@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-03-30 17:20:27
+# @Last Modified time: 2019-03-30 17:47:12
 import logging
 import subprocess
 import tempfile
@@ -172,7 +172,7 @@ class ClientHomeWork(ClientConsole):
             with open(ntf.name) as f_enc:
                 self.logger.debug(f'encoding default: {f_enc.encoding}')
 
-            with open(ntf.name, encoding=settings.ENCODING) as f:
+            with open(ntf.name, encoding='utf-16le') as f:
                 self.logger.debug(f'\n{"".join(f)}')
 
 
