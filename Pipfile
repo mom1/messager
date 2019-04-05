@@ -17,9 +17,10 @@ flake8-eradicate = "*"
 flake8-quotes = "*"
 mccabe = "*"
 pep8-naming = "*"
+ipdb = "*"
 
 [packages]
-
+pyyaml = "*"
 
 [requires]
 python_version = "3.7"
