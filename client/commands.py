@@ -2,15 +2,17 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-05 11:38:32
+# @Last Modified time: 2019-04-06 21:50:43
 import re
 import subprocess
 import tempfile
 from sys import platform
 
-import settings
-from pathlib import Path
 from convert import Converter, dispatcher
+from pathlib import Path
+from settings import Settings
+
+settings = Settings.get_instance()
 
 
 class Comander(object):
@@ -68,7 +70,7 @@ class CommandHomeWork1(object):
             self.logger.debug(f'word: {word} type: {type(word)}')
 
         for word in self.task1['list2']:
-            self.logger.debug(f'word: {word.decode(settings.ENCODING)} type: {type(word)}')
+            self.logger.debug(f'word: {word.decode(settings.get("encoding"))} type: {type(word)}')
         self.logger.debug('\n')
 
         self.logger.debug(
@@ -122,7 +124,7 @@ class CommandHomeWork1(object):
 
         with tempfile.NamedTemporaryFile(prefix='test_file', suffix='.txt') as ntf:
             for word in self.task6['list1']:
-                ntf.write(word.encode(settings.ENCODING) + b'\n')
+                ntf.write(word.encode(settings.get('encoding')) + b'\n')
             ntf.seek(0)
 
             with open(ntf.name) as f_enc:

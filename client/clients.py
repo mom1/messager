@@ -2,11 +2,13 @@
 # @Author: Max ST
 # @Date:   2019-04-04 20:50:07
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-04 22:23:44
+# @Last Modified time: 2019-04-07 13:14:45
 import commands
 import logging
 
-import settings
+from settings import Settings
+
+settings = Settings.get_instance()
 
 
 class AbstractClient(object):
@@ -36,17 +38,16 @@ class ClientConsole(AbstractClient):
         self.commander.reg_cmd(commands.CommandHomeWork2(self.logger))
 
     def connect(self, *args, **kwargs):
-        self.logger.debug('connect')
         try:
             while True:
                 message = self.input_data()
                 if self.commander.run(message):
                     continue
-                message = self.send_data(message)
-                message = self.receive_data(message)
+                yield message
         except KeyboardInterrupt:
             self.logger.debug('')
             self.logger.debug('connect closed')
+            yield False
 
     def input_data(self, *args, **kwargs):
         return input('Enter data to send\n:')
@@ -55,10 +56,10 @@ class ClientConsole(AbstractClient):
         response = data
         if isinstance(data, (str)):
             self.logger.debug('encode data')
-            response = data.encode(settings.ENCODING)
+            response = data.encode(settings.get('encoding'))
         if isinstance(data, (bytes)):
             self.logger.debug('decode data')
-            response = data.decode(settings.ENCODING)
+            response = data.decode(settings.get('encoding'))
         return response
 
     def prepare_data_send(self, data):
@@ -71,12 +72,13 @@ class ClientConsole(AbstractClient):
 
     def send_data(self, data, **kwargs):
         data_send = self.prepare_data_send(data)
-        self.logger.debug(f'{"*" * 15} DATA SEND TO SERVER {"*" * 15}')
         self.logger.debug(f'Send Data:{data_send}')
         return data_send
 
     def receive_data(self, data, **kwargs):
-        data_receiv = self.prepare_data_receiv(data)
         self.logger.debug(f'{"*" * 15} DATA RECEIVED FROM SERVER {"*" * 15}')
-        self.logger.debug(f'Received Data:{data_receiv}')
-        return data_receiv
+        self.logger.debug(f'Received Data:{data}')
+        return data
+
+    def show_mes(self, data):
+        self.logger.info(str(data))

@@ -18,6 +18,8 @@ flake8-quotes = "*"
 mccabe = "*"
 pep8-naming = "*"
 ipdb = "*"
+better-exceptions = "*"
+yapf = "*"
 
 [packages]
 pyyaml = "*"
