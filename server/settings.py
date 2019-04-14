@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:39
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-08 00:26:40
+# @Last Modified time: 2019-04-14 21:35:04
 from collections import ChainMap
 
 default_settings = {
@@ -10,9 +10,6 @@ default_settings = {
     'HOST': 'localhost',
     'PORT': 7777,
     'WORKERS': 5,
-    'TIME_OUT': 0.3,
-    'DATE_FORMAT': '%Y-%m-%d %H:%M:%S',
-    'DELIMITER': '\r\n',
 }
 
 

@@ -2,8 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 20:50:07
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-07 13:14:45
-import commands
+# @Last Modified time: 2019-04-14 23:35:47
 import logging
 
 from settings import Settings
@@ -33,24 +32,19 @@ class ClientConsole(AbstractClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger(type(self).__name__)
-        self.commander = commands.Comander(self)
-        self.commander.reg_cmd(commands.CommandHomeWork1(self.logger, self.toggle_data))
-        self.commander.reg_cmd(commands.CommandHomeWork2(self.logger))
 
     def connect(self, *args, **kwargs):
         try:
             while True:
-                message = self.input_data()
-                if self.commander.run(message):
-                    continue
-                yield message
+                yield self.input_data()
         except KeyboardInterrupt:
             self.logger.debug('')
             self.logger.debug('connect closed')
             yield False
 
     def input_data(self, *args, **kwargs):
-        return input('Enter data to send\n:')
+        text = kwargs.get('text', 'Enter data to send')
+        return input(f'{text}\n:')
 
     def toggle_data(self, data):
         response = data
@@ -81,4 +75,4 @@ class ClientConsole(AbstractClient):
         return data
 
     def show_mes(self, data):
-        self.logger.info(str(data))
+        print(str(data))

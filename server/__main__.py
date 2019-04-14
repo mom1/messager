@@ -2,14 +2,15 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-08 00:39:02
+# @Last Modified time: 2019-04-14 23:40:39
 import argparse
 import logging
 import os
 import socket
+from commands import main_commands
 
-from convert import Converter
-from jim import Message
+from jim_mes import Converter, Message
+from pathlib import Path
 from settings import Settings, default_settings
 
 logging.basicConfig(
@@ -39,11 +40,14 @@ class Server(object):
                             break
                         self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')
                         mes = Message(loads=data)
-                        if mes.action == 'presence':
-                            self.logger.debug('send success')
-                            client.sendall(bytes(Message.success()))
+                        response = main_commands.run(mes, logger=self.logger)
+                        if response:
+                            self.logger.debug('send response')
+                            client.sendall(bytes(response))
                         else:
-                            client.sendall(data)
+                            text_resp = f'Server is not know this a command "{mes.action}"'
+                            self.logger.error(text_resp)
+                            client.sendall(bytes(Message.error_resp(text_resp)))
         except KeyboardInterrupt:
             self.sock.close()
             self.logger.debug('closed')
@@ -82,4 +86,8 @@ if __name__ == '__main__':
         for row in conv.read():
             config.append({k.lower(): v for k, v in row.items()})
     setting = Settings.get_instance(command_line_args, *config, environ)
+    p = Path('./server')
+    for item in p.glob('**/*/*.py'):
+        __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
+
     Server().run()

@@ -2,16 +2,17 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-08 00:38:54
+# @Last Modified time: 2019-04-14 23:51:32
 import argparse
 import logging
 import os
 import socket
+from commands import main_commands
 from random import randint
 
 import clients
-from convert import Converter
-from jim import Message
+from jim_mes import Converter, Message
+from pathlib import Path
 from settings import Settings, default_settings
 
 logging.basicConfig(
@@ -37,27 +38,37 @@ class Client(clients.AbstractClient):
             return self.logger.debug(f'connect error: {response}')
         for messsage in self.client.connect(*args, **kwargs):
             if messsage is not False and messsage:
+                is_command = main_commands.run(self.prep_data(messsage), logger=self.logger)
+                if is_command:
+                    continue
                 self.send_data(messsage)
             elif messsage is False:
                 self.sock.close()
                 break
 
     def input_data(self, *args, **kwargs):
-        self.client.input_data(*args, **kwargs)
+        return self.client.input_data(*args, **kwargs)
 
-    def prep_data(self, data=None, loads=None):
-        self.logger.debug(f'prepare data for :{data}')
-        param = {'loads': loads} if loads else {'action': 'msg', 'text': data}
+    def prep_data(self, data=None, loads=None, **kwargs):
+        self.logger.debug(f'prepare data for :{data or loads}')
+        if 'action' not in kwargs:
+            kwargs['action'] = 'msg'
+            kwargs['text'] = data
+        param = {'loads': loads} if loads else kwargs
         return Message(**param)
 
-    def send_data(self, mes, *args, **kwargs):
+    def send_data(self, mes='', *args, **kwargs):
         self.logger.debug(f'{"*" * 15} DATA SEND TO SERVER {"*" * 15}')
-        self.sock.sendall(bytes(self.prep_data(mes)))
+        self.sock.sendall(bytes(self.prep_data(mes, **kwargs)))
         self.receive_data()
 
     def receive_data(self, *args, **kwargs):
         data = self.sock.recv(setting.get('buffer_size', 1024))
-        self.client.show_mes(self.prep_data(loads=data))
+        response = self.prep_data(loads=data)
+        if response.action == 'request':
+            resp = self.input_data(text=response.text)
+            return self.send_data(action=response.destination, param=resp)
+        self.client.show_mes(response)
 
 
 if __name__ == '__main__':
@@ -115,4 +126,7 @@ if __name__ == '__main__':
         for row in conv.read():
             config.append({k.lower(): v for k, v in row.items()})
     setting = Settings.get_instance(command_line_args, *config, environ)
+    p = Path('./client')
+    for item in p.glob('**/*/*.py'):
+        __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
     Client(client=client).connect()

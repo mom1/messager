@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-14 23:43:23
+# @Last Modified time: 2019-04-14 23:48:16
 from settings import Settings
 
 settings = Settings.get_instance()
@@ -47,3 +47,12 @@ class AbstractCommand(object):
 
     def execute(self, message, **kwargs):
         pass
+
+
+class Presence(AbstractCommand):
+
+    def execute(self, message, **kwargs):
+        return type(message).success()
+
+
+main_commands.reg_cmd(Presence, 'presence')
