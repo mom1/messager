@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-14 23:40:39
+# @Last Modified time: 2019-04-15 00:45:01
 import argparse
 import logging
 import os
@@ -88,6 +88,8 @@ if __name__ == '__main__':
     setting = Settings.get_instance(command_line_args, *config, environ)
     p = Path('./server')
     for item in p.glob('**/*/*.py'):
+        if item.parent.stem == 'tests':
+            continue
         __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
 
     Server().run()
