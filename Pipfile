@@ -21,6 +21,7 @@ ipdb = "*"
 better-exceptions = "*"
 yapf = "*"
 pytest = "*"
+pytest-cov = "*"
 
 [packages]
 pyyaml = "*"

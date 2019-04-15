@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-14 23:48:16
+# @Last Modified time: 2019-04-16 00:00:11
 from settings import Settings
 
 settings = Settings.get_instance()
@@ -15,7 +15,6 @@ class Comander(object):
 
     def run(self, request, *args, **kwargs):
         response = False
-        print(self.commands)
         if request.action == 'msg' and (request.text or '').startswith('!'):
             cmd = self.commands.get(request.text[1:], None)
         else:
