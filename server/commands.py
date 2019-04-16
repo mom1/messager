@@ -2,7 +2,9 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-16 00:00:11
+# @Last Modified time: 2019-04-16 09:33:52
+import logging
+
 from settings import Settings
 
 settings = Settings.get_instance()
@@ -42,7 +44,7 @@ class AbstractCommand(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.logger = kwargs.pop('logger', None)
+        self.logger = kwargs.pop('logger', logging.getLogger('Server'))
 
     def execute(self, message, **kwargs):
         pass

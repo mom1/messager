@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-15 00:45:01
+# @Last Modified time: 2019-04-16 09:31:19
 import argparse
 import logging
 import os
@@ -15,8 +15,10 @@ from settings import Settings, default_settings
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(name)s: %(message)s',
+    format='%(asctime)s %(levelname)s %(module)s: %(message)s',
+    filemode='w',
 )
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(module)s: %(message)s')
 
 
 class Server(object):
@@ -26,6 +28,13 @@ class Server(object):
         self.sock.bind((setting.get('host'), setting.get('port')))
         self.sock.listen(setting.get('workers'))
         self.logger = logging.getLogger(type(self).__name__)
+        handler = logging.FileHandler(f'server/log/{type(self).__name__}.log', encoding=setting.get('encoding'))
+        error_handler = logging.FileHandler(f'server/log/{type(self).__name__}_error.log', encoding=setting.get('encoding'))
+        error_handler.setLevel(logging.ERROR)
+        handler.setFormatter(formatter)
+        error_handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.addHandler(error_handler)
 
     def run(self):
         try:
