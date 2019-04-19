@@ -2,9 +2,10 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-16 09:33:52
+# @Last Modified time: 2019-04-19 11:45:20
 import logging
 
+from helpers import log
 from settings import Settings
 
 settings = Settings.get_instance()
@@ -15,6 +16,7 @@ class Comander(object):
         super().__init__()
         self.commands = {}
 
+    @log
     def run(self, request, *args, **kwargs):
         response = False
         if request.action == 'msg' and (request.text or '').startswith('!'):
@@ -41,7 +43,6 @@ main_commands = Comander()
 
 
 class AbstractCommand(object):
-
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.logger = kwargs.pop('logger', logging.getLogger('Server'))
@@ -51,7 +52,6 @@ class AbstractCommand(object):
 
 
 class Presence(AbstractCommand):
-
     def execute(self, message, **kwargs):
         return type(message).success()
 

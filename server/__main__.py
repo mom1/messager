@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-16 09:31:19
+# @Last Modified time: 2019-04-19 11:44:20
 import argparse
 import logging
 import os
@@ -13,13 +13,6 @@ from jim_mes import Converter, Message
 from pathlib import Path
 from settings import Settings, default_settings
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s %(module)s: %(message)s',
-    filemode='w',
-)
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(module)s: %(message)s')
-
 
 class Server(object):
     def __init__(self, *args, **kwargs):
@@ -28,13 +21,6 @@ class Server(object):
         self.sock.bind((setting.get('host'), setting.get('port')))
         self.sock.listen(setting.get('workers'))
         self.logger = logging.getLogger(type(self).__name__)
-        handler = logging.FileHandler(f'server/log/{type(self).__name__}.log', encoding=setting.get('encoding'))
-        error_handler = logging.FileHandler(f'server/log/{type(self).__name__}_error.log', encoding=setting.get('encoding'))
-        error_handler.setLevel(logging.ERROR)
-        handler.setFormatter(formatter)
-        error_handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.addHandler(error_handler)
 
     def run(self):
         try:
@@ -55,7 +41,7 @@ class Server(object):
                             client.sendall(bytes(response))
                         else:
                             text_resp = f'Server is not know this a command "{mes.action}"'
-                            self.logger.error(text_resp)
+                            self.logger.error(text_resp, exc_info=True)
                             client.sendall(bytes(Message.error_resp(text_resp)))
         except KeyboardInterrupt:
             self.sock.close()
@@ -65,24 +51,21 @@ class Server(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', nargs='?')
-    parser.add_argument(
-        '-e',
-        '--encoding',
-        default=default_settings.get('ENCODING', None),
-        nargs='?',
-        help=f'Encoding (default "{default_settings.get("ENCODING")}")')
-    parser.add_argument(
-        '-a',
-        '--address',
-        default=default_settings.get('HOST', None),
-        nargs='?',
-        help=f'IP (default "{default_settings.get("HOST")}")')
-    parser.add_argument(
-        '-p',
-        '--port',
-        default=default_settings.get('PORT'),
-        nargs='?',
-        help=f'Port (default "{default_settings.get("PORT")}")')
+    parser.add_argument('-e',
+                        '--encoding',
+                        default=default_settings.get('ENCODING', None),
+                        nargs='?',
+                        help=f'Encoding (default "{default_settings.get("ENCODING")}")')
+    parser.add_argument('-a',
+                        '--address',
+                        default=default_settings.get('HOST', None),
+                        nargs='?',
+                        help=f'IP (default "{default_settings.get("HOST")}")')
+    parser.add_argument('-p',
+                        '--port',
+                        default=default_settings.get('PORT'),
+                        nargs='?',
+                        help=f'Port (default "{default_settings.get("PORT")}")')
     namespace = parser.parse_args()
 
     environ = {k: v for k, v in os.environ.items() if k in default_settings}
@@ -95,6 +78,20 @@ if __name__ == '__main__':
         for row in conv.read():
             config.append({k.lower(): v for k, v in row.items()})
     setting = Settings.get_instance(command_line_args, *config, environ)
+
+    # loging
+    error_handler = logging.FileHandler(f'server/log/Server_error.log', encoding=setting.get('encoding'))
+    error_handler.setLevel(logging.ERROR)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(module)s: %(message)s',
+        handlers=[
+            error_handler,
+            logging.FileHandler(f'server/log/Server.log', encoding=setting.get('encoding')),
+            logging.StreamHandler(),
+        ],
+    )
+    # modules command and other
     p = Path('./server')
     for item in p.glob('**/*/*.py'):
         if item.parent.stem == 'tests':
