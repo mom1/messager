@@ -2,10 +2,11 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-19 11:44:20
+# @Last Modified time: 2019-04-21 15:13:46
 import argparse
 import logging
 import os
+import select
 import socket
 from commands import main_commands
 
@@ -20,32 +21,63 @@ class Server(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((setting.get('host'), setting.get('port')))
         self.sock.listen(setting.get('workers'))
+        self.sock.settimeout(0)
         self.logger = logging.getLogger(type(self).__name__)
+        self.connections, self.outputs, self.inputs = [], [], []
 
     def run(self):
         try:
             self.logger.info(f'start with {setting.get("host")}:{setting.get("port")}')
             while True:
-                client, address = self.sock.accept()
-                with client:
+                try:
+                    client, address = self.sock.accept()
+                except OSError:
+                    pass
+                else:
+                    self.connections.append(client)
                     self.logger.info(f'Connect client from {address}')
-                    while True:
-                        data = client.recv(setting.get('buffer_size', 1024))
-                        if not data:
-                            break
-                        self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')
-                        mes = Message(loads=data)
-                        response = main_commands.run(mes, logger=self.logger)
-                        if response:
-                            self.logger.debug('send response')
-                            client.sendall(bytes(response))
-                        else:
-                            text_resp = f'Server is not know this a command "{mes.action}"'
-                            self.logger.error(text_resp, exc_info=True)
-                            client.sendall(bytes(Message.error_resp(text_resp)))
+                finally:
+                    r = []
+                    w = []
+                    try:
+                        r, w, _ = select.select(self.connections, self.connections, [], 0)
+                    except Exception:
+                        self.logger.error('Exception until I/O select', exc_info=True)
+
+                    self.receive(r)
+                    self.process()
+                    self.send(w)
+
         except KeyboardInterrupt:
             self.sock.close()
             self.logger.debug('closed')
+
+    def receive(self, clients):
+        for client in clients:
+            data = client.recv(setting.get('buffer_size', 1024))
+            if not data:
+                break
+            self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')
+            self.inputs.append(Message(loads=data))
+
+    def process(self):
+        while len(self.inputs):
+            mes = self.inputs.pop(0)
+            response = main_commands.run(mes, logger=self.logger)
+            if response:
+                self.logger.debug('send response')
+                self.outputs.append(response)
+            else:
+                text_resp = f'Server is not know this a command "{mes.action}"'
+                self.logger.error(text_resp, exc_info=True)
+                self.outputs.append(Message.error_resp(text_resp))
+                self.inputs.append(mes)
+
+    def send(self, clients):
+        while len(self.outputs):
+            mes = self.outputs.pop(0)
+            for client in clients:
+                client.sendall(bytes(mes))
 
 
 if __name__ == '__main__':

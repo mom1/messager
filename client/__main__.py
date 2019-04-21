@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-14 23:51:32
+# @Last Modified time: 2019-04-21 15:52:26
 import argparse
 import logging
 import os
@@ -32,25 +32,31 @@ class Client(clients.AbstractClient):
         self.logger.debug(f'connect to server {setting.get("host")}:{setting.get("port")}')
         self.sock.connect((setting.get('host'), setting.get('port')))
         self.sock.sendall(bytes(Message.presence(user=setting.get('user', None))))
-        resp_mes = self.sock.recv(setting.get('buffer_size', 1024))
-        response = Message(loads=resp_mes)
-        if response.response != 200:
-            return self.logger.debug(f'connect error: {response}')
-        for messsage in self.client.connect(*args, **kwargs):
-            if messsage is not False and messsage:
-                is_command = main_commands.run(self.prep_data(messsage), logger=self.logger)
-                if is_command:
-                    continue
-                self.send_data(messsage)
-            elif messsage is False:
-                self.sock.close()
-                break
+        try:
+            while True:
+                if setting.get('receiver', None):
+                    self.receive_data()
+                else:
+                    messsage = self.input_data()
+                    if messsage is not False and messsage:
+                        is_command = main_commands.run(self.prep_data(messsage), logger=self.logger)
+                        if is_command:
+                            continue
+                        self.send_data(messsage)
+                    elif messsage is False:
+                        self.sock.close()
+                        break
+        except KeyboardInterrupt:
+            self.logger.debug('')
+            self.logger.debug('connect closed')
+            return False
 
     def input_data(self, *args, **kwargs):
         return self.client.input_data(*args, **kwargs)
 
     def prep_data(self, data=None, loads=None, **kwargs):
         self.logger.debug(f'prepare data for :{data or loads}')
+        kwargs['user'] = setting.get('user', None)
         if 'action' not in kwargs:
             kwargs['action'] = 'msg'
             kwargs['text'] = data
@@ -60,7 +66,6 @@ class Client(clients.AbstractClient):
     def send_data(self, mes='', *args, **kwargs):
         self.logger.debug(f'{"*" * 15} DATA SEND TO SERVER {"*" * 15}')
         self.sock.sendall(bytes(self.prep_data(mes, **kwargs)))
-        self.receive_data()
 
     def receive_data(self, *args, **kwargs):
         data = self.sock.recv(setting.get('buffer_size', 1024))
@@ -72,6 +77,7 @@ class Client(clients.AbstractClient):
 
 
 if __name__ == '__main__':
+    environ = {k.lower(): v for k, v in os.environ.items() if k in default_settings}
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', nargs='?')
     parser.add_argument(
@@ -105,13 +111,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '-u',
         '--user',
-        default=f'Anonymous_{randint(1, 1000)}',
+        default=environ.get('user', f'Anonymous_{randint(1, 1000)}'),
         nargs='?',
         help='User name (default Anonymous_XXXX)',
     )
+    parser.add_argument('-r', '--receiver', dest='receiver', action='store_true')
+    parser.set_defaults(receiver=False)
     namespace = parser.parse_args()
 
-    environ = {k: v for k, v in os.environ.items() if k in default_settings}
     command_line_args = {k: v for k, v in vars(namespace).items() if v}
     config = [{}]
 
@@ -125,8 +132,11 @@ if __name__ == '__main__':
         config = []
         for row in conv.read():
             config.append({k.lower(): v for k, v in row.items()})
+
     setting = Settings.get_instance(command_line_args, *config, environ)
+
     p = Path('./client')
     for item in p.glob('**/*/*.py'):
         __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
+
     Client(client=client).connect()

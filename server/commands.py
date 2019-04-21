@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-19 11:45:20
+# @Last Modified time: 2019-04-21 13:19:01
 import logging
 
 from helpers import log
@@ -48,6 +48,9 @@ class AbstractCommand(object):
         self.logger = kwargs.pop('logger', logging.getLogger('Server'))
 
     def execute(self, message, **kwargs):
+        pass
+
+    def validate(self, *args, **kwargs):
         pass
 
 
