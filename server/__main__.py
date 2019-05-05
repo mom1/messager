@@ -2,12 +2,13 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-21 15:13:46
+# @Last Modified time: 2019-05-05 11:29:36
 import argparse
 import logging
 import os
 import select
 import socket
+import threading
 from commands import main_commands
 
 from jim_mes import Converter, Message
@@ -53,12 +54,14 @@ class Server(object):
             self.logger.debug('closed')
 
     def receive(self, clients):
-        for client in clients:
-            data = client.recv(setting.get('buffer_size', 1024))
-            if not data:
-                break
-            self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')
-            self.inputs.append(Message(loads=data))
+        self.to_thread(clients, self.read_client_data)
+
+    def read_client_data(self, client):
+        data = client.recv(setting.get('buffer_size', 1024))
+        if not data:
+            return
+        self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')
+        self.inputs.append(Message(loads=data))
 
     def process(self):
         while len(self.inputs):
@@ -76,8 +79,18 @@ class Server(object):
     def send(self, clients):
         while len(self.outputs):
             mes = self.outputs.pop(0)
-            for client in clients:
-                client.sendall(bytes(mes))
+            self.to_thread(clients, self.write_client_data, mes)
+
+    def write_client_data(self, client, mes):
+        client.sendall(bytes(mes))
+
+    def to_thread(self, clients, target, *args):
+        for client in clients:
+            thread = threading.Thread(
+                target=target,
+                args=(client, *args),
+            )
+            thread.start()
 
 
 if __name__ == '__main__':
