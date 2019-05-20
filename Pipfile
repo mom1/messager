@@ -26,6 +26,7 @@ pytest-cov = "*"
 [packages]
 pyyaml = "*"
 jim-mes = {path = "./dist/jim_mes-0.3.1-py3-none-any.whl"}
+tabulate = "*"
 
 [requires]
 python_version = "3.7"
