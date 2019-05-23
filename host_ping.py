@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-05-20 18:10:48
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-05-20 19:40:57
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-05-23 22:57:12
 
 import ipaddress
 import platform
@@ -39,6 +39,7 @@ def host_range_ping(start, end, is_print=True):
     try:
         start_ip = ipaddress.ip_address(start)
         end_ip = ipaddress.ip_address(end)
+        start_ip, end_ip = sorted((start_ip, end_ip))
     except Exception:
         print('Не верные параметры')
         return
