@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
-# @Last Modified by:   Max ST
-# @Last Modified time: 2019-05-05 11:29:36
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-05-21 22:39:00
 import argparse
 import logging
 import os
@@ -10,9 +10,10 @@ import select
 import socket
 import threading
 from commands import main_commands
+from pathlib import Path
 
 from jim_mes import Converter, Message
-from pathlib import Path
+
 from settings import Settings, default_settings
 
 
@@ -96,21 +97,9 @@ class Server(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', nargs='?')
-    parser.add_argument('-e',
-                        '--encoding',
-                        default=default_settings.get('ENCODING', None),
-                        nargs='?',
-                        help=f'Encoding (default "{default_settings.get("ENCODING")}")')
-    parser.add_argument('-a',
-                        '--address',
-                        default=default_settings.get('HOST', None),
-                        nargs='?',
-                        help=f'IP (default "{default_settings.get("HOST")}")')
-    parser.add_argument('-p',
-                        '--port',
-                        default=default_settings.get('PORT'),
-                        nargs='?',
-                        help=f'Port (default "{default_settings.get("PORT")}")')
+    parser.add_argument('-e', '--encoding', default=default_settings.get('ENCODING', None), nargs='?', help=f'Encoding (default "{default_settings.get("ENCODING")}")')
+    parser.add_argument('-a', '--address', default=default_settings.get('HOST', None), nargs='?', help=f'IP (default "{default_settings.get("HOST")}")')
+    parser.add_argument('-p', '--port', default=default_settings.get('PORT'), nargs='?', help=f'Port (default "{default_settings.get("PORT")}")')
     namespace = parser.parse_args()
 
     environ = {k: v for k, v in os.environ.items() if k in default_settings}
