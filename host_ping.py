@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-05-20 18:10:48
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-23 22:57:12
+# @Last Modified time: 2019-05-23 23:17:13
 
 import ipaddress
 import platform
@@ -12,6 +12,11 @@ from tabulate import tabulate
 is_win = platform.system().lower() == 'windows'
 param = '-n' if is_win else '-c'
 
+
+# 1. Написать функцию host_ping(), в которой с помощью утилиты ping будет проверяться доступность сетевых узлов. Аргументом функции является список,
+# в котором каждый сетевой узел должен быть представлен именем хоста или ip-адресом. В функции необходимо перебирать ip-адреса и проверять
+# их доступность с выводом соответствующего сообщения («Узел доступен», «Узел недоступен»). При этом ip-адрес сетевого узла должен
+# создаваться с помощью функции ip_address().
 
 def host_ping(hosts, is_print=True):
     for host in hosts:
@@ -32,7 +37,12 @@ def host_ping(hosts, is_print=True):
             yield {key: ip}
 
 
-# list(host_ping(('192.168.0.1', 'ya.ru', 'babayaga')))
+list(host_ping(('192.168.0.1', 'ya.ru', 'babayaga')))
+
+
+# 2. Написать функцию host_range_ping() для перебора ip-адресов из заданного диапазона.
+# Меняться должен только последний октет каждого адреса.
+# По результатам проверки должно выводиться соответствующее сообщение.
 
 
 def host_range_ping(start, end, is_print=True):
@@ -52,11 +62,22 @@ def host_range_ping(start, end, is_print=True):
     return [i for i in host_ping(ips, is_print)]
 
 
-# host_range_ping('192.168.0.1', '192.168.0.20')
+host_range_ping('192.168.0.1', '192.168.0.3')
+
+
+# 3. Написать функцию host_range_ping_tab(), возможности которой основаны на функции из примера 2.
+# Но в данном случае результат должен быть итоговым по всем ip-адресам, представленным в табличном формате (использовать модуль tabulate).
+# Таблица должна состоять из двух колонок и выглядеть примерно так:
+# Reachable
+# 10.0.0.1
+# 10.0.0.2
+# Unreachable
+# 10.0.0.3
+# 10.0.0.4
 
 
 def host_range_ping_tab(start, end):
     print(tabulate(host_range_ping(start, end, is_print=False), headers='keys'))
 
 
-# host_range_ping_tab('192.168.0.1', '192.168.0.20')
+host_range_ping_tab('192.168.0.1', '192.168.0.20')
