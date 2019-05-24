@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-21 22:39:00
+# @Last Modified time: 2019-05-24 22:46:29
 import argparse
 import logging
 import os
@@ -58,7 +58,10 @@ class Server(object):
         self.to_thread(clients, self.read_client_data)
 
     def read_client_data(self, client):
-        data = client.recv(setting.get('buffer_size', 1024))
+        try:
+            data = client.recv(setting.get('buffer_size', 1024))
+        except Exception:
+            return
         if not data:
             return
         self.logger.debug(f'Client say: {data.decode(setting.get("encoding", "utf-8"))}')

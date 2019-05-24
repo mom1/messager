@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-05-20 18:10:48
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-23 23:17:13
+# @Last Modified time: 2019-05-24 21:31:48
 
 import ipaddress
 import platform
@@ -80,4 +80,4 @@ def host_range_ping_tab(start, end):
     print(tabulate(host_range_ping(start, end, is_print=False), headers='keys'))
 
 
-host_range_ping_tab('192.168.0.1', '192.168.0.20')
+host_range_ping_tab('192.168.0.1', '192.168.0.3')
