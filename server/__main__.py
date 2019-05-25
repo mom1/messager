@@ -2,14 +2,14 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-24 22:46:29
+# @Last Modified time: 2019-05-25 12:47:00
 import argparse
+import dis
 import logging
 import os
 import select
 import socket
 import threading
-from commands import main_commands
 from pathlib import Path
 
 from jim_mes import Converter, Message
@@ -17,19 +17,82 @@ from jim_mes import Converter, Message
 from settings import Settings, default_settings
 
 
-class Server(object):
+class PortDescr(object):
+    """docstring for PortDescr self """
+
+    def __init__(self, port=7777):
+        super().__init__()
+        self._port = port
+
+    def __set__(self, inst, value):
+        if isinstance(value, int) and 65535 > value >= 0:
+            self._port = value
+        else:
+            raise ValueError('Порт должен быть int и 65535 > port >= 0')
+
+    def __get__(self, inst, inst_type=None):
+        return self._port
+
+
+class ServerVerifier(type):
+    def __new__(cls, name, bases, attr_dict):
+        """
+            Тут находим объявление сокета и проверяем его инициализацию,
+            кэшируем имя атрибута
+        """
+        cls.store_soc = None
+        for key, val in attr_dict.items():
+            assert not isinstance(val, socket.socket), 'Создание сокетов на уровне классов запрещенно'
+            if key == '__classcell__' or isinstance(val, PortDescr):
+                continue
+            instrs = tuple(dis.Bytecode(val))
+            glob_soc = (tuple(filter(lambda x: x.opname == 'LOAD_GLOBAL' and x.argval == 'socket', instrs)) or (None, ))[0]
+            cls.store_soc = next((i for i in instrs[instrs.index(glob_soc):] if i.opname == 'STORE_ATTR'), None) if not cls.store_soc and glob_soc else cls.store_soc
+            tcp_param = next((j for j in instrs[instrs.index(glob_soc):instrs.index(cls.store_soc)] if j.arg == 13), None) if glob_soc and cls.store_soc else None
+            if tcp_param:
+                assert tcp_param.argval == 'SOCK_STREAM', 'Использование сокетов возможно только по TCP'
+        return super().__new__(cls, name, bases, attr_dict)
+
+    def __init__(cls, name, bases, attr_dict):
+        """
+            Т.к в предыдущей функции использовался дикт
+            мы могли пропустить вызовы интересующего метода
+            тут еще раз просматриваем все и ищем вызовы.
+            Но т.к. __new__ и __init__ вызываются последовательно
+            для каждого класса остается дыра в виде вызова в родительском классе.
+        """
+        if cls.store_soc:
+            checks_meth = ('connect', )
+            for key, val in attr_dict.items():
+                if key == '__classcell__' or isinstance(val, PortDescr):
+                    continue
+                instrs = tuple(dis.Bytecode(val))
+                socks = (i for i in instrs if i.argval == cls.store_soc.argval)
+                for sock in socks:
+                    calls = instrs[instrs.index(sock) + 1]
+                    # python 3.7 !!!LOAD_METHOD!!!
+                    assert not (calls.argval in checks_meth and calls.opname == 'LOAD_METHOD'), f'Для сокетов запрещенно вызывать методы {checks_meth}'
+        super().__init__(name, bases, attr_dict)
+
+
+class Server(metaclass=ServerVerifier):
+    port = PortDescr()
+
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((setting.get('host'), setting.get('port')))
+        from commands import main_commands
+        self.main_commands = main_commands
+        self.sock = socket.socket()
+        self.port = int(setting.get('port'))
+        self.sock.bind((setting.get('host'), self.port))
         self.sock.listen(setting.get('workers'))
-        self.sock.settimeout(0)
+        self.sock.settimeout(0.3)
         self.logger = logging.getLogger(type(self).__name__)
         self.connections, self.outputs, self.inputs = [], [], []
 
     def run(self):
         try:
-            self.logger.info(f'start with {setting.get("host")}:{setting.get("port")}')
+            self.logger.info(f'start with {setting.get("host")}:{self.port}')
             while True:
                 try:
                     client, address = self.sock.accept()
@@ -70,7 +133,7 @@ class Server(object):
     def process(self):
         while len(self.inputs):
             mes = self.inputs.pop(0)
-            response = main_commands.run(mes, logger=self.logger)
+            response = self.main_commands.run(mes, logger=self.logger)
             if response:
                 self.logger.debug('send response')
                 self.outputs.append(response)

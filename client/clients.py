@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 20:50:07
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-25 02:56:34
+# @Last Modified time: 2019-05-25 10:23:32
 import dis
 import logging
 import socket
@@ -35,7 +35,9 @@ class ClientVerifier(type):
         """
             Т.к в предыдущей функции использовался дикт
             мы могли пропустить вызовы интересующего метода
-            тут еще раз просматриваем все и ищем вызовы
+            тут еще раз просматриваем все и ищем вызовы.
+            Но т.к. __new__ и __init__ вызываются последовательно
+            для каждого класса остается дыра в виде вызова в родительском классе.
         """
         if cls.store_soc:
             checks_meth = ('accept', 'listen')
