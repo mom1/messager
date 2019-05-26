@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-25 12:47:00
+# @Last Modified time: 2019-05-26 15:42:35
 import argparse
 import dis
 import logging
@@ -10,10 +10,12 @@ import os
 import select
 import socket
 import threading
+from commands import main_commands
 from pathlib import Path
 
 from jim_mes import Converter, Message
 
+from db import Database
 from settings import Settings, default_settings
 
 
@@ -80,8 +82,6 @@ class Server(metaclass=ServerVerifier):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        from commands import main_commands
-        self.main_commands = main_commands
         self.sock = socket.socket()
         self.port = int(setting.get('port'))
         self.sock.bind((setting.get('host'), self.port))
@@ -91,6 +91,7 @@ class Server(metaclass=ServerVerifier):
         self.connections, self.outputs, self.inputs = [], [], []
 
     def run(self):
+        db = Database.get_instance()
         try:
             self.logger.info(f'start with {setting.get("host")}:{self.port}')
             while True:
@@ -133,7 +134,7 @@ class Server(metaclass=ServerVerifier):
     def process(self):
         while len(self.inputs):
             mes = self.inputs.pop(0)
-            response = self.main_commands.run(mes, logger=self.logger)
+            response = main_commands.run(mes, logger=self.logger)
             if response:
                 self.logger.debug('send response')
                 self.outputs.append(response)

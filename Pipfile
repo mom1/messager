@@ -26,6 +26,9 @@ pytest-cov = "*"
 pyyaml = "*"
 jim-mes = {path = "./dist/jim_mes-0.3.1-py3-none-any.whl"}
 tabulate = "*"
+sqlalchemy = "*"
+sqlalchemy-utils = "*"
+passlib = "*"
 
 [requires]
 python_version = "3.7"

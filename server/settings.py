@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-03-30 12:35:39
-# @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-14 21:35:04
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-05-26 13:59:58
 from collections import ChainMap
+
 
 default_settings = {
     'ENCODING': 'utf-8',
     'HOST': 'localhost',
     'PORT': 7777,
     'WORKERS': 5,
+    'DB_NAME': 'st_mes',
 }
 
 

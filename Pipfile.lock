@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "100a183caf87519ef1c2179b1a484ad612a7de7866a7c46c2b57373d22b95ee3"
+            "sha256": "40a10a763078a423f05c462312376729f23748569161d78eac057fee4ca48819"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,14 @@
             "path": "./dist/jim_mes-0.3.1-py3-none-any.whl",
             "version": "==0.3.1"
         },
+        "passlib": {
+            "hashes": [
+                "sha256:3d948f64138c25633613f303bcc471126eae67c04d5e3f6b7b8ce6242f8653e0",
+                "sha256:43526aea08fa32c6b6dbbbe9963c4c767285b78147b7437597f992812f69d280"
+            ],
+            "index": "pypi",
+            "version": "==1.7.1"
+        },
         "pyyaml": {
             "hashes": [
                 "sha256:1adecc22f88d38052fb787d959f003811ca858b799590a5eaa70e63dca50308c",
@@ -39,6 +47,27 @@
             ],
             "index": "pypi",
             "version": "==5.1"
+        },
+        "six": {
+            "hashes": [
+                "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
+                "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
+            ],
+            "version": "==1.12.0"
+        },
+        "sqlalchemy": {
+            "hashes": [
+                "sha256:91c54ca8345008fceaec987e10924bf07dcab36c442925357e5a467b36a38319"
+            ],
+            "index": "pypi",
+            "version": "==1.3.3"
+        },
+        "sqlalchemy-utils": {
+            "hashes": [
+                "sha256:3f1cb542cf0549a0de508d4919f3ad693a36230bf4cd13fdd6253549fec71182"
+            ],
+            "index": "pypi",
+            "version": "==0.33.11"
         },
         "tabulate": {
             "hashes": [

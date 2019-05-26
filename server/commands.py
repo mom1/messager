@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
-# @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-21 13:19:01
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-05-26 01:22:21
 import logging
 
 from helpers import log
-from settings import Settings
-
-settings = Settings.get_instance()
 
 
 class Comander(object):
