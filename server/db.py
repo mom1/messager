@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-26 15:41:41
+# @Last Modified time: 2019-05-28 19:47:17
 import enum
 
 import sqlalchemy as sa
@@ -28,7 +28,7 @@ class Base(object):
     id = sa.Column(sa.Integer, primary_key=True)  # noqa
 
 
-class Database(object):
+class DBManager(object):
     __instance = None
 
     def __init__(self, *args, **kwargs):

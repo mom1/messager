@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-26 15:42:35
+# @Last Modified time: 2019-05-28 19:47:43
 import argparse
 import dis
 import logging
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from jim_mes import Converter, Message
 
-from db import Database
+from db import DBManager
 from settings import Settings, default_settings
 
 
@@ -91,7 +91,7 @@ class Server(metaclass=ServerVerifier):
         self.connections, self.outputs, self.inputs = [], [], []
 
     def run(self):
-        db = Database.get_instance()
+        DBManager.get_instance()
         try:
             self.logger.info(f'start with {setting.get("host")}:{self.port}')
             while True:
