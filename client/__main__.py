@@ -2,11 +2,13 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-25 02:46:16
+# @Last Modified time: 2019-06-01 18:55:08
 import argparse
 import logging
 import os
+import selectors
 import socket
+import threading
 from commands import main_commands
 from pathlib import Path
 from random import randint
@@ -17,9 +19,11 @@ import clients
 from settings import Settings, default_settings
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.CRITICAL,
     format='%(name)s: %(message)s',
 )
+
+sel = selectors.DefaultSelector()
 
 
 class Client(clients.AbstractClient):
@@ -28,25 +32,31 @@ class Client(clients.AbstractClient):
         self.logger = logging.getLogger(type(self).__name__)
         self.client = kwargs.get('client', clients.ClientConsole())
         self.sock = socket.socket()
+        self.sock.setblocking(False)
+        events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        sel.register(self.sock, events)
 
     def connect(self, *args, **kwargs):
         self.logger.debug(f'connect to server {setting.get("host")}:{setting.get("port")}')
-        self.sock.connect((setting.get('host'), setting.get('port')))
+        self.sock.connect_ex((setting.get('host'), setting.get('port')))
         self.sock.sendall(bytes(Message.presence(user=setting.get('user', None))))
         try:
+            thread = threading.Thread(target=self.receive_data, daemon=True)
+            thread.start()
             while True:
-                if setting.get('receiver', None):
-                    self.receive_data()
-                else:
-                    messsage = self.input_data()
-                    if messsage is not False and messsage:
-                        is_command = main_commands.run(self.prep_data(messsage), logger=self.logger)
-                        if is_command:
-                            continue
-                        self.send_data(messsage)
-                    elif messsage is False:
-                        self.sock.close()
-                        break
+                events = sel.select(timeout=1)
+                for _, mask in events:
+                    if mask & selectors.EVENT_WRITE:
+                        messsage = self.input_data()
+                        if messsage is not False and messsage:
+                            is_command = main_commands.run(self.prep_data(messsage), logger=self.logger)
+                            if is_command:
+                                continue
+                            self.send_data(messsage)
+
+                        elif messsage is False:
+                            self.sock.close()
+                            break
         except KeyboardInterrupt:
             self.logger.debug('')
             self.logger.debug('connect closed')
@@ -69,12 +79,17 @@ class Client(clients.AbstractClient):
         self.sock.sendall(bytes(self.prep_data(mes, **kwargs)))
 
     def receive_data(self, *args, **kwargs):
-        data = self.sock.recv(setting.get('buffer_size', 1024))
-        response = self.prep_data(loads=data)
-        if response.action == 'request':
-            resp = self.input_data(text=response.text)
-            return self.send_data(action=response.destination, param=resp)
-        self.client.show_mes(response)
+        while True:
+            events = sel.select(timeout=None)
+            print(events)
+            for _, mask in events:
+                if mask & selectors.EVENT_READ:
+                    data = self.sock.recv(setting.get('buffer_size', 1024))
+                    response = self.prep_data(loads=data)
+                    if response.action == 'request':
+                        resp = self.input_data(text=response.text)
+                        self.send_data(action=response.destination, param=resp)
+                    self.client.show_mes(response)
 
 
 if __name__ == '__main__':

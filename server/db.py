@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-28 19:47:17
+# @Last Modified time: 2019-06-01 16:39:20
 import enum
 
 import sqlalchemy as sa
@@ -52,7 +52,7 @@ class DBManager(object):
         cursor.close()
 
     def _setup(self, *args, **kwargs):
-        self.engine = sa.create_engine('sqlite://', echo=True, connect_args={'check_same_thread': False})
+        self.engine = sa.create_engine('sqlite://', echo=False, connect_args={'check_same_thread': False})
         self.db_name = settings.get('db_name')
         self.engine.execute('ATTACH DATABASE ? AS ? ', (f'server/{self.db_name}.db', '{0}'.format(self.db_name)))
         Base.metadata.create_all(self.engine)
@@ -92,7 +92,7 @@ class Core(Base):
 
     def save(self):
         self._session.add(self)
-        self._session.flush()
+        self._session.commit()
         return self
 
     @classmethod

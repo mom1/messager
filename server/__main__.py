@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-28 19:47:43
+# @Last Modified time: 2019-06-01 18:56:23
 import argparse
 import dis
 import logging
@@ -84,9 +84,11 @@ class Server(metaclass=ServerVerifier):
         super().__init__()
         self.sock = socket.socket()
         self.port = int(setting.get('port'))
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((setting.get('host'), self.port))
         self.sock.listen(setting.get('workers'))
-        self.sock.settimeout(0.3)
+        # self.sock.settimeout(0.3)
+        self.sock.setblocking(False)
         self.logger = logging.getLogger(type(self).__name__)
         self.connections, self.outputs, self.inputs = [], [], []
 

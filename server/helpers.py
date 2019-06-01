@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-19 09:31:57
-# @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-20 20:47:31
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-05-29 00:40:46
 import inspect
 import logging
 from functools import wraps
@@ -28,7 +28,7 @@ def get_name_by_frame(frame):
 
 def log(func):
     @wraps(func)
-    def wrapper(request, *args, **kwargs):
+    def wrapper(mes, *args, **kwargs):
         stack = inspect.stack()
         caller_name = get_name_by_frame(stack[1][0])
         curr_name = f'{func.__module__}.{func.__qualname__}'
@@ -36,6 +36,6 @@ def log(func):
         del stack
 
         logger.debug(f'caller "{caller_name}" call this "{ curr_name }"')
-        return func(request, *args, **kwargs)
+        return func(mes, *args, **kwargs)
 
     return wrapper
