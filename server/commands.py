@@ -2,10 +2,10 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 12:59:12
+# @Last Modified time: 2019-06-02 14:45:19
 import logging
 
-from db import User, UserHistory
+from db import User, UserHistory, TypeHistory
 
 
 class Comander(object):
@@ -59,11 +59,7 @@ class AbstractCommand(object):
 class Presence(AbstractCommand):
     def execute(self, message, **kwargs):
         user = User.by_name(message.user)
-        UserHistory.create(
-            oper_id=user.id if user else 0,
-            type_row='login',
-            ip_addr=str(kwargs.get('addr', '')),
-        )
+        UserHistory.create(oper=user, type_row=TypeHistory.login, ip_addr=str(kwargs.get('addr', '')))
         return type(message).success()
 
 

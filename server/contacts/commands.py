@@ -2,12 +2,13 @@
 # @Author: MaxST
 # @Date:   2019-06-01 19:01:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 14:04:14
+# @Last Modified time: 2019-06-02 14:45:50
 from commands import AbstractCommand, main_commands
 
 from jim_mes import Message
 
-from db import Contact, User
+from db import Contact, User, TypeHistory
+from db import UserHistory as History
 
 
 class AddContactCommand(AbstractCommand):
@@ -26,6 +27,7 @@ class AddContactCommand(AbstractCommand):
                 return Message(response='500')
         else:
             return Message(response='400', text='Contact not found')
+        History.create(oper=owner, type_row=TypeHistory.add_contact)
         return Message(response='201')
 
 
@@ -47,6 +49,7 @@ class DelContactCommand(AbstractCommand):
                 return Message(response='500')
         else:
             return Message(response='400', text='Contact or user not found')
+        History.create(oper=user, type_row=TypeHistory.del_contact)
         return Message(response='202')
 
 

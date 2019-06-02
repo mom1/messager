@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 14:21:15
+# @Last Modified time: 2019-06-02 15:13:23
 import enum
 
 import sqlalchemy as sa
@@ -59,7 +59,7 @@ class DBManager(object):
         if self.db_name == 'test':
             self.engine.execute('ATTACH DATABASE ? AS ? ', (f'{self.db_name}.db', '{0}'.format(self.db_name)))
         else:
-            self.engine.execute('ATTACH DATABASE ? AS ? ', (f'server/{self.db_name}.db', '{0}'.format(self.db_name)))
+            self.engine.execute('ATTACH DATABASE ? AS ? ', (f'client/{self.db_name}.db', '{0}'.format(self.db_name)))
         Base.metadata.create_all(self.engine)
         Core.set_session(sa.orm.sessionmaker(bind=self.engine)())
 
@@ -126,6 +126,7 @@ class TypeHistory(enum.Enum):
     ch_pass = 3
     add_contact = 4
     del_contact = 5
+    message = 6
 
 
 class UserHistory(Core):
@@ -148,3 +149,14 @@ class Contact(Core):
     @classmethod
     def get_by_owner_contact(cls, owner, contact):
         return cls.query().filter_by(owner=owner, contact=contact).first()
+
+
+class UserMessages(UserHistory):
+    id = sa.Column(sa.Integer, sa.ForeignKey(UserHistory.id), primary_key=True)  # noqa
+    message = sa.Column(sa.String(500))
+
+    def save(self):
+        if not self.type_row:
+            self.type_row = TypeHistory.message
+        super().save()
+        return self

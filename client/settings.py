@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-03-30 12:35:39
-# @Last Modified by:   Max ST
-# @Last Modified time: 2019-04-21 12:32:12
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-06-02 15:15:02
 from collections import ChainMap
 
 default_settings = {
@@ -10,6 +10,7 @@ default_settings = {
     'HOST': 'localhost',
     'PORT': 7777,
     'USER': None,
+    'DB_NAME': 'st_mes_client',
 }
 
 
