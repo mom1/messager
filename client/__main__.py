@@ -2,13 +2,14 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-01 18:55:08
+# @Last Modified time: 2019-06-02 13:02:01
 import argparse
 import logging
 import os
 import selectors
 import socket
 import threading
+import time
 from commands import main_commands
 from pathlib import Path
 from random import randint
@@ -32,7 +33,8 @@ class Client(clients.AbstractClient):
         self.logger = logging.getLogger(type(self).__name__)
         self.client = kwargs.get('client', clients.ClientConsole())
         self.sock = socket.socket()
-        self.sock.setblocking(False)
+        self.sock.setblocking(True)
+        self.sock.settimeout(5)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         sel.register(self.sock, events)
 
@@ -44,8 +46,8 @@ class Client(clients.AbstractClient):
             thread = threading.Thread(target=self.receive_data, daemon=True)
             thread.start()
             while True:
-                events = sel.select(timeout=1)
-                for _, mask in events:
+                time.sleep(1)
+                for _, mask in sel.select(timeout=1):
                     if mask & selectors.EVENT_WRITE:
                         messsage = self.input_data()
                         if messsage is not False and messsage:
@@ -80,15 +82,15 @@ class Client(clients.AbstractClient):
 
     def receive_data(self, *args, **kwargs):
         while True:
-            events = sel.select(timeout=None)
-            print(events)
-            for _, mask in events:
+            time.sleep(1)
+            for _, mask in sel.select(timeout=None):
                 if mask & selectors.EVENT_READ:
                     data = self.sock.recv(setting.get('buffer_size', 1024))
                     response = self.prep_data(loads=data)
                     if response.action == 'request':
                         resp = self.input_data(text=response.text)
                         self.send_data(action=response.destination, param=resp)
+                    # elif response.action:
                     self.client.show_mes(response)
 
 

@@ -2,13 +2,15 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-01 16:39:20
+# @Last Modified time: 2019-06-02 13:55:18
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy import func
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
+from sqlalchemy.orm import relationship
 from sqlalchemy_utils import PasswordType
 
 from settings import Settings
@@ -52,9 +54,12 @@ class DBManager(object):
         cursor.close()
 
     def _setup(self, *args, **kwargs):
-        self.engine = sa.create_engine('sqlite://', echo=False, connect_args={'check_same_thread': False})
         self.db_name = settings.get('db_name')
-        self.engine.execute('ATTACH DATABASE ? AS ? ', (f'server/{self.db_name}.db', '{0}'.format(self.db_name)))
+        self.engine = sa.create_engine('sqlite://', echo=False, connect_args={'check_same_thread': False})
+        if self.db_name == 'test':
+            self.engine.execute('ATTACH DATABASE ? AS ? ', (f'{self.db_name}.db', '{0}'.format(self.db_name)))
+        else:
+            self.engine.execute('ATTACH DATABASE ? AS ? ', (f'server/{self.db_name}.db', '{0}'.format(self.db_name)))
         Base.metadata.create_all(self.engine)
         Core.set_session(sa.orm.sessionmaker(bind=self.engine)())
 
@@ -110,6 +115,10 @@ class User(Core):
     descr = sa.Column(sa.String(300))
     password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
 
+    @classmethod
+    def by_name(cls, username):
+        return cls.query().filter(func.lower(cls.username) == username).first()
+
 
 class TypeHistory(enum.Enum):
     login = 1
@@ -130,3 +139,10 @@ class Contact(Core):
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id), primary_key=True)  # noqa
     owner_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
     contact_id = sa.Column(sa.ForeignKey('user.id'))
+
+    owner = relationship('User', backref='contacts', foreign_keys=[owner_id])
+    contact = relationship('User', foreign_keys=[contact_id])
+
+    @classmethod
+    def get_by_owner_contact(cls, owner, contact):
+        return cls.query().filter_by(owner=owner, contact=contact).first()

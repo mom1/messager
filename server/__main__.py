@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-01 18:56:23
+# @Last Modified time: 2019-06-01 22:42:33
 import argparse
 import dis
 import logging
@@ -144,7 +144,7 @@ class Server(metaclass=ServerVerifier):
                 text_resp = f'Server is not know this a command "{mes.action}"'
                 self.logger.error(text_resp, exc_info=True)
                 self.outputs.append(Message.error_resp(text_resp))
-                self.inputs.append(mes)
+                # self.inputs.append(mes)
 
     def send(self, clients):
         while len(self.outputs):
@@ -152,12 +152,17 @@ class Server(metaclass=ServerVerifier):
             self.to_thread(clients, self.write_client_data, mes)
 
     def write_client_data(self, client, mes):
-        client.sendall(bytes(mes))
+        try:
+            client.sendall(bytes(mes))
+        except BrokenPipeError:
+            self.connections.remove(client)
+            client.close()
 
     def to_thread(self, clients, target, *args):
         for client in clients:
             thread = threading.Thread(
                 target=target,
+                # daemon=True,
                 args=(client, *args),
             )
             thread.start()

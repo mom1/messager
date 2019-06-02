@@ -2,10 +2,10 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-05-26 01:22:21
+# @Last Modified time: 2019-06-02 12:59:12
 import logging
 
-from helpers import log
+from db import User, UserHistory
 
 
 class Comander(object):
@@ -13,15 +13,20 @@ class Comander(object):
         super().__init__()
         self.commands = {}
 
-    @log
     def run(self, request, *args, **kwargs):
         response = False
-        if request.action == 'msg' and (request.text or '').startswith('!'):
-            cmd = self.commands.get(request.text[1:], None)
-        else:
-            cmd = self.commands.get(request.action, None)
+        name_cmd = request.action
+        if request.action == 'msg':
+            if (request.text or '').startswith('!'):
+                name_cmd = request.text[1:]
+            else:
+                name_cmd = (request.text or '').split()[0]
+            if not self.commands.get(name_cmd, None):
+                name_cmd = request.action
+        cmd = self.commands.get(name_cmd, None)
         if cmd:
             response = cmd(*args, **kwargs).execute(request, *args, **kwargs)
+            print(response)
             response = True if not response else response
         return response
 
@@ -53,6 +58,12 @@ class AbstractCommand(object):
 
 class Presence(AbstractCommand):
     def execute(self, message, **kwargs):
+        user = User.by_name(message.user)
+        UserHistory.create(
+            oper_id=user.id if user else 0,
+            type_row='login',
+            ip_addr=str(kwargs.get('addr', '')),
+        )
         return type(message).success()
 
 
