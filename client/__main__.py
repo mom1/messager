@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-03-30 12:35:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 15:11:49
+# @Last Modified time: 2019-06-02 23:36:05
 import argparse
 import logging
 import os
@@ -17,8 +17,8 @@ from random import randint
 from jim_mes import Converter, Message
 
 import clients
+from db import DBManager, User, UserMessages
 from settings import Settings, default_settings
-from db import DBManager, UserMessages, User
 
 logging.basicConfig(
     level=logging.CRITICAL,
@@ -45,6 +45,8 @@ class Client(clients.AbstractClient):
         self.sock.sendall(bytes(Message.presence(user=setting.get('user', None))))
         try:
             DBManager.get_instance()
+            if not User.by_name(setting.get('user')):
+                User.create(username=setting.get('user'), password=setting.get('user'))
             thread = threading.Thread(target=self.receive_data, daemon=True)
             thread.start()
             while True:
@@ -81,7 +83,8 @@ class Client(clients.AbstractClient):
     def send_data(self, mes='', *args, **kwargs):
         self.logger.debug(f'{"*" * 15} DATA SEND TO SERVER {"*" * 15}')
         prep_mes = self.prep_data(mes, **kwargs)
-        UserMessages.create(oper=User.by_name(prep_mes.user), message=str(prep_mes))
+        if not kwargs.get('not_log', False):
+            UserMessages.create(oper=User.by_name(prep_mes.user), message=str(prep_mes))
         self.sock.sendall(bytes(prep_mes))
 
     def receive_data(self, *args, **kwargs):
@@ -93,7 +96,7 @@ class Client(clients.AbstractClient):
                     response = self.prep_data(loads=data)
                     if response.action == 'request':
                         resp = self.input_data(text=response.text)
-                        self.send_data(action=response.destination, param=resp)
+                        self.send_data(action=response.destination, param=resp, not_log=True)
                     # elif response.action:
                     self.client.show_mes(response)
 

@@ -2,11 +2,11 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 14:21:15
+# @Last Modified time: 2019-06-02 23:11:51
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy import func
+from sqlalchemy import desc, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
@@ -118,6 +118,12 @@ class User(Core):
     @classmethod
     def by_name(cls, username):
         return cls.query().filter(func.lower(cls.username) == username).first()
+
+    def last_login(self):
+        return getattr(UserHistory.query().filter_by(
+            oper=self,
+            type_row=TypeHistory.login,
+        ).order_by(desc(UserHistory.created)).first(), 'created', 'Newer login')
 
 
 class TypeHistory(enum.Enum):

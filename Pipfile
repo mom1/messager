@@ -29,6 +29,7 @@ tabulate = "*"
 sqlalchemy = "*"
 sqlalchemy-utils = "*"
 passlib = "*"
+pyqt5 = "*"
 
 [requires]
 python_version = "3.7"

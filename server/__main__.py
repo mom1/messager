@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-06 23:40:29
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-01 22:42:33
+# @Last Modified time: 2019-06-02 23:39:18
 import argparse
 import dis
 import logging
@@ -16,6 +16,7 @@ from pathlib import Path
 from jim_mes import Converter, Message
 
 from db import DBManager
+from gui import ServerGUI
 from settings import Settings, default_settings
 
 
@@ -87,13 +88,14 @@ class Server(metaclass=ServerVerifier):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((setting.get('host'), self.port))
         self.sock.listen(setting.get('workers'))
-        # self.sock.settimeout(0.3)
         self.sock.setblocking(False)
         self.logger = logging.getLogger(type(self).__name__)
         self.connections, self.outputs, self.inputs = [], [], []
+        self.start = False
 
     def run(self):
         DBManager.get_instance()
+        self.start = True
         try:
             self.logger.info(f'start with {setting.get("host")}:{self.port}')
             while True:
@@ -167,6 +169,9 @@ class Server(metaclass=ServerVerifier):
             )
             thread.start()
 
+    def settings(self):
+        return setting
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -174,6 +179,8 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--encoding', default=default_settings.get('ENCODING', None), nargs='?', help=f'Encoding (default "{default_settings.get("ENCODING")}")')
     parser.add_argument('-a', '--address', default=default_settings.get('HOST', None), nargs='?', help=f'IP (default "{default_settings.get("HOST")}")')
     parser.add_argument('-p', '--port', default=default_settings.get('PORT'), nargs='?', help=f'Port (default "{default_settings.get("PORT")}")')
+    parser.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI Configuration')
+    parser.set_defaults(gui=False)
     namespace = parser.parse_args()
 
     environ = {k: v for k, v in os.environ.items() if k in default_settings}
@@ -206,4 +213,8 @@ if __name__ == '__main__':
             continue
         __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
 
-    Server().run()
+    if namespace.gui:
+        server = ServerGUI(Server())
+    else:
+        server = Server()
+    server.run()
