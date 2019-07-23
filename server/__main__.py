@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-22 23:13:02
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 23:34:39
 import argparse
 import logging
 import logging.config
+import time
 from pathlib import Path
 
-from dynaconf import settings
+from cli import CommandLineInterface
 from core import Server
+from dynaconf import settings
 
 
 def arg_parser():
@@ -27,7 +29,7 @@ def arg_parser():
         help=f'Increase verbosity of log output (default "{settings.get("LOGGING_LEVEL")}")',
     )
     parser.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI Configuration')
-    parser.set_defaults(gui=False)
+    parser.set_defaults(gui=settings.get('GUI'))
     namespace = parser.parse_args()
 
     if namespace.config:
@@ -76,6 +78,11 @@ for item in p.glob('**/*/*.py'):
         continue
     __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
 
-
 serv = Server()
-serv.main_loop()
+serv.daemon = True
+serv.start()
+
+time.sleep(1)
+
+if not settings.get('GUI'):
+    CommandLineInterface().main_loop()

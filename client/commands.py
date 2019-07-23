@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 10:27:39
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 23:38:17
 import logging
 import time
 
@@ -43,7 +43,7 @@ class Comander(object):
         print('Поддерживаемые команды:')
         for key, cmd in self.commands.items():
             print(f'{key} - {cmd.__doc__}')
-        print('help - вывести подсказки по командам')
+        print('help - Вывести подсказки по командам')
         return True
 
 

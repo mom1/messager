@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "max_talk"
+name = "talkative"
 version = "0.1.0"
 description = "Simple messager"
 authors = ["MaxST <mstolpasov@gmail.com>"]

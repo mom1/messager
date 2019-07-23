@@ -1,2 +1,2 @@
-# messager
+# Talkative (messanger)
 Project for learning

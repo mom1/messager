@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 12:50:58
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 23:23:13
 import logging
 import select
 import socket
@@ -18,10 +18,11 @@ from metaclasses import ServerVerifier
 logger = logging.getLogger('server')
 
 
-class Server(metaclass=ServerVerifier):
+class Server(threading.Thread, metaclass=ServerVerifier):
     port = PortDescr()
 
     def __init__(self):
+        super().__init__()
         self.clients = []
         self.messages = []
         self.names = {}
@@ -37,7 +38,7 @@ class Server(metaclass=ServerVerifier):
         self.started = True
         logger.info(f'start with {settings.get("host")}:{self.port}')
 
-    def main_loop(self):
+    def run(self):
         self.init_socket()
         try:
             while True:
@@ -92,7 +93,7 @@ class Server(metaclass=ServerVerifier):
     def process(self, send_data):
         try:
             for mes in self.messages:
-                response = main_commands.run(mes, self, send_data=send_data)
+                response = main_commands.run(self, mes, send_data=send_data)
                 if response:
                     logger.debug(f'send response')
         except Exception:

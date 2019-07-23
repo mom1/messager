@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-22 23:21:23
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 22:56:04
 import logging
-from jim_mes import Message
 
 DEBUG = True
 
@@ -38,3 +37,4 @@ EXIT = 'exit'
 DB_NAME = 'st_mes'
 
 USER_NAME = None
+GUI = False  # start gui default

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 12:51:20
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 23:38:11
 import logging
 
 from dynaconf import settings
@@ -17,13 +17,15 @@ class Comander(object):
         super().__init__()
         self.commands = {}
 
-    def run(self, request, *args, **kwargs):
+    def run(self, serv, request, *args, **kwargs):
         response = None
-        name_cmd = request.action
+        name_cmd = request.action if isinstance(request, Message) else request
         cmd = self.commands.get(name_cmd, None)
         if cmd:
             logger.debug(f'I found command {cmd}')
-            response = cmd(*args, **kwargs).execute(request, *args, **kwargs)
+            response = cmd(*args, **kwargs).execute(serv, request, *args, **kwargs)
+        elif name_cmd == 'help':
+            response = self.print_help()
         return response
 
     def reg_cmd(self, command, name=None):
@@ -36,20 +38,28 @@ class Comander(object):
         if command in self.commands:
             del self.commands[command]
 
+    def print_help(self):
+        '''Функция выводящяя справку по использованию'''
+        print('Поддерживаемые команды:')
+        for key, cmd in self.commands.items():
+            print(f'{key} - {cmd.__doc__}')
+        print('help - Вывести подсказки по командам')
+        return True
+
 
 class AbstractCommand(object):
     def __init__(self, *args, **kwargs):
         super().__init__()
 
-    def execute(self, message, **kwargs):
-        pass
-
-    def validate(self, *args, **kwargs):
+    def execute(self, serv, message, **kwargs):
         pass
 
 
 class Presence(AbstractCommand):
-    def execute(self, message, serv, **kwargs):
+    '''Пользователь представился'''
+    name = settings.PRESENCE
+
+    def execute(self, serv, message, **kwargs):
         if message.user_account_name not in serv.names:
             serv.names[message.user_account_name] = message.client
             mes = Message.success(**{settings.DESTINATION: message.user_account_name})
@@ -62,9 +72,10 @@ class Presence(AbstractCommand):
 
 
 class ExitCommand(AbstractCommand):
-    name = 'exit'
+    '''Выход пользователя'''
+    name = settings.EXIT
 
-    def execute(self, message, serv, **kwargs):
+    def execute(self, serv, message, **kwargs):
         client = serv.names.get(message.user_account_name)
         if client:
             serv.clients.remove(client)
@@ -72,6 +83,7 @@ class ExitCommand(AbstractCommand):
             del serv.names[message.user_account_name]
 
 
+icommands = Comander()
 main_commands = Comander()
-main_commands.reg_cmd(Presence, 'presence')
+main_commands.reg_cmd(Presence)
 main_commands.reg_cmd(ExitCommand)

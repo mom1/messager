@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 11:12:02
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-23 23:53:51
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -12,10 +12,10 @@ logger = logging.getLogger('server__message')
 
 
 class MessageCommand(AbstractCommand):
-    '''Отправить сообщение. Кому и текст будет запрошены отдельно.'''
+    '''Отправить сообщение. Кому и текст будут запрошены отдельно.'''
     name = 'message'
 
-    def execute(self, msg, serv, *args, **kwargs):
+    def execute(self, serv, msg, *args, **kwargs):
         send_data = kwargs.get('send_data') or []
         if msg.is_valid():
             dest_user = getattr(msg, settings.DESTINATION, None)
