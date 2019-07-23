@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
-# @Last Modified by:   MaxST
-# @Last Modified time: 2019-06-02 14:45:19
+# @Last Modified by:   maxst
+# @Last Modified time: 2019-07-23 12:51:20
 import logging
 
-from db import User, UserHistory, TypeHistory
+from dynaconf import settings
+
+from jim_mes import Message
+
+logger = logging.getLogger('commands')
 
 
 class Comander(object):
@@ -14,20 +18,12 @@ class Comander(object):
         self.commands = {}
 
     def run(self, request, *args, **kwargs):
-        response = False
+        response = None
         name_cmd = request.action
-        if request.action == 'msg':
-            if (request.text or '').startswith('!'):
-                name_cmd = request.text[1:]
-            else:
-                name_cmd = (request.text or '').split()[0]
-            if not self.commands.get(name_cmd, None):
-                name_cmd = request.action
         cmd = self.commands.get(name_cmd, None)
         if cmd:
+            logger.debug(f'I found command {cmd}')
             response = cmd(*args, **kwargs).execute(request, *args, **kwargs)
-            print(response)
-            response = True if not response else response
         return response
 
     def reg_cmd(self, command, name=None):
@@ -41,13 +37,9 @@ class Comander(object):
             del self.commands[command]
 
 
-main_commands = Comander()
-
-
 class AbstractCommand(object):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.logger = kwargs.pop('logger', logging.getLogger('Server'))
 
     def execute(self, message, **kwargs):
         pass
@@ -57,10 +49,29 @@ class AbstractCommand(object):
 
 
 class Presence(AbstractCommand):
-    def execute(self, message, **kwargs):
-        user = User.by_name(message.user)
-        UserHistory.create(oper=user, type_row=TypeHistory.login, ip_addr=str(kwargs.get('addr', '')))
-        return type(message).success()
+    def execute(self, message, serv, **kwargs):
+        if message.user_account_name not in serv.names:
+            serv.names[message.user_account_name] = message.client
+            mes = Message.success(**{settings.DESTINATION: message.user_account_name})
+        else:
+            serv.clients.remove(message.client)
+            mes = Message.error_resp('Имя пользователя уже занято.', user=message.user_account_name)
+        serv.write_client_data(message.client, mes)
+
+        return True
 
 
+class ExitCommand(AbstractCommand):
+    name = 'exit'
+
+    def execute(self, message, serv, **kwargs):
+        client = serv.names.get(message.user_account_name)
+        if client:
+            serv.clients.remove(client)
+            client.close()
+            del serv.names[message.user_account_name]
+
+
+main_commands = Comander()
 main_commands.reg_cmd(Presence, 'presence')
+main_commands.reg_cmd(ExitCommand)

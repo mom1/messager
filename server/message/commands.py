@@ -1,34 +1,37 @@
 # -*- coding: utf-8 -*-
-# @Author: Max ST
-# @Date:   2019-04-21 13:07:02
+# @Author: maxst
+# @Date:   2019-07-23 10:34:37
 # @Last Modified by:   maxst
-# @Last Modified time: 2019-05-19 15:45:39
+# @Last Modified time: 2019-07-23 11:12:02
+import logging
 from commands import AbstractCommand, main_commands
 
-from jim_mes import Message
+from dynaconf import settings
+
+logger = logging.getLogger('server__message')
 
 
-class MsgCommand(AbstractCommand):
-    name = 'msg'
+class MessageCommand(AbstractCommand):
+    '''Отправить сообщение. Кому и текст будет запрошены отдельно.'''
+    name = 'message'
 
-    def execute(self, request, *args, **kwargs):
-        if not self.validate(request):
-            return Message.error_resp('request is not valid')
-        return request
+    def execute(self, msg, serv, *args, **kwargs):
+        send_data = kwargs.get('send_data') or []
+        if msg.is_valid():
+            dest_user = getattr(msg, settings.DESTINATION, None)
+            src_user = getattr(msg, settings.SENDER, None)
+            dest = serv.names.get(dest_user)
+            if not dest:
+                logger.error(f'Пользователь {dest_user} не зарегистрирован на сервере, отправка сообщения невозможна.')
+                return False
+            elif dest not in send_data:
+                logger.info(f'Связь с клиентом с именем {dest_user} была потеряна')
+                serv.clients.remove(dest)
+                del serv.names[dest_user]
+                return False
+            serv.write_client_data(dest, msg)
+            logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
+        return True
 
-    def validate(self, request, *args, **kwargs):
-        dest = request.destination
-        if not dest:
-            dest = request.text.split(':')[0] if request.text else ''
-            request.destination = dest
-        exp = (
-            request.action == self.name,
-            request.text,
-            # dest,
-            request.time,
-            request.user,
-        )
-        return all(exp)
 
-
-main_commands.reg_cmd(MsgCommand)
+main_commands.reg_cmd(MessageCommand)
