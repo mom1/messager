@@ -2,10 +2,12 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 09:25:13
+# @Last Modified time: 2019-07-26 00:11:25
 import logging
+from collections import OrderedDict
 
 from dynaconf import settings
+from tabulate import tabulate
 
 from db import User
 from jim_mes import Message
@@ -16,7 +18,8 @@ logger = logging.getLogger('commands')
 class Comander(object):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.commands = {}
+        cls_store = kwargs.get('cls_store', dict)
+        self.commands = cls_store()
 
     def run(self, serv, request, *args, **kwargs):
         response = None
@@ -42,8 +45,8 @@ class Comander(object):
     def print_help(self):
         """Функция выводящяя справку по использованию"""
         print('Поддерживаемые команды:')
-        for key, cmd in self.commands.items():
-            print(f'{key} - {cmd.__doc__}')
+        sort_dict = OrderedDict(sorted(self.commands.items()))
+        print(tabulate(((k, v.__doc__) for k, v in sort_dict.items())))
         print('help - Вывести подсказки по командам')
         return True
 

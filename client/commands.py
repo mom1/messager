@@ -2,11 +2,12 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:38:17
+# @Last Modified time: 2019-07-26 00:17:10
 import logging
 import time
+from collections import OrderedDict
 
-from dynaconf import settings
+from tabulate import tabulate
 
 from jim_mes import Message
 
@@ -39,10 +40,10 @@ class Comander(object):
             del self.commands[command]
 
     def print_help(self):
-        '''Функция выводящяя справку по использованию'''
+        """Функция выводящяя справку по использованию"""
         print('Поддерживаемые команды:')
-        for key, cmd in self.commands.items():
-            print(f'{key} - {cmd.__doc__}')
+        sort_dict = OrderedDict(sorted(self.commands.items()))
+        print(tabulate(((k, v.__doc__) for k, v in sort_dict.items())))
         print('help - Вывести подсказки по командам')
         return True
 
@@ -59,7 +60,7 @@ class AbstractCommand(object):
 
 
 class ExitCommand(AbstractCommand):
-    '''Выход из программы'''
+    """Выход из программы"""
     name = 'exit'
 
     def execute(self, client, *args, **kwargs):
