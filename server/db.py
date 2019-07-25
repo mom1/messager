@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 09:07:45
+# @Last Modified time: 2019-07-25 23:16:00
 import datetime
 import enum
 import logging
@@ -92,8 +92,10 @@ class Core(Base):
         cls._session = session
 
     @classmethod
-    def query(cls):
-        return cls._session.query(cls)
+    def query(cls, *args):
+        if not args:
+            return cls._session.query(cls)
+        return cls._session.query(*args)
 
     @classmethod  # noqa
     def all(cls):
