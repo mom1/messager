@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:51:04
+# @Last Modified time: 2019-07-25 23:38:17
 import logging
 import socket
 import threading
@@ -17,7 +17,16 @@ from metaclasses import ClientVerifier
 logger = logging.getLogger('client')
 
 
-class Client(metaclass=ClientVerifier):
+class SendMixin(object):
+    def send_message(self, mes):
+        try:
+            self.sock.sendall(bytes(mes))
+        except Exception:
+            logger.critical('Потеряно соединение с сервером.')
+            exit(1)
+
+
+class Client(SendMixin, metaclass=ClientVerifier):
     def __init__(self, *args, **kwargs):
         self.sock = None
         super().__init__()
@@ -29,7 +38,7 @@ class Client(metaclass=ClientVerifier):
     def connect(self):
         self.sock.connect((settings.get('HOST'), settings.as_int('PORT')))
         logger.debug(f'Start with {settings.get("host")}:{settings.get("port")}')
-        self.sock.sendall(bytes(Message.presence()))
+        self.send_message(Message.presence())
         try:
             data = self.sock.recv(settings.get('max_package_length', 1024))
             message = Message(data)
@@ -54,17 +63,18 @@ class Client(metaclass=ClientVerifier):
                 if not reciver.is_alive() or not sender.is_alive():
                     break
         except KeyboardInterrupt:
+            self.send_message(Message.exit_request())
             logger.debug('User closed')
 
 
 class ClientReader(threading.Thread):
-    ''' Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль.'''
+    """ Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль."""
     def __init__(self, sock):
         self.sock = sock
         super().__init__()
 
     def run(self):
-        '''Основной цикл приёмника сообщений, принимает сообщения, выводит в консоль. Завершается при потере соединения.'''
+        """Основной цикл приёмника сообщений, принимает сообщения, выводит в консоль. Завершается при потере соединения."""
         while True:
             try:
                 message = self.read_data()
@@ -86,21 +96,14 @@ class ClientReader(threading.Thread):
         return Message(data)
 
 
-class ClientSender(threading.Thread):
-    '''Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем.'''
+class ClientSender(threading.Thread, SendMixin):
+    """Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем."""
     def __init__(self, sock):
         self.sock = sock
         super().__init__()
 
-    def send_message(self, mes):
-        try:
-            self.sock.sendall(bytes(mes))
-        except Exception:
-            logger.critical('Потеряно соединение с сервером.')
-            exit(1)
-
     def run(self):
-        '''Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения'''
+        """Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения"""
         main_commands.print_help()
         while True:
             command = input('Введите команду: ')

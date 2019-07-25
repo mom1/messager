@@ -2,16 +2,17 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 08:16:40
+# @Last Modified time: 2019-07-26 00:21:41
 import argparse
 import logging
 import logging.config
 import time
 from pathlib import Path
 
+from dynaconf import settings
+
 from cli import CommandLineInterface
 from core import Server
-from dynaconf import settings
 
 
 def arg_parser():
@@ -44,10 +45,23 @@ def arg_parser():
 
 
 def _configure_logger(verbose=0):
+    class MaxLevelFilter(logging.Filter):
+        """Filters (lets through) all messages with level < LEVEL"""
+        def __init__(self, level):
+            self.level = level
+
+        def filter(self, record):  # noqa
+            return record.levelno < self.level
+
     root_logger = logging.root
-    level = logging.DEBUG
+    level = settings.get('LOGGING_LEVEL')
+
     log_dir = Path(settings.get('LOG_DIR'))
     log_dir.mkdir(parents=True, exist_ok=True)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.addFilter(MaxLevelFilter(level))
+
     error_handler = logging.FileHandler(f'{log_dir}/Server_error.log', encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
 
@@ -57,7 +71,7 @@ def _configure_logger(verbose=0):
         handlers=[
             error_handler,
             logging.FileHandler(f'{log_dir}/Server.log', encoding=settings.get('encoding')),
-            logging.StreamHandler(),
+            stream_handler,
         ],
     )
 
