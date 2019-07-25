@@ -2,20 +2,22 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 22:56:04
+# @Last Modified time: 2019-07-25 07:47:48
 import logging
 
+# Debug
 DEBUG = True
+DEBUG_SQL = False
 
+# network
 PORT = 7777
 HOST = '127.0.0.1'
-
 MAX_CONNECTIONS = 5
 MAX_PACKAGE_LENGTH = 1024
 ENCODING = 'utf-8'
 
+# log
 LOGGING_LEVEL = logging.DEBUG
-
 LOG_DIR = 'log'
 
 # Прококол JIM основные ключи:
@@ -34,7 +36,24 @@ MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'
 EXIT = 'exit'
 
-DB_NAME = 'st_mes'
+# DB
+DATABASES = {
+    'default': {
+        'ENGINE': 'sqlite',
+        'NAME': 'db/db_talkative.db',
+    },
+    'server': {
+        'ENGINE': 'sqlite',
+        'NAME': 'db/db_server.db',
+        'CONNECT_ARGS': {'check_same_thread': False},
+    },
+    'client': {
+        'ENGINE': 'sqlite',
+        'NAME': 'db/db_client.db',
+        'CONNECT_ARGS': {'check_same_thread': False},
+    },
+}
 
+# Oper
 USER_NAME = None
-GUI = False  # start gui default
+GUI = False  # do gui start default?

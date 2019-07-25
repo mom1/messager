@@ -2,11 +2,12 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:38:11
+# @Last Modified time: 2019-07-25 09:25:13
 import logging
 
 from dynaconf import settings
 
+from db import User
 from jim_mes import Message
 
 logger = logging.getLogger('commands')
@@ -39,7 +40,7 @@ class Comander(object):
             del self.commands[command]
 
     def print_help(self):
-        '''Функция выводящяя справку по использованию'''
+        """Функция выводящяя справку по использованию"""
         print('Поддерживаемые команды:')
         for key, cmd in self.commands.items():
             print(f'{key} - {cmd.__doc__}')
@@ -56,13 +57,15 @@ class AbstractCommand(object):
 
 
 class Presence(AbstractCommand):
-    '''Пользователь представился'''
+    """Пользователь представился"""
     name = settings.PRESENCE
 
     def execute(self, serv, message, **kwargs):
         if message.user_account_name not in serv.names:
             serv.names[message.user_account_name] = message.client
             mes = Message.success(**{settings.DESTINATION: message.user_account_name})
+            client_ip, client_port = message.client.getpeername()
+            User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port)
         else:
             serv.clients.remove(message.client)
             mes = Message.error_resp('Имя пользователя уже занято.', user=message.user_account_name)
@@ -72,15 +75,17 @@ class Presence(AbstractCommand):
 
 
 class ExitCommand(AbstractCommand):
-    '''Выход пользователя'''
+    """Выход пользователя"""
     name = settings.EXIT
 
     def execute(self, serv, message, **kwargs):
         client = serv.names.get(message.user_account_name)
         if client:
+            client_ip, client_port = client.getpeername()
             serv.clients.remove(client)
             client.close()
             del serv.names[message.user_account_name]
+            User.logout_user(message.user_account_name, ip_addr=client_ip, port=client_port)
 
 
 icommands = Comander()

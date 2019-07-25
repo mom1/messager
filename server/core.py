@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:23:13
+# @Last Modified time: 2019-07-25 09:25:42
 import logging
 import select
 import socket
@@ -11,11 +11,13 @@ from commands import main_commands
 
 from dynaconf import settings
 
+from db import DBManager
 from descriptors import PortDescr
 from jim_mes import Message
 from metaclasses import ServerVerifier
 
-logger = logging.getLogger('server')
+app_name = 'server'
+logger = logging.getLogger(app_name)
 
 
 class Server(threading.Thread, metaclass=ServerVerifier):
@@ -40,6 +42,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
 
     def run(self):
         self.init_socket()
+        self.database = DBManager(app_name)
         try:
             while True:
                 # Ждём подключения, если таймаут вышел, ловим исключение.

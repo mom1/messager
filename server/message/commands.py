@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:53:51
+# @Last Modified time: 2019-07-25 07:47:11
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -12,7 +12,7 @@ logger = logging.getLogger('server__message')
 
 
 class MessageCommand(AbstractCommand):
-    '''Отправить сообщение. Кому и текст будут запрошены отдельно.'''
+    """Отправить сообщение. Кому и текст будут запрошены отдельно."""
     name = 'message'
 
     def execute(self, serv, msg, *args, **kwargs):

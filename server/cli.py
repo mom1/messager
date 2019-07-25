@@ -2,9 +2,11 @@
 # @Author: MaxST
 # @Date:   2019-07-23 22:59:32
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:50:30
+# @Last Modified time: 2019-07-25 09:24:59
 import logging
 from commands import AbstractCommand, icommands
+
+from db import User
 
 logger = logging.getLogger('cli')
 
@@ -21,12 +23,23 @@ class CommandLineInterface(object):
             logger.debug('User closed')
 
 
-class Quit(AbstractCommand):
-    '''Завершение работы сервера'''
+class QuitCommand(AbstractCommand):
+    """Завершение работы сервера"""
     name = 'quit'
 
     def execute(self, cli, command, **kwargs):
         exit(0)
 
 
-icommands.reg_cmd(Quit)
+class UserListCommand(AbstractCommand):
+    """Список известных пользователей"""
+    name = 'users'
+
+    def execute(self, cli, command, **kwargs):
+        for user in User.all():
+            print(f'Пользователь {user.username}, последний вход: {user.last_login}')
+        return True
+
+
+icommands.reg_cmd(QuitCommand)
+icommands.reg_cmd(UserListCommand)

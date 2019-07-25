@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-23 23:34:39
+# @Last Modified time: 2019-07-25 08:16:40
 import argparse
 import logging
 import logging.config
@@ -16,7 +16,7 @@ from dynaconf import settings
 
 def arg_parser():
     parser = argparse.ArgumentParser()
-    parser.description = "Talkative - Server Messager for study"
+    parser.description = 'Talkative - Server Messager for study'
     parser.add_argument('--config', nargs='?')
     parser.add_argument('-e', '--encoding', nargs='?', help=f'Encoding (default "{settings.get("ENCODING")}")')
     parser.add_argument('-a', '--host', nargs='?', help=f'IP (default "{settings.get("HOST")}")')
@@ -45,12 +45,14 @@ def arg_parser():
 
 def _configure_logger(verbose=0):
     root_logger = logging.root
+    level = logging.DEBUG
     log_dir = Path(settings.get('LOG_DIR'))
     log_dir.mkdir(parents=True, exist_ok=True)
     error_handler = logging.FileHandler(f'{log_dir}/Server_error.log', encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
+
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         handlers=[
             error_handler,
