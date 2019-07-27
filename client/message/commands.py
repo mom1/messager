@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-23 08:56:24
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 10:18:03
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-27 16:35:06
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -14,7 +14,7 @@ logger = logging.getLogger('client__message')
 
 
 class MessageCommand(AbstractCommand):
-    '''Отправить сообщение. Кому и текст будет запрошены отдельно.'''
+    """Отправить сообщение. Кому и текст будет запрошены отдельно."""
     name = 'message'
 
     def execute(self, client, *args, **kwargs):

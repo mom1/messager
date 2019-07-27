@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 23:38:17
+# @Last Modified time: 2019-07-27 21:43:29
 import logging
 import socket
 import threading
@@ -11,22 +11,35 @@ from commands import main_commands
 
 from dynaconf import settings
 
+from db import DBManager, User
 from jim_mes import Message
 from metaclasses import ClientVerifier
 
-logger = logging.getLogger('client')
+app_name = 'client'
+
+logger = logging.getLogger(app_name)
+
+sock_lock = threading.Lock()
+
+database_lock = threading.Lock()
 
 
-class SendMixin(object):
+class SocketMixin(object):
     def send_message(self, mes):
+        # with sock_lock:
         try:
             self.sock.sendall(bytes(mes))
         except Exception:
             logger.critical('Потеряно соединение с сервером.')
             exit(1)
 
+    def read_data(self):
+        with sock_lock:
+            data = self.sock.recv(settings.get('max_package_length', 1024))
+        return Message(data) if data else None
 
-class Client(SendMixin, metaclass=ClientVerifier):
+
+class Client(SocketMixin, metaclass=ClientVerifier):
     def __init__(self, *args, **kwargs):
         self.sock = None
         super().__init__()
@@ -39,21 +52,24 @@ class Client(SendMixin, metaclass=ClientVerifier):
         self.sock.connect((settings.get('HOST'), settings.as_int('PORT')))
         logger.debug(f'Start with {settings.get("host")}:{settings.get("port")}')
         self.send_message(Message.presence())
-        try:
-            data = self.sock.recv(settings.get('max_package_length', 1024))
-            message = Message(data)
-        except Exception:
-            logger.error('Error connect to server', exc_info=True)
+        with sock_lock:
+            try:
+                data = self.sock.recv(settings.get('max_package_length', 1024))
+                message = Message(data)
+            except Exception:
+                logger.error('Error connect to server', exc_info=True)
         logger.debug(f'Установлено соединение с сервером. Ответ сервера: {message}')
         print(f'Установлено соединение с сервером.')
+        self.database = DBManager(app_name)
+
+        self.update_user_list()
+        sender = ClientSender(self.sock)
+        sender.daemon = True
+        sender.start()
 
         reciver = ClientReader(self.sock)
         reciver.daemon = True
         reciver.start()
-
-        sender = ClientSender(self.sock)
-        sender.daemon = True
-        sender.start()
 
         # Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение или пользователь
         # ввёл exit. Поскольку все события обработываются в потоках, достаточно просто завершить цикл.
@@ -66,16 +82,32 @@ class Client(SendMixin, metaclass=ClientVerifier):
             self.send_message(Message.exit_request())
             logger.debug('User closed')
 
+    def update_user_list(self):
+        """Функция запроса списка известных пользователей"""
+        logger.debug(f'Запрос списка известных пользователей {settings.USER_NAME}')
+        self.send_message(Message(**{
+            settings.ACTION: settings.USERS_REQUEST,
+            settings.USER: settings.USER_NAME,
+        }))
+        response = self.read_data()
+        if response.response == 202:
+            with database_lock:
+                User.save_all((User(username=user) for user in getattr(response, settings.LIST_INFO, []) if User.filter_by(username=user).count() == 0))
+        else:
+            logger.error('Ошибка запроса списка известных пользователей.')
 
-class ClientReader(threading.Thread):
+
+class ClientReader(threading.Thread, SocketMixin):
     """ Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль."""
     def __init__(self, sock):
         self.sock = sock
+        self.db_lock = database_lock
         super().__init__()
 
     def run(self):
         """Основной цикл приёмника сообщений, принимает сообщения, выводит в консоль. Завершается при потере соединения."""
         while True:
+            time.sleep(1)
             try:
                 message = self.read_data()
                 if message:
@@ -89,17 +121,12 @@ class ClientReader(threading.Thread):
                 logger.critical(f'Потеряно соединение с сервером.', exc_info=True)
                 break
 
-    def read_data(self):
-        data = self.sock.recv(settings.get('max_package_length', 1024))
-        if not data:
-            return
-        return Message(data)
 
-
-class ClientSender(threading.Thread, SendMixin):
+class ClientSender(threading.Thread, SocketMixin):
     """Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем."""
     def __init__(self, sock):
         self.sock = sock
+        self.db_lock = database_lock
         super().__init__()
 
     def run(self):

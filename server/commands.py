@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-26 00:11:25
+# @Last Modified time: 2019-07-27 20:54:11
 import logging
 from collections import OrderedDict
 
@@ -91,7 +91,18 @@ class ExitCommand(AbstractCommand):
             User.logout_user(message.user_account_name, ip_addr=client_ip, port=client_port)
 
 
+class UserListCommand(AbstractCommand):
+    """Список известных пользователей"""
+    name = settings.USERS_REQUEST
+
+    def execute(self, serv, msg, **kwargs):
+        src_user = getattr(msg, settings.USER, None)
+        serv.write_client_data(serv.names.get(src_user), Message.success(202, **{settings.LIST_INFO: [u.username for u in User.all()]}))
+        return True
+
+
 icommands = Comander()
 main_commands = Comander()
 main_commands.reg_cmd(Presence)
 main_commands.reg_cmd(ExitCommand)
+main_commands.reg_cmd(UserListCommand)

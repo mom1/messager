@@ -2,8 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 15:33:22
-import datetime
+# @Last Modified time: 2019-07-27 21:27:08
 import enum
 import logging
 
@@ -15,11 +14,8 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy_utils import PasswordType
 
-from errors import NotFoundUser
-
-logger = logging.getLogger('server__db')
+logger = logging.getLogger('client__db')
 
 
 class DBManager(object):
@@ -142,12 +138,17 @@ class Core(Base):
     def delete_all(cls):
         cls.delete_qs(cls.all())
 
+    @classmethod
+    def save_all(cls, qs):
+        for item in qs:
+            cls._session.add(item)
+        cls._session.commit()
+
 
 class User(Core):
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
     username = sa.Column(sa.String(30), unique=True, nullable=False)
     descr = sa.Column(sa.String(300))
-    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
     last_login = sa.Column(sa.DateTime)
 
     @classmethod
@@ -159,35 +160,6 @@ class User(Core):
             oper=self,
             type_row=TypeHistory.login,
         ).order_by(desc(UserHistory.created)).first(), 'created', 'Newer login')
-
-    @classmethod
-    def login_user(cls, username, **kwargs):
-        user = cls.by_name(username)
-        if not user:
-            user = cls.create(username=username, password='placeholder')
-        user.last_login = datetime.datetime.now()
-        user.save()
-        param = {
-            'oper': user,
-            'ip_addr': str(kwargs.get('ip_addr', '')),
-            'port': kwargs.get('port', None),
-        }
-        ActiveUsers.create(**param)
-        UserHistory.create(type_row=TypeHistory.login, **param)
-
-    @classmethod
-    def logout_user(cls, username, **kwargs):
-        user = cls.by_name(username)
-        if not user:
-            logger.warn(str(NotFoundUser(username)))
-            # raise NotFoundUser(username)
-        ActiveUsers.delete_qs(ActiveUsers.filter_by(oper=user))
-        UserHistory.create(
-            type_row=TypeHistory.logout,
-            oper=user,
-            ip_addr=str(kwargs.get('ip_addr', '')),
-            port=kwargs.get('port', None),
-        )
 
     def has_contact(self, contact_name):
         contact = User.by_name(contact_name) if contact_name else None
@@ -226,6 +198,7 @@ class TypeHistory(enum.Enum):
     del_contact = 5
     mes_sent = 6
     mes_accepted = 7
+    mes_history = 8
 
 
 class UserHistory(Core):
@@ -264,6 +237,21 @@ class Contact(Core):
     @classmethod
     def get_by_owner_contact(cls, owner, contact):
         return cls.query().filter_by(owner=owner, contact=contact).first()
+
+
+class UserMessages(Core):
+    id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
+    sender_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
+    receiver_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
+    message = sa.Column(sa.Text())
+
+    sender = relationship('User', backref='sents_messages', foreign_keys=[sender_id])
+    receiver = relationship('User', backref='received_messages', foreign_keys=[receiver_id])
+
+    @classmethod
+    def chat_hiltory(cls, username):
+        user = User.by_name(username) if isinstance(username, str) else username
+        return cls.filter((cls.sender == user) | (cls.receiver == user)).all()
 
 
 # Отладка

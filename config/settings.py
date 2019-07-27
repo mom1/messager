@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 07:47:48
+# @Last Modified time: 2019-07-27 20:40:40
 import logging
 
 # Debug
@@ -17,7 +17,7 @@ MAX_PACKAGE_LENGTH = 1024
 ENCODING = 'utf-8'
 
 # log
-LOGGING_LEVEL = logging.DEBUG
+LOGGING_LEVEL = logging.INFO
 LOG_DIR = 'log'
 
 # Прококол JIM основные ключи:
@@ -35,6 +35,11 @@ ERROR = 'error'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'
 EXIT = 'exit'
+GET_CONTACTS = 'get_contacts'
+LIST_INFO = 'data_list'
+DEL_CONTACT = 'remove'
+ADD_CONTACT = 'add'
+USERS_REQUEST = 'get_users'
 
 # DB
 DATABASES = {

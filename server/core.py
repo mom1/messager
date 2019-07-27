@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 09:25:42
+# @Last Modified time: 2019-07-27 20:47:21
 import logging
 import select
 import socket
@@ -66,7 +66,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 # принимаем сообщения и если ошибка, исключаем клиента.
                 if recv_data:
                     for client_with_message in recv_data:
-                        self.to_thread(client_with_message, self.read_client_data)
+                        self.read_client_data(client_with_message)
                 self.process(send_data)
         except KeyboardInterrupt:
             self.sock.close()
