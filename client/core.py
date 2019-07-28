@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 12:31:32
+# @Last Modified time: 2019-07-28 12:44:24
 import logging
 import socket
 import threading
@@ -27,12 +27,12 @@ database_lock = threading.Lock()
 
 class SocketMixin(object):
     def send_message(self, mes):
-        # with sock_lock:
-        try:
-            self.sock.sendall(bytes(mes))
-        except Exception:
-            logger.critical('Потеряно соединение с сервером.')
-            exit(1)
+        with sock_lock:
+            try:
+                self.sock.sendall(bytes(mes))
+            except Exception:
+                logger.critical('Потеряно соединение с сервером.')
+                exit(1)
 
     def read_data(self):
         # with sock_lock:
