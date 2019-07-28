@@ -2,14 +2,15 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 14:37:58
+# @Last Modified time: 2019-07-28 21:13:26
 import argparse
 import logging
 import logging.config
 from pathlib import Path
-from core import Client
 
 from dynaconf import settings
+
+from core import Client
 
 
 def arg_parser():
@@ -62,16 +63,16 @@ def _configure_logger(verbose=0):
 
     stream_handler = logging.StreamHandler()
     stream_handler.addFilter(MaxLevelFilter(level))
-
-    error_handler = logging.FileHandler(f'{log_dir}/Client_error.log', encoding=settings.get('encoding'))
+    log_file_err = Path(f'{log_dir}/Client_error.log')
+    error_handler = logging.FileHandler(log_file_err, encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
-
+    log_file = Path(f'{log_dir}/Client.log')
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         handlers=[
             error_handler,
-            logging.FileHandler(f'{log_dir}/Client.log', encoding=settings.get('encoding')),
+            logging.FileHandler(log_file, encoding=settings.get('encoding')),
             stream_handler,
         ],
     )

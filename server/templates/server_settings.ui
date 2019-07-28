@@ -96,6 +96,7 @@
    </attribute>
    <addaction name="action_refresh"/>
    <addaction name="action_history"/>
+   <addaction name="action_config"/>
   </widget>
   <action name="action_refresh">
    <property name="icon">
@@ -122,6 +123,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+H</string>
+   </property>
+  </action>
+  <action name="action_config">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/settings.png</normaloff>icons/settings.png</iconset>
+   </property>
+   <property name="text">
+    <string>Настройки</string>
+   </property>
+   <property name="toolTip">
+    <string>Настройки сервера</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

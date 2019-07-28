@@ -61,4 +61,4 @@ DATABASES = {
 
 # Oper
 USER_NAME = None
-GUI = False  # do gui start default?
+GUI = True  # do gui start default?

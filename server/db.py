@@ -2,10 +2,11 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 15:33:22
+# @Last Modified time: 2019-07-28 21:18:49
 import datetime
 import enum
 import logging
+from pathlib import Path
 
 import sqlalchemy as sa
 from dynaconf import settings
@@ -47,8 +48,9 @@ class DBManager(object):
         if not db_settings:
             logger.critical(f'DATABASE setting need for {self.envs}')
             exit(1)
+        db_name = Path(db_settings.get('NAME'))
         self.engine = sa.create_engine(
-            f'{db_settings.get("ENGINE", "sqlite")}:///{db_settings.get("NAME")}',
+            f'{db_settings.get("ENGINE", "sqlite")}:///{db_name}',
             echo=settings.get('DEBUG_SQL', False),
             connect_args=db_settings.get('CONNECT_ARGS'),
         )

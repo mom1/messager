@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-21 12:32:49
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-21 12:33:21
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-29 01:30:24
 import logging
 
 
@@ -17,10 +17,10 @@ class PortDescr(object):
         self._port = port
 
     def __set__(self, inst, value):
-        if isinstance(value, int) and 65535 > value >= 0:
+        if isinstance(value, int) and 65535 > value >= 1024:
             self._port = value
         else:
-            raise ValueError('Порт должен быть int и 65535 > port >= 0')
+            raise ValueError('Порт должен быть от 1024 до 65536')
 
     def __get__(self, inst, inst_type=None):
         return self._port

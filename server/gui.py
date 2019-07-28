@@ -2,31 +2,54 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 19:24:55
+# @Last Modified time: 2019-07-29 01:27:35
 import sys
+from ipaddress import ip_address
+from pathlib import Path
 
 from dynaconf import settings
+from dynaconf.loaders import yaml_loader as loader
 from PyQt5 import uic
 from PyQt5.QtCore import QSettings, Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow
+from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
+                             QMessageBox)
 
 from db import ActiveUsers, DBManager, User
 
 
-class ServerGUI(QMainWindow):
+class SaveGeometryMixin(object):
+    def init_ui(self):
+        self.restore_size_pos()
+
+    def restore_size_pos(self):
+        self.settings = QSettings(type(self).__name__, 'server')
+        size = self.settings.value('size', None)
+        pos = self.settings.value('pos', None)
+        if size:
+            self.resize(size)
+        if pos:
+            self.move(pos)
+
+    def closeEvent(self, e):  # noqa
+        # Write window size and position to config file
+        self.settings.setValue('size', self.size())
+        self.settings.setValue('pos', self.pos())
+        e.accept()
+
+
+class ServerGUI(SaveGeometryMixin, QMainWindow):
     def __init__(self, server):
         self.server = server
         super().__init__()
-        uic.loadUi('server/templates/server_settings.ui', self)
-
-        self.restore_size_pos()
+        uic.loadUi(Path('server/templates/server_settings.ui'), self)
 
         self.events = {
             settings.PRESENCE: self.update_active_users,
             settings.EXIT: self.update_active_users,
             'action_refresh': self.update_active_users,
             'action_history': self.history_open,
+            'action_config': self.config_open,
         }
         self.register_event()
         self.init_ui()
@@ -40,16 +63,8 @@ class ServerGUI(QMainWindow):
             if method:
                 action.triggered.connect(method)
 
-    def restore_size_pos(self):
-        self.settings = QSettings('ServerGUI', 'server')
-        size = self.settings.value('size', None)
-        pos = self.settings.value('pos', None)
-        if size:
-            self.resize(size)
-        if pos:
-            self.move(pos)
-
     def init_ui(self):
+        super().init_ui()
         self.statusBar().showMessage('Server Working')
         self.update_active_users()
         self.show()
@@ -77,24 +92,23 @@ class ServerGUI(QMainWindow):
 
     def history_open(self):
         global stat_window
-        stat_window = HistoryWindow()
+        stat_window = HistoryWindow(self)
 
-    def closeEvent(self, e):  # noqa
-        # Write window size and position to config file
-        self.settings.setValue('size', self.size())
-        self.settings.setValue('pos', self.pos())
-        e.accept()
+    def config_open(self):
+        global config_window
+        config_window = ConfigWindow(self)
 
 
-class HistoryWindow(QDialog):
+class HistoryWindow(SaveGeometryMixin, QDialog):
     """Класс окна с историей пользователей"""
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent_gui = parent
         super().__init__()
-        uic.loadUi('server/templates/history_messages.ui', self)
-        self.restore_size_pos()
+        uic.loadUi(Path('server/templates/history_messages.ui'), self)
         self.init_ui()
 
     def init_ui(self):
+        super().init_ui()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.update_messages()
         self.show()
@@ -117,20 +131,61 @@ class HistoryWindow(QDialog):
         self.tbMessages.resizeColumnsToContents()
         self.tbMessages.resizeRowsToContents()
 
-    def restore_size_pos(self):
-        self.settings = QSettings('HistoryWindow', 'server')
-        size = self.settings.value('size', None)
-        pos = self.settings.value('pos', None)
-        if size:
-            self.resize(size)
-        if pos:
-            self.move(pos)
 
-    def closeEvent(self, e):  # noqa
-        # Write window size and position to config file
-        self.settings.setValue('size', self.size())
-        self.settings.setValue('pos', self.pos())
-        e.accept()
+class ConfigWindow(SaveGeometryMixin, QDialog):
+    """Класс окна настроек """
+    def __init__(self, parent):
+        self.parent_gui = parent
+        super().__init__()
+        uic.loadUi(Path('server/templates/config_server.ui'), self)
+        self.init_ui()
+
+    def init_ui(self):
+        super().init_ui()
+        db_def = Path(settings.get('DATABASES.SERVER.NAME'))
+
+        def open_file_dialog():
+            """Функция обработчик открытия окна выбора папки"""
+            global dialog
+            dialog = QFileDialog(config_window, 'Путь до папки с БД', str(db_def.parent.absolute()))
+            path_d = dialog.getExistingDirectory()
+            if path_d:
+                path_d = str(Path(path_d))
+                self.ledPath.clear()
+                self.ledPath.insert(path_d)
+
+        self.btnPath.clicked.connect(open_file_dialog)
+        self.ledPath.insert(str(db_def.parent.absolute()))
+        self.ledNameDB.insert(str(db_def.name))
+        self.ledIp.insert(str(ip_address(settings.get('HOST'))))
+        self.ledPort.insert(str(settings.get('PORT')))
+        self.btnBox.accepted.connect(self.save_server_config)
+        self.show()
+
+    def save_server_config(self):
+        for_save = {}
+        msg_box = QMessageBox()
+        db_path = Path(self.ledPath.text())
+        db_name = Path(self.ledNameDB.text())
+        db_name = db_name if db_name.suffix else db_name.with_suffix('db')
+        db = db_path.joinpath(db_name)
+        try:
+            db = db.relative_to(Path.cwd())
+        except Exception:
+            pass
+        try:
+            port = self.parent_gui.server.port = int(self.ledPort.text())
+        except Exception as e:
+            return msg_box.warning(config_window, 'Ошибка', str(e))
+        # set settings
+        settings.set('HOST', self.ledIp.text())
+        settings.set('PORT', port)
+        settings.DATABASES.SERVER.NAME = str(db)
+        for_save['DEFAULT'] = set_dict = settings.as_dict()
+        for_save['DEFAULT']['DATABASES'] = set_dict['DATABASES'].to_dict()
+
+        loader.write(Path('config/user_settings.yaml'), for_save, merge=True)
+        msg_box.information(config_window, 'OK', 'Настройки успешно сохранены!')
 
 
 if __name__ == '__main__':

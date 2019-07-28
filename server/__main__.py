@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 14:57:15
+# @Last Modified time: 2019-07-29 01:25:58
 import argparse
 import logging
 import logging.config
@@ -64,16 +64,16 @@ def _configure_logger(verbose=0):
 
     stream_handler = logging.StreamHandler()
     stream_handler.addFilter(MaxLevelFilter(level))
-
-    error_handler = logging.FileHandler(f'{log_dir}/Server_error.log', encoding=settings.get('encoding'))
+    log_error = Path(f'{log_dir}/Server_error.log')
+    error_handler = logging.FileHandler(log_error, encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
-
+    log_file = Path(f'{log_dir}/Server.log')
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         handlers=[
             error_handler,
-            logging.FileHandler(f'{log_dir}/Server.log', encoding=settings.get('encoding')),
+            logging.FileHandler(log_file, encoding=settings.get('encoding')),
             stream_handler,
         ],
     )

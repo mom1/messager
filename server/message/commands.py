@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 22:56:07
+# @Last Modified time: 2019-07-28 20:03:49
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -35,6 +35,7 @@ class MessageCommand(AbstractCommand):
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
             with serv.db_lock:
                 UserHistory.proc_message(src_user, dest_user)
+            serv.notify(self.name)
         return True
 
 

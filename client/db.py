@@ -2,9 +2,10 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 14:08:20
+# @Last Modified time: 2019-07-29 01:35:25
 import enum
 import logging
+from pathlib import Path
 
 import sqlalchemy as sa
 from dynaconf import settings
@@ -38,15 +39,13 @@ class DBManager(object):
         cursor.close()
 
     def _setup(self, *args, **kwargs):
-        db = settings.get('DATABASES')
-        if not db:
+        try:
+            db_settings = settings.get(f'DATABASES.{self.envs}')
+        except Exception as e:
             logger.critical('DATABASES setting required')
-            exit(1)
-        db_settings = db.get(self.envs, db.get('default'))
-        if not db_settings:
-            logger.critical(f'DATABASE setting need for {self.envs}')
-            exit(1)
-        db_name = db_settings.get('NAME', '').format(**{'user': settings.USER_NAME})
+            raise e
+
+        db_name = Path(db_settings.get('NAME', '').format(**{'user': settings.USER_NAME}))
         self.engine = sa.create_engine(
             f'{db_settings.get("ENGINE", "sqlite")}:///{db_name}',
             echo=settings.get('DEBUG_SQL', False),

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 12:23:56
+# @Last Modified time: 2019-07-28 20:06:46
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -22,8 +22,10 @@ class AddContactCommand(AbstractCommand):
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
         user = User.by_name(src_user)
         if contact:
-            user.add_contact(contact)
+            with serv.db_lock:
+                user.add_contact(contact)
             serv.write_client_data(serv.names.get(src_user), Msg.success())
+            serv.notify(self.name)
         else:
             serv.write_client_data(serv.names.get(src_user), Msg.error_resp('Не найден контакт'))
         logger.info(f'User {src_user} add contact {contact}')
@@ -39,8 +41,10 @@ class DelContactCommand(AbstractCommand):
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
         user = User.by_name(src_user)
         if contact:
-            user.del_contact(contact)
-        serv.write_client_data(serv.names.get(src_user), Msg.success())
+            with serv.db_lock:
+                user.del_contact(contact)
+            serv.write_client_data(serv.names.get(src_user), Msg.success())
+            serv.notify(self.name)
         logger.info(f'User {src_user} del contact {contact}')
         return True
 
