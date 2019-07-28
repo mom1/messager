@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 11:19:20
+# @Last Modified time: 2019-07-29 01:55:08
 import logging
 
 # Debug
@@ -17,7 +17,7 @@ MAX_PACKAGE_LENGTH = 1024
 ENCODING = 'utf-8'
 
 # log
-LOGGING_LEVEL = logging.INFO
+LOGGING_LEVEL = logging.DEBUG
 LOG_DIR = 'log'
 
 # Прококол JIM основные ключи:
