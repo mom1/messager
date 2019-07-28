@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 21:43:29
+# @Last Modified time: 2019-07-28 12:31:32
 import logging
 import socket
 import threading
@@ -11,7 +11,8 @@ from commands import main_commands
 
 from dynaconf import settings
 
-from db import DBManager, User
+from db import DBManager, User, UserHistory, UserMessages
+from errors import ContactExists
 from jim_mes import Message
 from metaclasses import ClientVerifier
 
@@ -34,8 +35,8 @@ class SocketMixin(object):
             exit(1)
 
     def read_data(self):
-        with sock_lock:
-            data = self.sock.recv(settings.get('max_package_length', 1024))
+        # with sock_lock:
+        data = self.sock.recv(settings.get('max_package_length', 1024))
         return Message(data) if data else None
 
 
@@ -63,6 +64,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         self.database = DBManager(app_name)
 
         self.update_user_list()
+        self.update_contacts_list()
         sender = ClientSender(self.sock)
         sender.daemon = True
         sender.start()
@@ -90,9 +92,28 @@ class Client(SocketMixin, metaclass=ClientVerifier):
             settings.USER: settings.USER_NAME,
         }))
         response = self.read_data()
-        if response.response == 202:
+        if response and response.response == 202:
             with database_lock:
                 User.save_all((User(username=user) for user in getattr(response, settings.LIST_INFO, []) if User.filter_by(username=user).count() == 0))
+        else:
+            logger.error('Ошибка запроса списка известных пользователей.')
+
+    def update_contacts_list(self):
+        """Функция запрос контакт листа"""
+        logger.debug(f'Запрос контакт листа для пользователя {settings.USER_NAME}')
+        self.send_message(Message(**{
+            settings.ACTION: settings.GET_CONTACTS,
+            settings.USER: settings.USER_NAME,
+        }))
+        response = self.read_data()
+        if response and response.response == 202:
+            with database_lock:
+                user = User.by_name(settings.USER_NAME)
+                for contact in getattr(response, settings.LIST_INFO, []):
+                    try:
+                        user.add_contact(contact)
+                    except ContactExists:
+                        pass
         else:
             logger.error('Ошибка запроса списка известных пользователей.')
 
@@ -110,13 +131,17 @@ class ClientReader(threading.Thread, SocketMixin):
             time.sleep(1)
             try:
                 message = self.read_data()
-                if message:
-                    if message.is_valid():
-                        sender = getattr(message, settings.SENDER, None)
-                        print(f'Message from {sender}:\n{message}')
-                        logger.info(f'Получено сообщение от пользователя {sender}:\n{message}')
-                    else:
-                        logger.error(f'Получено некорректное сообщение с сервера: {message}')
+                if not message:
+                    continue
+                if message.is_valid():
+                    sender = getattr(message, settings.SENDER, None)
+                    print(f'\r\nMessage from {sender}:\n{message}')
+                    with self.db_lock:
+                        UserHistory.proc_message(sender, settings.USER_NAME)
+                        UserMessages.create(sender=User.by_name(sender), receiver=User.by_name(settings.USER_NAME), message=str(message))
+                    logger.info(f'Получено сообщение от пользователя {sender}:\n{message}')
+                else:
+                    logger.error(f'Получено некорректное сообщение с сервера: {message}')
             except Exception:
                 logger.critical(f'Потеряно соединение с сервером.', exc_info=True)
                 break

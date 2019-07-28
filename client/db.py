@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 21:27:08
+# @Last Modified time: 2019-07-27 23:47:25
 import enum
 import logging
 
@@ -14,6 +14,9 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+
+from errors import (ContactExists, ContactNotExists, NotFoundContact,
+                    NotFoundUser)
 
 logger = logging.getLogger('client__db')
 
@@ -43,8 +46,9 @@ class DBManager(object):
         if not db_settings:
             logger.critical(f'DATABASE setting need for {self.envs}')
             exit(1)
+        db_name = db_settings.get("NAME", '').format(**{'user': settings.USER_NAME})
         self.engine = sa.create_engine(
-            f'{db_settings.get("ENGINE", "sqlite")}:///{db_settings.get("NAME")}',
+            f'{db_settings.get("ENGINE", "sqlite")}:///{db_name}',
             echo=settings.get('DEBUG_SQL', False),
             connect_args=db_settings.get('CONNECT_ARGS'),
         )
@@ -169,17 +173,23 @@ class User(Core):
 
     def add_contact(self, contact_name):
         cont = User.by_name(contact_name)
-        if cont and not self.has_contact(contact_name):
-            self.contacts.append(Contact(contact=cont))
-            self.history.append(UserHistory(type_row=TypeHistory.add_contact, note=contact_name))
-            self.save()
+        if not cont:
+            raise NotFoundUser(contact_name)
+        if self.has_contact(contact_name):
+            raise ContactExists(contact_name)
+        self.contacts.append(Contact(contact=cont))
+        self.history.append(UserHistory(type_row=TypeHistory.add_contact, note=contact_name))
+        self.save()
 
     def del_contact(self, contact_name):
         cont = User.by_name(contact_name)
-        if cont and self.has_contact(contact_name):
-            self.contacts.remove(Contact.filter_by(owner=self, contact=cont).one())
-            self.history.append(UserHistory(type_row=TypeHistory.del_contact, note=contact_name))
-            self.save()
+        if not cont:
+            raise NotFoundContact(contact_name)
+        if not self.has_contact(contact_name):
+            raise ContactNotExists(contact_name)
+        self.contacts.remove(Contact.filter_by(owner=self, contact=cont).one())
+        self.history.append(UserHistory(type_row=TypeHistory.del_contact, note=contact_name))
+        self.save()
 
     @hybrid_property
     def sent(self):
@@ -251,7 +261,7 @@ class UserMessages(Core):
     @classmethod
     def chat_hiltory(cls, username):
         user = User.by_name(username) if isinstance(username, str) else username
-        return cls.filter((cls.sender == user) | (cls.receiver == user)).all()
+        return cls.query().filter((cls.sender == user) | (cls.receiver == user)).all()
 
 
 # Отладка

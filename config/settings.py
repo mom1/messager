@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 20:40:40
+# @Last Modified time: 2019-07-28 11:19:20
 import logging
 
 # Debug
@@ -54,7 +54,7 @@ DATABASES = {
     },
     'client': {
         'ENGINE': 'sqlite',
-        'NAME': 'db/db_client.db',
+        'NAME': 'db/db_client_{user}.db',
         'CONNECT_ARGS': {'check_same_thread': False},
     },
 }

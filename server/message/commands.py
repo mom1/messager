@@ -2,11 +2,13 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-25 07:47:11
+# @Last Modified time: 2019-07-27 22:56:07
 import logging
 from commands import AbstractCommand, main_commands
 
 from dynaconf import settings
+
+from db import UserHistory
 
 logger = logging.getLogger('server__message')
 
@@ -31,6 +33,8 @@ class MessageCommand(AbstractCommand):
                 return False
             serv.write_client_data(dest, msg)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
+            with serv.db_lock:
+                UserHistory.proc_message(src_user, dest_user)
         return True
 
 

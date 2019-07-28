@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 20:47:21
+# @Last Modified time: 2019-07-27 22:55:46
 import logging
 import select
 import socket
@@ -19,6 +19,8 @@ from metaclasses import ServerVerifier
 app_name = 'server'
 logger = logging.getLogger(app_name)
 
+database_lock = threading.Lock()
+
 
 class Server(threading.Thread, metaclass=ServerVerifier):
     port = PortDescr()
@@ -29,6 +31,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.messages = []
         self.names = {}
         self.started = False
+        self.db_lock = database_lock
 
     def init_socket(self):
         self.sock = socket.socket()
