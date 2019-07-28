@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 22:55:46
+# @Last Modified time: 2019-07-28 19:38:38
 import logging
 import select
 import socket
@@ -32,6 +32,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.names = {}
         self.started = False
         self.db_lock = database_lock
+        self._observers = {}
 
     def init_socket(self):
         self.sock = socket.socket()
@@ -42,6 +43,25 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.sock.listen(settings.get('max_connections'))
         self.started = True
         logger.info(f'start with {settings.get("host")}:{self.port}')
+
+    def attach(self, observer, event):
+        obs = self._observers.get(event, []) or []
+        obs.append(observer)
+        self._observers[event] = obs
+        logger.info(f'{observer} подписался на событие {event}')
+        return True
+
+    def detach(self, observer, event):
+        obs = self._observers.get(event, []) or []
+        obs.remove(observer)
+        self._observers[event] = obs
+        logger.info(f'{observer} отписался от события {event}')
+        return True
+
+    def notify(self, event):
+        obs = self._observers.get(event, []) or []
+        for observer in obs:
+            observer.update(self, event)
 
     def run(self):
         self.init_socket()
@@ -73,6 +93,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 self.process(send_data)
         except KeyboardInterrupt:
             self.sock.close()
+            self.started = False
             logger.debug('closed')
 
     def read_client_data(self, client):

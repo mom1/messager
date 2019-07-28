@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 23:47:25
+# @Last Modified time: 2019-07-28 14:08:20
 import enum
 import logging
 
@@ -46,7 +46,7 @@ class DBManager(object):
         if not db_settings:
             logger.critical(f'DATABASE setting need for {self.envs}')
             exit(1)
-        db_name = db_settings.get("NAME", '').format(**{'user': settings.USER_NAME})
+        db_name = db_settings.get('NAME', '').format(**{'user': settings.USER_NAME})
         self.engine = sa.create_engine(
             f'{db_settings.get("ENGINE", "sqlite")}:///{db_name}',
             echo=settings.get('DEBUG_SQL', False),

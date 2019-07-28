@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-26 00:23:10
+# @Last Modified time: 2019-07-28 14:37:58
 import argparse
 import logging
 import logging.config
@@ -39,9 +39,9 @@ def arg_parser():
     for k, v in vars(namespace).items():
         if not v:
             continue
-        setattr(settings, k.upper(), v)
+        settings.set(k, v)
     if namespace.name:
-        settings.USER_NAME = namespace.name
+        settings.set('USER_NAME', namespace.name)
     _configure_logger(namespace.verbose)
 
 

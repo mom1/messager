@@ -2,17 +2,20 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-26 00:21:41
+# @Last Modified time: 2019-07-28 14:57:15
 import argparse
 import logging
 import logging.config
+import sys
 import time
 from pathlib import Path
 
 from dynaconf import settings
+from PyQt5.QtWidgets import QApplication
 
 from cli import CommandLineInterface
 from core import Server
+from gui import ServerGUI
 
 
 def arg_parser():
@@ -39,7 +42,7 @@ def arg_parser():
     for k, v in vars(namespace).items():
         if not v:
             continue
-        setattr(settings, k.upper(), v)
+        settings.set(k, v)
 
     _configure_logger(namespace.verbose)
 
@@ -102,3 +105,7 @@ time.sleep(1)
 
 if not settings.get('GUI'):
     CommandLineInterface().main_loop()
+else:
+    app = QApplication(sys.argv)
+    mw = ServerGUI(serv)
+    sys.exit(app.exec_())

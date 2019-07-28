@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 20:54:11
+# @Last Modified time: 2019-07-28 15:36:29
 import logging
 from collections import OrderedDict
 
@@ -69,6 +69,7 @@ class Presence(AbstractCommand):
             mes = Message.success(**{settings.DESTINATION: message.user_account_name})
             client_ip, client_port = message.client.getpeername()
             User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port)
+            serv.notify(self.name)
         else:
             serv.clients.remove(message.client)
             mes = Message.error_resp('Имя пользователя уже занято.', user=message.user_account_name)
@@ -89,6 +90,7 @@ class ExitCommand(AbstractCommand):
             client.close()
             del serv.names[message.user_account_name]
             User.logout_user(message.user_account_name, ip_addr=client_ip, port=client_port)
+            serv.notify(self.name)
 
 
 class UserListCommand(AbstractCommand):
