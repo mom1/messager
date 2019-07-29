@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 19:38:38
+# @Last Modified time: 2019-07-29 08:56:22
 import logging
 import select
 import socket
@@ -23,6 +23,12 @@ database_lock = threading.Lock()
 
 
 class Server(threading.Thread, metaclass=ServerVerifier):
+    """Основной транспортный сервер
+
+    [description]
+    :param port: [description]
+    :type port: [type]
+    """
     port = PortDescr()
 
     def __init__(self):
@@ -35,6 +41,10 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self._observers = {}
 
     def init_socket(self):
+        """Инициализация сокета
+
+        [description]
+        """
         self.sock = socket.socket()
         self.port = settings.as_int('PORT')
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -45,6 +55,16 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         logger.info(f'start with {settings.get("host")}:{self.port}')
 
     def attach(self, observer, event):
+        """Подписка на события сервера
+
+        список событий не фиксирован
+        :param observer: Наблюдатель
+        :type observer: {object} с методом update
+        :param event: Событие на которое подписывается
+        :type event: {str}
+        :returns: Результат подписки
+        :rtype: {bool}
+        """
         obs = self._observers.get(event, []) or []
         obs.append(observer)
         self._observers[event] = obs
@@ -52,6 +72,16 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         return True
 
     def detach(self, observer, event):
+        """Отписаться от события
+
+        [description]
+        :param observer: [description]
+        :type observer: [type]
+        :param event: [description]
+        :type event: [type]
+        :returns: [description]
+        :rtype: {bool}
+        """
         obs = self._observers.get(event, []) or []
         obs.remove(observer)
         self._observers[event] = obs
@@ -59,11 +89,21 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         return True
 
     def notify(self, event):
+        """Уведомление о событии
+
+        [description]
+        :param event: [description]
+        :type event: [type]
+        """
         obs = self._observers.get(event, []) or []
         for observer in obs:
             observer.update(self, event)
 
     def run(self):
+        """Запуск основного цикла
+
+        [description]
+        """
         self.init_socket()
         self.database = DBManager(app_name)
         try:
@@ -97,6 +137,12 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             logger.debug('closed')
 
     def read_client_data(self, client):
+        """Чтение из сокета
+
+        [description]
+        :param client: [description]
+        :type client: [type]
+        """
         try:
             data = client.recv(settings.get('max_package_length', 1024))
         except Exception:
@@ -111,6 +157,14 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.messages.append(mes)
 
     def write_client_data(self, client, mes):
+        """Запись в сокет
+
+        [description]
+        :param client: [description]
+        :type client: [type]
+        :param mes: [description]
+        :type mes: [type]
+        """
         try:
             client.sendall(bytes(mes))
         except BrokenPipeError:
@@ -118,6 +172,12 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             client.close()
 
     def process(self, send_data):
+        """Обработка сообщений и команд
+
+        [description]
+        :param send_data: [description]
+        :type send_data: [type]
+        """
         try:
             for mes in self.messages:
                 response = main_commands.run(self, mes, send_data=send_data)
@@ -126,11 +186,3 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         except Exception:
             logger.error('Error process message', exc_info=True)
         self.messages.clear()
-
-    def to_thread(self, client, target, *args):
-        thread = threading.Thread(
-            target=target,
-            daemon=True,
-            args=(client, *args),
-        )
-        thread.start()

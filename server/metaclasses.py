@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-23 12:18:27
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 12:42:06
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-07-29 09:11:47
 import dis
 import socket
 
@@ -16,9 +16,10 @@ class ServerVerifier(type):
             кэшируем имя атрибута
         """
         cls.store_soc = None
+        except_ = ('__classcell__', '__doc__')
         for key, val in attr_dict.items():
             assert not isinstance(val, socket.socket), 'Создание сокетов на уровне классов запрещенно'
-            if key == '__classcell__' or isinstance(val, PortDescr):
+            if key in except_ or isinstance(val, PortDescr):
                 continue
             instrs = tuple(dis.Bytecode(val))
             glob_soc = (tuple(filter(lambda x: x.opname == 'LOAD_GLOBAL' and x.argval == 'socket', instrs)) or (None, ))[0]
@@ -40,8 +41,9 @@ class ServerVerifier(type):
         """
         if cls.store_soc:
             checks_meth = ('connect', )
+            except_ = ('__classcell__', '__doc__')
             for key, val in attr_dict.items():
-                if key == '__classcell__' or isinstance(val, PortDescr):
+                if key in except_ or isinstance(val, PortDescr):
                     continue
                 instrs = tuple(dis.Bytecode(val))
                 socks = (i for i in instrs if i.argval == cls.store_soc.argval)

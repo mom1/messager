@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 01:25:58
+# @Last Modified time: 2019-07-29 09:15:28
 import argparse
 import logging
 import logging.config
@@ -32,8 +32,11 @@ def arg_parser():
         default=settings.get('LOGGING_LEVEL'),
         help=f'Increase verbosity of log output (default "{settings.get("LOGGING_LEVEL")}")',
     )
-    parser.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI Configuration')
-    parser.set_defaults(gui=settings.get('GUI'))
+    log_group = parser.add_mutually_exclusive_group()
+    log_group.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI Configuration')
+    log_group.set_defaults(gui=settings.get('GUI'))
+    log_group.add_argument('-c', '--console', dest='console', action='store_true', help='Start cli')
+    log_group.set_defaults(console=settings.get('console'))
     namespace = parser.parse_args()
 
     if namespace.config:
@@ -103,9 +106,11 @@ serv.start()
 
 time.sleep(1)
 
-if not settings.get('GUI'):
+if settings.get('console'):
     CommandLineInterface().main_loop()
-else:
+elif settings.get('gui'):
     app = QApplication(sys.argv)
     mw = ServerGUI(serv)
     sys.exit(app.exec_())
+else:
+    pass

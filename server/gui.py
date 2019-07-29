@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 01:27:35
+# @Last Modified time: 2019-07-29 08:49:12
 import sys
 from ipaddress import ip_address
 from pathlib import Path
@@ -65,7 +65,10 @@ class ServerGUI(SaveGeometryMixin, QMainWindow):
 
     def init_ui(self):
         super().init_ui()
-        self.statusBar().showMessage('Server Working')
+        if self.server.started:
+            self.statusBar().showMessage('Server Working')
+        else:
+            self.statusBar().showMessage('Server not Working')
         self.update_active_users()
         self.show()
 
@@ -142,6 +145,7 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
 
     def init_ui(self):
         super().init_ui()
+        self.setAttribute(Qt.WA_DeleteOnClose)
         db_def = Path(settings.get('DATABASES.SERVER.NAME'))
 
         def open_file_dialog():

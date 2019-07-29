@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 01:55:08
+# @Last Modified time: 2019-07-29 09:03:42
 import logging
 
 # Debug
@@ -62,3 +62,4 @@ DATABASES = {
 # Oper
 USER_NAME = None
 GUI = True  # do gui start default?
+CONSOLE = not GUI  # do console start default?
