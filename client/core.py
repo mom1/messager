@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 15:31:00
+# @Last Modified time: 2019-07-29 13:29:39
 import logging
 import socket
 import threading
@@ -29,15 +29,28 @@ class SocketMixin(object):
     def send_message(self, mes):
         with sock_lock:
             try:
-                self.sock.sendall(bytes(mes))
-            except Exception:
-                logger.critical('Потеряно соединение с сервером.')
+                self.sock.send(bytes(mes))
+            except OSError as err:
+                if err.errno:
+                    print('Потеряно соединение с сервером.')
+                    logger.critical('Потеряно соединение с сервером.', exc_info=True)
+                    exit(1)
+            except (Exception, BrokenPipeError):
+                print('Потеряно соединение с сервером.')
+                logger.critical('Потеряно соединение с сервером.', exc_info=True)
                 exit(1)
 
     def read_data(self):
-        # with sock_lock:
-        data = self.sock.recv(settings.get('max_package_length', 1024))
-        return Message(data) if data else None
+        with sock_lock:
+            try:
+                data = self.sock.recv(settings.get('max_package_length', 1024))
+            # Вышел таймаут соединения если errno = None, иначе обрыв соединения.
+            except OSError as err:
+                if err.errno:
+                    logger.critical(f'Потеряно соединение с сервером.')
+                    exit(1)
+            else:
+                return Message(data) if data else None
 
 
 class Client(SocketMixin, metaclass=ClientVerifier):
@@ -48,17 +61,13 @@ class Client(SocketMixin, metaclass=ClientVerifier):
 
     def init_socket(self):
         self.sock = socket.socket()
+        self.sock.settimeout(1)
 
     def connect(self):
         self.sock.connect((settings.get('HOST'), settings.as_int('PORT')))
         logger.debug(f'Start with {settings.get("host")}:{settings.get("port")}')
         self.send_message(Message.presence())
-        with sock_lock:
-            try:
-                data = self.sock.recv(settings.get('max_package_length', 1024))
-                message = Message(data)
-            except Exception:
-                logger.error('Error connect to server', exc_info=True)
+        message = self.read_data()
         logger.debug(f'Установлено соединение с сервером. Ответ сервера: {message}')
         print(f'Установлено соединение с сервером.')
         self.database = DBManager(app_name)
@@ -129,22 +138,18 @@ class ClientReader(threading.Thread, SocketMixin):
         """Основной цикл приёмника сообщений, принимает сообщения, выводит в консоль. Завершается при потере соединения."""
         while True:
             time.sleep(1)
-            try:
-                message = self.read_data()
-                if not message:
-                    continue
-                if message.is_valid():
-                    sender = getattr(message, settings.SENDER, None)
-                    print(f'\r\nMessage from {sender}:\n{message}')
-                    with self.db_lock:
-                        UserHistory.proc_message(sender, settings.USER_NAME)
-                        UserMessages.create(sender=User.by_name(sender), receiver=User.by_name(settings.USER_NAME), message=str(message))
-                    logger.info(f'Получено сообщение от пользователя {sender}:\n{message}')
-                else:
-                    logger.error(f'Получено некорректное сообщение с сервера: {message}')
-            except Exception:
-                logger.critical(f'Потеряно соединение с сервером.', exc_info=True)
-                break
+            message = self.read_data()
+            if not message:
+                continue
+            if message.is_valid():
+                sender = getattr(message, settings.SENDER, None)
+                print(f'\r\nMessage from {sender}:\n{message}')
+                with self.db_lock:
+                    UserHistory.proc_message(sender, settings.USER_NAME)
+                    UserMessages.create(sender=User.by_name(sender), receiver=User.by_name(settings.USER_NAME), message=str(message))
+                logger.info(f'Получено сообщение от пользователя {sender}:\n{message}')
+            else:
+                logger.error(f'Получено некорректное сообщение с сервера: {message}')
 
 
 class ClientSender(threading.Thread, SocketMixin):
