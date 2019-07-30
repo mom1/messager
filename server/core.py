@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 08:56:22
+# @Last Modified time: 2019-07-30 19:22:32
 import logging
 import select
 import socket
@@ -148,13 +148,14 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         except Exception:
             logger.info(f'Клиент {client.getpeername()} отключился от сервера.')
             self.clients.remove(client)
-        if not data:
-            return
-        logger.debug(f'Client say: {data.decode(settings.get("encoding", "utf-8"))}')
-        mes = Message(data)
-        if mes.action == settings.get('presence'):
-            mes.client = client
-        self.messages.append(mes)
+        else:
+            if not data:
+                return
+            logger.debug(f'Client say: {data.decode(settings.get("encoding", "utf-8"))}')
+            mes = Message(data)
+            if mes.action == settings.get('presence'):
+                mes.client = client
+            self.messages.append(mes)
 
     def write_client_data(self, client, mes):
         """Запись в сокет
