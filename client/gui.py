@@ -2,8 +2,9 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-02 03:50:17
+# @Last Modified time: 2019-08-02 04:02:23
 # from dynaconf.loaders import yaml_loader as loader
+import logging
 from pathlib import Path
 
 from dynaconf import settings
@@ -11,10 +12,13 @@ from PyQt5 import uic
 from PyQt5.Qt import QAction
 from PyQt5.QtCore import QObject, QSettings, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QMessageBox
 
 from db import User, UserHistory, UserMessages
+from errors import ContactExists, NotFoundUser, ContactNotExists
 from jim_mes import Message
+
+logger = logging.getLogger('gui')
 
 
 class SaveGeometryMixin(object):
@@ -86,6 +90,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
     def init_ui(self):
         super().init_ui()
         self.setWindowTitle(f'You are: {settings.USER_NAME}')
+        self.MsgBox = QMessageBox()
         self.contacts_list_state = 'exists'
         self.current_chat = None
         self.update_contact()
@@ -189,21 +194,31 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def add_contact(self):
         user = User.by_name(settings.USER_NAME)
-        user.add_contact(self.current_chat)
-        self.client.send_message(Message(**{
-            settings.ACTION: settings.ADD_CONTACT,
-            settings.USER: settings.USER_NAME,
-            settings.ACCOUNT_NAME: self.current_chat,
-        }))
-        self.switch_list_state()
+        try:
+            user.add_contact(self.current_chat)
+            self.client.send_message(Message(**{
+                settings.ACTION: settings.ADD_CONTACT,
+                settings.USER: settings.USER_NAME,
+                settings.ACCOUNT_NAME: self.current_chat,
+            }))
+        except (ContactExists, NotFoundUser, ContactNotExists) as e:
+            self.MsgBox.critical(self, 'Ошибка', str(e))
+            logger.error(e)
+        else:
+            self.switch_list_state()
 
     def del_contact(self):
         user = User.by_name(settings.USER_NAME)
         name_contact = self.listContact.currentIndex().data()
-        user.del_contact(name_contact)
-        self.client.send_message(Message(**{
-            settings.ACTION: settings.DEL_CONTACT,
-            settings.USER: settings.USER_NAME,
-            settings.ACCOUNT_NAME: name_contact,
-        }))
-        self.update_contact()
+        try:
+            user.del_contact(name_contact)
+            self.client.send_message(Message(**{
+                settings.ACTION: settings.DEL_CONTACT,
+                settings.USER: settings.USER_NAME,
+                settings.ACCOUNT_NAME: name_contact,
+            }))
+        except (ContactExists, NotFoundUser, ContactNotExists) as e:
+            self.MsgBox.critical(self, 'Ошибка', str(e))
+            logger.error(e)
+        else:
+            self.update_contact()

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-07-27 16:26:55
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 12:10:13
+# @Last Modified time: 2019-08-02 04:01:42
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -10,7 +10,7 @@ from dynaconf import settings
 from tabulate import tabulate
 
 from db import User
-from errors import ContactExists, NotFoundUser
+from errors import ContactExists, NotFoundUser, ContactNotExists
 from jim_mes import Message as Msg
 
 logger = logging.getLogger('client__contacts')
@@ -62,7 +62,7 @@ class EditContactsCommand(AbstractCommand):
             except NotFoundUser as e:
                 print(e)
                 logger.error(e)
-            except ContactExists as e:
+            except (ContactExists, NotFoundUser, ContactExists, ContactNotExists) as e:
                 print(e)
                 logger.error(e)
             GetContactsCommand().execute(client, *args, **kwargs)
