@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 09:03:42
+# @Last Modified time: 2019-08-01 22:58:15
 import logging
 
 # Debug
@@ -41,6 +41,8 @@ DEL_CONTACT = 'remove'
 ADD_CONTACT = 'add'
 USERS_REQUEST = 'get_users'
 
+EVENT_NEW_MESSAGE = 'new_message'
+
 # DB
 DATABASES = {
     'default': {
@@ -63,3 +65,8 @@ DATABASES = {
 USER_NAME = None
 GUI = True  # do gui start default?
 CONSOLE = not GUI  # do console start default?
+
+
+# Colors
+COLOR_MESSAGE_IN = '#a40000;'
+COLOR_MESSAGE_OUT = 'green'

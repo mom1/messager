@@ -134,4 +134,5 @@ venv.bak/
 *.msp
 
 # BD
-db/
+db/*
+*.db

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 21:13:26
+# @Last Modified time: 2019-08-02 00:25:20
 import argparse
 import logging
 import logging.config
@@ -27,8 +27,11 @@ def arg_parser():
         default=settings.get('LOGGING_LEVEL'),
         help=f'Increase verbosity of log output (default "{settings.get("LOGGING_LEVEL")}")',
     )
-    parser.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI')
-    parser.set_defaults(gui=False)
+    log_group = parser.add_mutually_exclusive_group()
+    log_group.add_argument('-g', '--gui', dest='gui', action='store_true', help='Start GUI Configuration')
+    log_group.set_defaults(gui=settings.get('GUI'))
+    log_group.add_argument('-c', '--console', dest='console', action='store_true', help='Start cli')
+    log_group.set_defaults(console=settings.get('console'))
 
     parser.add_argument('-n', '--name', nargs='?', help=f'Name user for connect')
 
@@ -41,8 +44,16 @@ def arg_parser():
         if not v:
             continue
         settings.set(k, v)
+
     if namespace.name:
         settings.set('USER_NAME', namespace.name)
+    else:
+        try:
+            while not settings.USER_NAME:
+                settings.set('USER_NAME', input('Введите имя пользователя\n:'))
+        except KeyboardInterrupt:
+            exit(0)
+
     _configure_logger(namespace.verbose)
 
 
@@ -53,7 +64,7 @@ def _configure_logger(verbose=0):
             self.level = level
 
         def filter(self, record):  # noqa
-            return record.levelno < self.level
+            return record.levelno <= self.level
 
     root_logger = logging.root
     level = settings.get('LOGGING_LEVEL')
@@ -63,10 +74,10 @@ def _configure_logger(verbose=0):
 
     stream_handler = logging.StreamHandler()
     stream_handler.addFilter(MaxLevelFilter(level))
-    log_file_err = Path(f'{log_dir}/Client_error.log')
+    log_file_err = Path(f'{log_dir}/Client_{settings.USER_NAME}_error.log')
     error_handler = logging.FileHandler(log_file_err, encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
-    log_file = Path(f'{log_dir}/Client.log')
+    log_file = Path(f'{log_dir}/Client_{settings.USER_NAME}.log')
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
@@ -89,11 +100,6 @@ def _configure_logger(verbose=0):
 
 arg_parser()
 
-try:
-    while not settings.USER_NAME:
-        settings.USER_NAME = input('Введите имя пользователя\n:')
-except KeyboardInterrupt:
-    exit(0)
 
 logger = logging.getLogger('client')
 logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} with name "{settings.USER_NAME}"')

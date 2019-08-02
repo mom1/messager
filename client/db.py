@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 01:35:25
+# @Last Modified time: 2019-08-02 03:47:36
 import enum
 import logging
 from pathlib import Path
@@ -14,7 +14,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from errors import (ContactExists, ContactNotExists, NotFoundContact,
                     NotFoundUser)
@@ -198,6 +198,11 @@ class User(Core):
     def accepted(self):
         return UserHistory.filter_by(oper=self, type_row=TypeHistory.mes_accepted).count()
 
+    def not_contacts(self):
+        subquery = self._session.query(Contact.contact_id).filter(Contact.owner_id == self.id)
+        query = self.query().filter(~User.id.in_(subquery), User.id != self.id)
+        return query.all()
+
 
 class TypeHistory(enum.Enum):
     login = 1
@@ -240,7 +245,7 @@ class Contact(Core):
     owner_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
     contact_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
 
-    owner = relationship('User', backref='contacts', foreign_keys=[owner_id])
+    owner = relationship('User', backref=backref('contacts', order_by='Contact.contact_id'), foreign_keys=[owner_id])
     contact = relationship('User', foreign_keys=[contact_id])
 
     @classmethod
@@ -258,9 +263,9 @@ class UserMessages(Core):
     receiver = relationship('User', backref='received_messages', foreign_keys=[receiver_id])
 
     @classmethod
-    def chat_hiltory(cls, username):
+    def chat_hiltory(cls, username, limit=100):
         user = User.by_name(username) if isinstance(username, str) else username
-        return cls.query().filter((cls.sender == user) | (cls.receiver == user)).all()
+        return cls.query().filter((cls.sender == user) | (cls.receiver == user)).order_by(desc(cls.created)).limit(limit).all()
 
 
 # Отладка

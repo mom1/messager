@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 08:49:12
+# @Last Modified time: 2019-07-31 09:08:31
 import sys
 from ipaddress import ip_address
 from pathlib import Path
@@ -38,7 +38,14 @@ class SaveGeometryMixin(object):
         e.accept()
 
 
-class ServerGUI(SaveGeometryMixin, QMainWindow):
+class ServerGUI(object):
+    def __init__(self, server):
+        super().__init__()
+        global main_window
+        main_window = ServerMainWindow(server)
+
+
+class ServerMainWindow(SaveGeometryMixin, QMainWindow):
     def __init__(self, server):
         self.server = server
         super().__init__()
@@ -95,11 +102,11 @@ class ServerGUI(SaveGeometryMixin, QMainWindow):
 
     def history_open(self):
         global stat_window
-        stat_window = HistoryWindow(self)
+        stat_window = HistoryWindow(main_window)
 
     def config_open(self):
         global config_window
-        config_window = ConfigWindow(self)
+        config_window = ConfigWindow(main_window)
 
 
 class HistoryWindow(SaveGeometryMixin, QDialog):

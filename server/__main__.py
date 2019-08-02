@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-29 09:15:28
+# @Last Modified time: 2019-07-31 09:14:42
 import argparse
 import logging
 import logging.config
@@ -110,7 +110,7 @@ if settings.get('console'):
     CommandLineInterface().main_loop()
 elif settings.get('gui'):
     app = QApplication(sys.argv)
-    mw = ServerGUI(serv)
+    ServerGUI(serv)
     sys.exit(app.exec_())
 else:
     pass
