@@ -31,7 +31,7 @@ class DBManager(object):
     @staticmethod
     @sa.event.listens_for(Engine, 'connect')
     def set_sqlite_pragma(dbapi_connection, connection_record=None):
-        # Пока не знаю как от этого отделаться при других бекэндах
+        # Пока не знаю как от этого отделаться при других бэкендах
         cursor = dbapi_connection.cursor()
         cursor.execute('PRAGMA synchronous = 0')
         cursor.execute('PRAGMA mmap_size = 268435456')

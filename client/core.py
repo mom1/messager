@@ -27,6 +27,7 @@ logger = logging.getLogger(app_name)
 sock_lock = threading.Lock()
 
 database_lock = threading.Lock()
+client = None
 
 
 class SocketMixin(object):
@@ -80,28 +81,28 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         self.update_user_list()
         self.update_contacts_list()
 
-        reciver = ClientReader(self.sock)
-        reciver.daemon = True
-        reciver.setDaemon(True)
-        reciver.start()
+        receiver = ClientReader(self.sock)
+        receiver.daemon = True
+        receiver.setDaemon(True)
+        receiver.start()
 
         if settings.get('console'):
             client = ClientSender(self.sock)
-            reciver.attach(client, settings.get('event_new_message'))
+            receiver.attach(client, settings.get('event_new_message'))
             client.daemon = True
             client.start()
         elif settings.get('gui'):
             app = QApplication(sys.argv)
             client = ClientGui(self)
-            reciver.new_message.connect(client.update)
+            receiver.new_message.connect(client.update)
             app.exec_()
 
         # Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение или пользователь
-        # ввёл exit. Поскольку все события обработываются в потоках, достаточно просто завершить цикл.
+        # ввёл exit. Поскольку все события обрабатываются в потоках, достаточно просто завершить цикл.
         try:
             while True:
                 time.sleep(1)
-                if not reciver.is_alive() or not client or not client.is_alive():
+                if not receiver.is_alive() or not client or not client.is_alive():
                     break
         except KeyboardInterrupt:
             pass

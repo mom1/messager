@@ -139,3 +139,6 @@ db/*
 
 # VSCode
 .vscode
+
+# secrets
+.secret.*

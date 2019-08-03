@@ -14,6 +14,7 @@ passlib = "^1.7"
 pyqt5 = "^5.13"
 dynaconf = "^2.0"
 tabulate = "^0.8.3"
+pycryptodomex = "^3.8"
 
 [tool.poetry.dev-dependencies]
 flake8-broken-line = "^0.1.0"
