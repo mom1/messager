@@ -2,14 +2,18 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 15:36:29
+# @Last Modified time: 2019-08-04 19:41:39
+import binascii
+import hmac
 import logging
+import os
 from collections import OrderedDict
 
 from dynaconf import settings
 from tabulate import tabulate
 
 from db import User
+from decorators import login_required
 from jim_mes import Message
 
 logger = logging.getLogger('commands')
@@ -65,11 +69,26 @@ class Presence(AbstractCommand):
 
     def execute(self, serv, message, **kwargs):
         if message.user_account_name not in serv.names:
-            serv.names[message.user_account_name] = message.client
-            mes = Message.success(**{settings.DESTINATION: message.user_account_name})
-            client_ip, client_port = message.client.getpeername()
-            User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port)
-            serv.notify(self.name)
+            user = User.by_name(message.user_account_name)
+            if not user:
+                mes = Message.error_resp('Пользователь не зарегистрирован.', user=message.user_account_name)
+            else:
+                random_str = binascii.hexlify(os.urandom(64))
+                digest = hmac.new(user.auth_key, random_str).digest()
+                message_auth = Message(response=511, **{settings.DATA: random_str.decode('ascii')})
+                try:
+                    serv.write_client_data(message.client, message_auth)
+                except OSError:
+                    serv.clients.remove(message.client)
+                data = Message(message.client.recv(settings.get('max_package_length', 1024)))
+                client_digest = binascii.a2b_base64(getattr(data, settings.DATA, ''))
+
+                if data.response == 511 and hmac.compare_digest(digest, client_digest):
+                    serv.names[message.user_account_name] = message.client
+                    mes = Message.success(**{settings.DESTINATION: message.user_account_name})
+                    client_ip, client_port = message.client.getpeername()
+                    User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port, pub_key=getattr(message, settings.PUBLIC_KEY, ''))
+                    serv.notify(self.name)
         else:
             serv.clients.remove(message.client)
             mes = Message.error_resp('Имя пользователя уже занято.', user=message.user_account_name)
@@ -82,6 +101,7 @@ class ExitCommand(AbstractCommand):
     """Выход пользователя"""
     name = settings.EXIT
 
+    @login_required
     def execute(self, serv, message, **kwargs):
         client = serv.names.get(message.user_account_name)
         if client:
@@ -97,6 +117,7 @@ class UserListCommand(AbstractCommand):
     """Список известных пользователей"""
     name = settings.USERS_REQUEST
 
+    @login_required
     def execute(self, serv, msg, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         serv.write_client_data(serv.names.get(src_user), Message.success(202, **{settings.LIST_INFO: [u.username for u in User.all()]}))

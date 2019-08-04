@@ -97,6 +97,7 @@
    <addaction name="action_refresh"/>
    <addaction name="action_history"/>
    <addaction name="action_config"/>
+   <addaction name="action_add_user"/>
   </widget>
   <action name="action_refresh">
    <property name="icon">
@@ -138,6 +139,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="action_add_user">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/new-user.png</normaloff>icons/new-user.png</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить пользователя</string>
+   </property>
+   <property name="toolTip">
+    <string>Добавить пользователя</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
    </property>
   </action>
  </widget>

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-02 03:47:36
+# @Last Modified time: 2019-08-04 23:05:17
 import enum
 import logging
 from pathlib import Path
@@ -15,6 +15,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship
+from sqlalchemy_utils import PasswordType
 
 from errors import (ContactExists, ContactNotExists, NotFoundContact,
                     NotFoundUser)
@@ -72,7 +73,7 @@ class Base(object):
 class Core(Base):
     building_type = sa.Column(sa.String(32), nullable=False)
     created = sa.Column(sa.DateTime, default=sa.func.now())
-    updated = sa.Column(sa.DateTime, default=sa.func.now(), onupdate=sa.func.utc_timestamp())
+    updated = sa.Column(sa.DateTime, default=sa.func.now(), onupdate=sa.func.now())
     active = sa.Column(sa.Boolean, default=False)
     sort = sa.Column(sa.Integer, default=0)
 
@@ -152,6 +153,8 @@ class User(Core):
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
     username = sa.Column(sa.String(30), unique=True, nullable=False)
     descr = sa.Column(sa.String(300))
+    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
+    auth_key = sa.Column(sa.String())
     last_login = sa.Column(sa.DateTime)
 
     @classmethod

@@ -2,13 +2,14 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 20:03:49
+# @Last Modified time: 2019-08-04 19:09:44
 import logging
 from commands import AbstractCommand, main_commands
 
 from dynaconf import settings
 
 from db import UserHistory
+from decorators import login_required
 
 logger = logging.getLogger('server__message')
 
@@ -17,6 +18,7 @@ class MessageCommand(AbstractCommand):
     """Отправить сообщение. Кому и текст будут запрошены отдельно."""
     name = 'message'
 
+    @login_required
     def execute(self, serv, msg, *args, **kwargs):
         send_data = kwargs.get('send_data') or []
         if msg.is_valid():

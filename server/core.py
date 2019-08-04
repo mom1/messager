@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-30 19:22:32
+# @Last Modified time: 2019-08-04 18:46:41
 import logging
 import select
 import socket
@@ -187,3 +187,12 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         except Exception:
             logger.error('Error process message', exc_info=True)
         self.messages.clear()
+
+    def service_update_lists(self):
+        """Функция - отправляет сервисное сообщение 205 с требованием клиентам обновить списки"""
+        for name, client in self.names.items():
+            try:
+                self.write_client_data(client, Message(response=205))
+            except OSError:
+                self.clients.remove(client)
+                del self.names[name]

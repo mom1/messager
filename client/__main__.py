@@ -2,18 +2,29 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-02 00:25:20
+# @Last Modified time: 2019-08-04 02:09:56
 import argparse
 import logging
 import logging.config
+import os
+import sys
 from pathlib import Path
 
+from Cryptodome.PublicKey import RSA
 from dynaconf import settings
+from dynaconf.loaders import yaml_loader as loader
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from core import Client
+from gui import UserAuth
+
+client_app = QApplication(sys.argv)
+auth = UserAuth()
+message = QMessageBox()
 
 
 def arg_parser():
+    global auth
     parser = argparse.ArgumentParser()
     parser.description = 'Talkative - Client Messager for study'
     parser.add_argument('--config', nargs='?')
@@ -33,7 +44,8 @@ def arg_parser():
     log_group.add_argument('-c', '--console', dest='console', action='store_true', help='Start cli')
     log_group.set_defaults(console=settings.get('console'))
 
-    parser.add_argument('-n', '--name', nargs='?', help=f'Name user for connect')
+    parser.add_argument('-n', '--name', nargs='?', help='Name user for connect')
+    parser.add_argument('--password', nargs='?', help='User password')
 
     namespace = parser.parse_args()
 
@@ -45,16 +57,31 @@ def arg_parser():
             continue
         settings.set(k, v)
 
-    if namespace.name:
+    if namespace.name and namespace.password:
         settings.set('USER_NAME', namespace.name)
+        passwd = namespace.password
     else:
-        try:
-            while not settings.USER_NAME:
-                settings.set('USER_NAME', input('Введите имя пользователя\n:'))
-        except KeyboardInterrupt:
-            exit(0)
+        if settings.GUI:
+            client_app.exec_()
+            if auth.accepted:
+                user_name, passwd = auth.get_auth()
+                if not user_name or not passwd:
+                    message.critical(auth, 'Ошибка', 'Логин или пароль не заданны')
+                    exit(0)
+        else:
+            user_name = settings.USER_NAME
+            try:
+                while not user_name or not passwd:
+                    user_name = input('Введите имя пользователя\n:')
+                    passwd = input('Введите пароль\n:')
+            except KeyboardInterrupt:
+                exit(0)
+    del auth
+    settings.set('USER_NAME', user_name)
+    settings.set('PASSWORD', passwd)
 
     _configure_logger(namespace.verbose)
+    _process_key()
 
 
 def _configure_logger(verbose=0):
@@ -98,8 +125,23 @@ def _configure_logger(verbose=0):
     root_logger.setLevel(level)
 
 
-arg_parser()
+def _process_key():
+    """Загружаем ключи с файла, если же файла нет, то генерируем новую пару."""
+    secret = f'.secret.{settings.USER_NAME}.yaml'
+    settings.INCLUDES_FOR_DYNACONF.append(secret)
+    key = settings.get_fresh('USER_KEY')
+    if not key:
+        key_file = Path.cwd().joinpath(Path(f'config/{secret}'))
+        keys = RSA.generate(2048, os.urandom)
+        key = keys.export_key().decode('ascii')
+        loader.write(key_file, {'DEFAULT': {
+            'USER_KEY': key,
+            'PASSWORD': settings.PASSWORD,
+        }}, merge=True)
+        key = settings.get_fresh('USER_KEY')
 
+
+arg_parser()
 
 logger = logging.getLogger('client')
 logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} with name "{settings.USER_NAME}"')

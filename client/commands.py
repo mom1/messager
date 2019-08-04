@@ -40,7 +40,7 @@ class Comander(object):
             del self.commands[command]
 
     def print_help(self):
-        """Функция выводящяя справку по использованию"""
+        """Функция выводящая справку по использованию"""
         print('Поддерживаемые команды:')
         sort_dict = OrderedDict(sorted(self.commands.items()))
         print(tabulate(((k, v.__doc__) for k, v in sort_dict.items())))

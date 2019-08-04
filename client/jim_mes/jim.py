@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-07 11:20:56
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-23 11:06:34
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-04 23:06:23
 import time
 
+from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 
 from .convert import Converter
@@ -70,7 +71,8 @@ class Message(object):
         return cls(action=settings.ERROR, msg=text, **kwargs)
 
     @classmethod
-    def presence(cls, type_='status', user=None, **kwargs):
+    def presence(cls, type_='status', user=None, pub_key=None, **kwargs):
+        kwargs[settings.PUBLIC_KEY] = pub_key or RSA.import_key(settings.get('USER_KEY')).publickey().export_key().decode('ascii')
         return cls(action=settings.PRESENCE, type=type_, user=user or settings.USER_NAME, **kwargs)
 
     @classmethod

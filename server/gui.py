@@ -2,7 +2,9 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-31 09:08:31
+# @Last Modified time: 2019-08-04 23:10:49
+import binascii
+import hashlib
 import sys
 from ipaddress import ip_address
 from pathlib import Path
@@ -57,6 +59,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
             'action_refresh': self.update_active_users,
             'action_history': self.history_open,
             'action_config': self.config_open,
+            'action_add_user': self.add_user_open,
         }
         self.register_event()
         self.init_ui()
@@ -107,6 +110,10 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
     def config_open(self):
         global config_window
         config_window = ConfigWindow(main_window)
+
+    def add_user_open(self):
+        global add_user_window
+        add_user_window = AddUserWindow(main_window, self.server)
 
 
 class HistoryWindow(SaveGeometryMixin, QDialog):
@@ -197,6 +204,46 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
 
         loader.write(Path('config/user_settings.yaml'), for_save, merge=True)
         msg_box.information(config_window, 'OK', 'Настройки успешно сохранены!')
+
+
+class AddUserWindow(SaveGeometryMixin, QDialog):
+    """Класс окна добавления пользователя"""
+    def __init__(self, parent, server):
+        self.parent_gui = parent
+        self.server = server
+        super().__init__()
+        uic.loadUi(Path('server/templates/add_user.ui'), self)
+        self.init_ui()
+
+    def init_ui(self):
+        super().init_ui()
+        self.messages = QMessageBox()
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.buttonBox.accepted.connect(self.save_data)
+        self.show()
+
+    def save_data(self):
+        """Функция проверки правильности ввода и сохранения в базу нового пользователя. """
+        if not self.editUser.text():
+            self.messages.critical(self, 'Ошибка', 'Не указано имя пользователя.')
+            return
+        elif self.editPass2.text() != self.editPass1.text():
+            self.messages.critical(self, 'Ошибка', 'Введённые пароли не совпадают.')
+            return
+        elif User.by_name(self.editUser.text()):
+            self.messages.critical(self, 'Ошибка', 'Пользователь уже существует.')
+            return
+        else:
+            hash_ = binascii.hexlify(hashlib.pbkdf2_hmac(
+                'sha512',
+                self.editPass1.text().encode('utf-8'),
+                self.editUser.text().encode('utf-8'),
+                10000,
+            ))
+            User.create(username=self.editUser.text(), password=self.editPass1.text(), auth_key=hash_)
+            self.messages.information(self, 'Успех', 'Пользователь успешно зарегистрирован.')
+            # Рассылаем клиентам сообщение о необходимости обновить справочники
+            self.server.service_update_lists()
 
 
 if __name__ == '__main__':

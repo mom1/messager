@@ -2,12 +2,14 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-28 20:06:46
+# @Last Modified time: 2019-08-04 22:30:44
 import logging
 from commands import AbstractCommand, main_commands
 
 from dynaconf import settings
+
 from db import User
+from decorators import login_required
 from jim_mes import Message as Msg
 
 logger = logging.getLogger('server__contacts')
@@ -17,6 +19,7 @@ class AddContactCommand(AbstractCommand):
     """Обрабатывает запросы на добавление контакта"""
     name = settings.ADD_CONTACT
 
+    @login_required
     def execute(self, serv, msg, *args, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
@@ -36,6 +39,7 @@ class DelContactCommand(AbstractCommand):
     """Обрабатывает запросы на удаление контакта"""
     name = settings.DEL_CONTACT
 
+    @login_required
     def execute(self, serv, msg, *args, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
@@ -53,6 +57,7 @@ class ListContactsCommand(AbstractCommand):
     """Обрабатывает запросы на получение списка контактов пользователя"""
     name = settings.GET_CONTACTS
 
+    @login_required
     def execute(self, serv, msg, *args, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         user = User.by_name(src_user)
@@ -61,6 +66,26 @@ class ListContactsCommand(AbstractCommand):
         return True
 
 
+class RequestKeyCommand(AbstractCommand):
+    """Обрабатывает запросы на получение списка контактов пользователя"""
+    name = settings.PUBLIC_KEY_REQUEST
+
+    @login_required
+    def execute(self, serv, msg, *args, **kwargs):
+        dest_user = getattr(msg, settings.DESTINATION, None)
+        src_user = getattr(msg, settings.SENDER, None)
+        user = User.by_name(dest_user)
+        conn = serv.names.get(src_user)
+        if user and user.pub_key:
+            mes = Msg(response=511, **{settings.DATA: user.pub_key, settings.ACCOUNT_NAME: dest_user})
+        else:
+            mes = Msg.error_resp('Ошибка определения ключа')
+        serv.write_client_data(conn, mes)
+        logger.info(f'User {src_user} get pub_key {dest_user}')
+        return True
+
+
 main_commands.reg_cmd(AddContactCommand)
 main_commands.reg_cmd(DelContactCommand)
 main_commands.reg_cmd(ListContactsCommand)
+main_commands.reg_cmd(RequestKeyCommand)

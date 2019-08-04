@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-01 22:58:15
+# @Last Modified time: 2019-08-04 23:06:49
 import logging
 
 # Debug
@@ -27,6 +27,7 @@ USER = 'user'
 ACCOUNT_NAME = 'account_name'
 SENDER = 'from'
 DESTINATION = 'to'
+DATA = 'bin'
 
 # Прочие ключи, используемые в протоколе
 PRESENCE = 'presence'
@@ -40,6 +41,8 @@ LIST_INFO = 'data_list'
 DEL_CONTACT = 'remove'
 ADD_CONTACT = 'add'
 USERS_REQUEST = 'get_users'
+PUBLIC_KEY = 'pubkey'
+PUBLIC_KEY_REQUEST = 'pubkey_need'
 
 EVENT_NEW_MESSAGE = 'new_message'
 
@@ -52,12 +55,16 @@ DATABASES = {
     'server': {
         'ENGINE': 'sqlite',
         'NAME': 'db/db_server.db',
-        'CONNECT_ARGS': {'check_same_thread': False},
+        'CONNECT_ARGS': {
+            'check_same_thread': False
+        },
     },
     'client': {
         'ENGINE': 'sqlite',
         'NAME': 'db/db_client_{user}.db',
-        'CONNECT_ARGS': {'check_same_thread': False},
+        'CONNECT_ARGS': {
+            'check_same_thread': False
+        },
     },
 }
 
@@ -65,7 +72,6 @@ DATABASES = {
 USER_NAME = None
 GUI = True  # do gui start default?
 CONSOLE = not GUI  # do console start default?
-
 
 # Colors
 COLOR_MESSAGE_IN = '#a40000;'

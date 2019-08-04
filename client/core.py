@@ -2,7 +2,11 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-02 03:45:24
+# @Last Modified time: 2019-08-04 22:52:03
+import base64
+import binascii
+import hashlib
+import hmac
 import logging
 import socket
 import sys
@@ -10,12 +14,14 @@ import threading
 import time
 from commands import main_commands
 
+from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 
 from db import DBManager, User, UserHistory, UserMessages
-from errors import ContactExists
+from errors import ContactExists, ServerError
 from gui import ClientGui
 from jim_mes import Message
 from metaclasses import ClientVerifier
@@ -57,6 +63,8 @@ class SocketMixin(object):
 
 
 class Client(SocketMixin, metaclass=ClientVerifier):
+    # Центральный класс пока не понимаю зачем я его сделал
+    # нужно переписать
     def __init__(self, *args, **kwargs):
         self.sock = None
         self.db_lock = database_lock
@@ -70,18 +78,75 @@ class Client(SocketMixin, metaclass=ClientVerifier):
     def connect(self):
         global client
         client = None
-        self.sock.connect((settings.get('HOST'), settings.as_int('PORT')))
+        connected = False
+        for i in range(5):
+            logger.info(f'Попытка подключения №{i + 1}')
+            try:
+                self.sock.connect((settings.get('HOST'), settings.as_int('PORT')))
+            except (OSError, ConnectionRefusedError):
+                pass
+            else:
+                connected = True
+                break
+            time.sleep(1)
+
+        if not connected:
+            logger.critical('Не удалось установить соединение с сервером')
+            exit(1)
+
         logger.debug(f'Start with {settings.get("host")}:{settings.get("port")}')
+        self.database = DBManager(app_name)
+        user = User.by_name(settings.USER_NAME)
+        hash_ = binascii.hexlify(hashlib.pbkdf2_hmac(
+            'sha512',
+            settings.get('password').encode('utf-8'),
+            settings.USER_NAME.encode('utf-8'),
+            10000,
+        ))
+        if user:
+            user.password = settings.get('password')
+            user.auth_key = hash_
+            user.active = False
+        else:
+            user = User(username=settings.USER_NAME, password=settings.get('password'), auth_key=hash_)
+        user.save()
         self.send_message(Message.presence())
         message = self.read_data()
+
+        response = getattr(message, settings.RESPONSE, None)
+        while True:
+            if response == 200:
+                break
+            elif response == 205:
+                # ?????
+                break
+            elif response == 400:
+                raise ServerError(getattr(message, settings.ERROR, ''))
+            elif response == 511:
+                # Если всё нормально, то продолжаем процедуру авторизации.
+                ans_data = getattr(message, settings.DATA, '')
+                digest = hmac.new(user.auth_key, ans_data.encode('utf-8')).digest()
+                response = Message(response=511, **{settings.DATA: binascii.b2a_base64(digest).decode('ascii')})
+                self.send_message(response)
+
+                message = self.read_data()
+                if not message:
+                    logger.error(f'Авторизация не пройдена')
+                    exit(1)
+                response = getattr(message, settings.RESPONSE, None)
+                user.active = True
+                user.save()
+            else:
+                logger.error(f'Принят неизвестный код подтверждения {response}')
+                break
+
         logger.debug(f'Установлено соединение с сервером. Ответ сервера: {message}')
         print(f'Установлено соединение с сервером.')
-        self.database = DBManager(app_name)
 
         self.update_user_list()
         self.update_contacts_list()
 
-        receiver = ClientReader(self.sock)
+        receiver = ClientReader(self)
         receiver.daemon = True
         receiver.setDaemon(True)
         receiver.start()
@@ -95,6 +160,8 @@ class Client(SocketMixin, metaclass=ClientVerifier):
             app = QApplication(sys.argv)
             client = ClientGui(self)
             receiver.new_message.connect(client.update)
+            receiver.up_all_users.connect(client.update)
+            receiver.response_key.connect(client.update)
             app.exec_()
 
         # Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение или пользователь
@@ -124,7 +191,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         response = self.read_data()
         if response and response.response == 202:
             with database_lock:
-                User.save_all((User(username=user) for user in getattr(response, settings.LIST_INFO, []) if User.filter_by(username=user).count() == 0))
+                User.save_all((User(username=user, password='placeholder') for user in getattr(response, settings.LIST_INFO, []) if User.filter_by(username=user).count() == 0))
         else:
             logger.error('Ошибка запроса списка известных пользователей.')
 
@@ -145,21 +212,23 @@ class Client(SocketMixin, metaclass=ClientVerifier):
                     except ContactExists:
                         pass
         else:
-            logger.error('Ошибка запроса списка известных пользователей.')
+            logger.error('Ошибка запроса списка контактов пользователей.')
 
 
 class ClientReader(threading.Thread, SocketMixin, QObject):
     """ Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль."""
 
     new_message = pyqtSignal(Message)
+    up_all_users = pyqtSignal(Message)
+    response_key = pyqtSignal(Message)
 
-    def __init__(self, sock):
-        self.sock = sock
+    def __init__(self, parent):
+        self.parent = parent
+        self.sock = parent.sock
         self.db_lock = database_lock
         self._observers = {}
         self.message = None
-        # super().__init__()
-        # Вызываем конструктор предка
+        self.decrypter = PKCS1_OAEP.new(RSA.import_key(settings.get('USER_KEY')))
         threading.Thread.__init__(self)
         QObject.__init__(self)
 
@@ -172,12 +241,29 @@ class ClientReader(threading.Thread, SocketMixin, QObject):
                 continue
             if self.message.is_valid():
                 sender = getattr(self.message, settings.SENDER, None)
+                mes_ecrypted = base64.b64decode(str(self.message))
+                decrypted_message = self.decrypter.decrypt(mes_ecrypted)
                 with self.db_lock:
                     UserHistory.proc_message(sender, settings.USER_NAME)
-                    UserMessages.create(sender=User.by_name(sender), receiver=User.by_name(settings.USER_NAME), message=str(self.message))
+                    UserMessages.create(
+                        sender=User.by_name(sender),
+                        receiver=User.by_name(settings.USER_NAME),
+                        message=decrypted_message.decode('utf8'),
+                    )
                 self.notify(settings.get('event_new_message'))
                 self.new_message.emit(self.message)
                 logger.info(f'Получено сообщение от пользователя {sender}:\n{self.message}')
+            elif self.message.response == 205:
+                self.parent.update_user_list()
+                self.up_all_users.emit(self.message)
+            elif self.message.response == 511:
+                pub_key = getattr(self.message, settings.DATA, '')
+                rest_user = User.by_name(getattr(self.message, settings.ACCOUNT_NAME, ''))
+                rest_user.pub_key = pub_key
+                rest_user.save()
+                self.response_key.emit(self.message)
+            elif self.message.response == 200:
+                pass
             else:
                 logger.error(f'Получено некорректное сообщение с сервера: {self.message}')
 

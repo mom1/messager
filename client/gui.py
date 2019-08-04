@@ -2,8 +2,9 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-02 04:02:23
-# from dynaconf.loaders import yaml_loader as loader
+# @Last Modified time: 2019-08-04 22:31:59
+
+import base64
 import logging
 from pathlib import Path
 
@@ -12,10 +13,12 @@ from PyQt5 import uic
 from PyQt5.Qt import QAction
 from PyQt5.QtCore import QObject, QSettings, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QDialog, QMainWindow, QMessageBox
 
+from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.PublicKey import RSA
 from db import User, UserHistory, UserMessages
-from errors import ContactExists, NotFoundUser, ContactNotExists
+from errors import ContactExists, ContactNotExists, NotFoundUser
 from jim_mes import Message
 
 logger = logging.getLogger('gui')
@@ -41,6 +44,23 @@ class SaveGeometryMixin(object):
         self.settings.setValue('size', self.size())
         self.settings.setValue('pos', self.pos())
         e.accept()
+
+
+class UserAuth(SaveGeometryMixin, QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi(Path('client/templates/auth_client.ui'), self)
+        self.init_ui()
+
+    def init_ui(self):
+        self.buttonBox.accepted.connect(self.accept_auth)
+        self.show()
+
+    def accept_auth(self):
+        self.accepted = True
+
+    def get_auth(self):
+        return self.editName.text(), self.editPass.text()
 
 
 class ClientGui(QObject):
@@ -102,7 +122,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         action = QAction('Удалить', self)
         action.triggered.connect(self.del_contact)
         self.listContact.addAction(action)
-
+        self.encryptor = None
         self.show()
 
     def restore_size_pos(self):
@@ -116,6 +136,8 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def update_contact(self):
         user = User.by_name(settings.USER_NAME)
+        if not user:
+            return
         if self.contacts_list_state != 'new':
             contacts_list = [i.contact.username for i in user.contacts]
         else:
@@ -137,6 +159,13 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.current_chat = self.listContact.currentIndex().data()
         if self.contacts_list_state == 'new':
             self.add_contact()
+        else:
+            request = Message(**{
+                settings.ACTION: settings.PUBLIC_KEY_REQUEST,
+                settings.SENDER: settings.USER_NAME,
+                settings.DESTINATION: self.current_chat,
+            })
+            self.client.send_message(request)
         self.lblContact.setText(f'{self.current_chat}:')
         self.fill_chat()
 
@@ -158,17 +187,29 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.editMessages.setHtml(''.join(mes_list))
 
     def update(self, message):
-        if getattr(message, settings.SENDER, None) == self.current_chat:
+        if message.response == 205:
+            if self.contacts_list_state == 'new':
+                self.update_contact()
+        elif message.response == 511:
+            if self.current_chat == getattr(message, settings.ACCOUNT_NAME, ''):
+                key = getattr(message, settings.DATA, '')
+                self.encryptor = PKCS1_OAEP.new(RSA.import_key(key))
+        elif getattr(message, settings.SENDER, None) == self.current_chat:
             self.fill_chat()
 
     def send_message(self):
         if not self.current_chat or not self.editMessage.text():
             return
-        message = self.make_message(self.editMessage.text())
+        if not self.encryptor:
+            logger.warn(f'Нет ключа для этого чата {self.current_chat}')
+            self.MsgBox.critical(self, 'Ошибка', 'Нет ключа для этого чата')
+            return
+        mes_crypted = self.encryptor.encrypt(self.editMessage.text().encode('utf8'))
+        message = self.make_message(base64.b64encode(mes_crypted).decode('ascii'))
         self.client.send_message(message)
         with self.client.db_lock:
             UserHistory.proc_message(settings.USER_NAME, self.current_chat)
-            UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=str(message))
+            UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=self.editMessage.text())
         self.editMessage.clear()
         self.fill_chat()
 

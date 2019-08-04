@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-21 11:33:54
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-07-21 11:54:49
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-04 23:10:23
 import inspect
 import logging
 from functools import wraps
+
 from dynaconf import settings
 
 logger = logging.getLogger('decorators')
@@ -41,3 +42,18 @@ def log(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def login_required(func):
+    def checker(*args, **kwargs):
+        serv = args[1]
+        mes = args[2]
+        con1 = getattr(mes, settings.ACCOUNT_NAME, '')
+        con2 = getattr(mes, settings.SENDER, '')
+        client = serv.names.get(mes.user_account_name) or serv.names.get(con1) or serv.names.get(con2)
+        if not client:
+            logger.critical('Ошибка login_required')
+            raise TypeError
+        return func(*args, **kwargs)
+
+    return checker
