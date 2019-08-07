@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 23:06:49
+# @Last Modified time: 2019-08-06 21:49:44
 import logging
 
 # Debug
@@ -56,14 +56,14 @@ DATABASES = {
         'ENGINE': 'sqlite',
         'NAME': 'db/db_server.db',
         'CONNECT_ARGS': {
-            'check_same_thread': False
+            'check_same_thread': False,
         },
     },
     'client': {
         'ENGINE': 'sqlite',
         'NAME': 'db/db_client_{user}.db',
         'CONNECT_ARGS': {
-            'check_same_thread': False
+            'check_same_thread': False,
         },
     },
 }

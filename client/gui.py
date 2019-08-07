@@ -2,12 +2,14 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 22:31:59
+# @Last Modified time: 2019-08-06 21:50:08
 
 import base64
 import logging
 from pathlib import Path
 
+from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5 import uic
 from PyQt5.Qt import QAction
@@ -15,8 +17,6 @@ from PyQt5.QtCore import QObject, QSettings, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QDialog, QMainWindow, QMessageBox
 
-from Cryptodome.Cipher import PKCS1_OAEP
-from Cryptodome.PublicKey import RSA
 from db import User, UserHistory, UserMessages
 from errors import ContactExists, ContactNotExists, NotFoundUser
 from jim_mes import Message
