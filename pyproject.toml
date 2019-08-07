@@ -33,6 +33,8 @@ python-language-server = {version = "^0.27.0", extras = ["all"]}
 pyls-isort = "^0.1.1"
 mccabe = "^0.6.1"
 pyls-flake8 = {git = "https://github.com/emanspeaks/pyls-flake8.git"}
+Sphinx = "^2.1"
+sphinx_rtd_theme = "^0.4.3"
 
 [build-system]
 requires = ["poetry>=0.12"]
