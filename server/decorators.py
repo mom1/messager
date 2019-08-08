@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 11:33:54
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 23:10:23
+# @Last Modified time: 2019-08-08 21:05:12
 import inspect
 import logging
 from functools import wraps
@@ -13,7 +13,12 @@ logger = logging.getLogger('decorators')
 
 
 def get_name_by_frame(frame):
-    print(settings.PORT)
+    """Получить имя по фрейму.
+
+    Args:
+        frame: Фрейм
+
+    """
     name = []
     module = inspect.getmodule(frame)
     if module:
@@ -30,6 +35,7 @@ def get_name_by_frame(frame):
 
 
 def log(func):
+    """Декоратор логирования."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         stack = inspect.stack()
@@ -45,6 +51,18 @@ def log(func):
 
 
 def login_required(func):
+    """Декоратор проверяющий авторизацию.
+
+    Args:
+        func: декорируемая функция
+
+    Returns:
+        Результат выполнения декорируемой функции
+
+    Raises:
+        TypeError: если пользователь не авторизован
+
+    """
     def checker(*args, **kwargs):
         serv = args[1]
         mes = args[2]

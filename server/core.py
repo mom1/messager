@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 18:46:41
+# @Last Modified time: 2019-08-08 19:53:43
 import logging
 import select
 import socket
@@ -23,15 +23,24 @@ database_lock = threading.Lock()
 
 
 class Server(threading.Thread, metaclass=ServerVerifier):
-    """Основной транспортный сервер
+    """Основной транспортный сервер.
 
-    [description]
-    :param port: [description]
-    :type port: [type]
+    Не блокирующий сервер приема сообщений и обработки
+
+    Attributes:
+        port: Дескриптор значения порта для подключения
+        clients: Лист сокетов подключенных клиентов
+        messages: Список сообщений для обработки
+        started: Признак запущенности сервера :)
+        db_lock: Блокировщик потока доступа к БД
+        _observers: Подписчики на события сервера (языковая реализация)
+
     """
+
     port = PortDescr()
 
     def __init__(self):
+        """Инициализация."""
         super().__init__()
         self.clients = []
         self.messages = []
@@ -41,10 +50,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self._observers = {}
 
     def init_socket(self):
-        """Инициализация сокета
-
-        [description]
-        """
+        """Инициализация сокета."""
         self.sock = socket.socket()
         self.port = settings.as_int('PORT')
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -55,15 +61,18 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         logger.info(f'start with {settings.get("host")}:{self.port}')
 
     def attach(self, observer, event):
-        """Подписка на события сервера
+        """Подписка на события сервера.
 
         список событий не фиксирован
-        :param observer: Наблюдатель
-        :type observer: {object} с методом update
-        :param event: Событие на которое подписывается
-        :type event: {str}
-        :returns: Результат подписки
-        :rtype: {bool}
+
+        Args:
+            observer: Объект наблюдатель.
+            event: Строка имени события.
+
+        Returns:
+            Признак удачного выполнения
+            bool
+
         """
         obs = self._observers.get(event, []) or []
         obs.append(observer)
@@ -72,15 +81,16 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         return True
 
     def detach(self, observer, event):
-        """Отписаться от события
+        """Отписаться от события.
 
-        [description]
-        :param observer: [description]
-        :type observer: [type]
-        :param event: [description]
-        :type event: [type]
-        :returns: [description]
-        :rtype: {bool}
+        Args:
+            observer: Объект наблюдатель.
+            event: Строка имени события.
+
+        Returns:
+            Признак удачного выполнения
+            bool
+
         """
         obs = self._observers.get(event, []) or []
         obs.remove(observer)
@@ -89,21 +99,20 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         return True
 
     def notify(self, event):
-        """Уведомление о событии
+        """Уведомление о событии.
 
-        [description]
-        :param event: [description]
-        :type event: [type]
+        У подписчика вызывается метод **update**
+
+        Args:
+            event: Строка имени произошедшего события.
+
         """
         obs = self._observers.get(event, []) or []
         for observer in obs:
             observer.update(self, event)
 
     def run(self):
-        """Запуск основного цикла
-
-        [description]
-        """
+        """Запуск основного цикла."""
         self.init_socket()
         self.database = DBManager(app_name)
         try:
@@ -114,7 +123,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 except OSError:
                     pass
                 else:
-                    logger.info(f'Установлено соедение с ПК {client_address}')
+                    logger.info(f'Установлено соединение с ПК {client_address}')
                     self.clients.append(client)
 
                 recv_data = []
@@ -137,11 +146,11 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             logger.debug('closed')
 
     def read_client_data(self, client):
-        """Чтение из сокета
+        """Чтение из сокета.
 
-        [description]
-        :param client: [description]
-        :type client: [type]
+        Args:
+            client: Сокет клиента из которого будет производится чтение
+
         """
         try:
             data = client.recv(settings.get('max_package_length', 1024))
@@ -158,13 +167,14 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             self.messages.append(mes)
 
     def write_client_data(self, client, mes):
-        """Запись в сокет
+        """Запись в сокет.
 
-        [description]
-        :param client: [description]
-        :type client: [type]
-        :param mes: [description]
-        :type mes: [type]
+        При возникновении BrokenPipeError удаляем клиента из списка прослушивания
+
+        Args:
+            client: Сокет клиента в который будет производится запись
+            mes: Объект сообщения который будет записан
+
         """
         try:
             client.sendall(bytes(mes))
@@ -173,11 +183,13 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             client.close()
 
     def process(self, send_data):
-        """Обработка сообщений и команд
+        """Обработка сообщений и команд.
 
-        [description]
-        :param send_data: [description]
-        :type send_data: [type]
+        Перебор сообщений и отправка их основному объекту команд
+
+        Args:
+            send_data: Набор сокетов клиентов готовых к приему сообщений
+
         """
         try:
             for mes in self.messages:
@@ -189,7 +201,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.messages.clear()
 
     def service_update_lists(self):
-        """Функция - отправляет сервисное сообщение 205 с требованием клиентам обновить списки"""
+        """Сервисное сообщение 205 с требованием клиентам обновить списки."""
         for name, client in self.names.items():
             try:
                 self.write_client_data(client, Message(response=205))

@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cli &mdash; документация Talkative (messager) server </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) server
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server.html">Server</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) server</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>cli</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код cli</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># @Author: MaxST</span>
+<span class="c1"># @Date:   2019-07-23 22:59:32</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-08 19:00:24</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">commands</span> <span class="k">import</span> <span class="n">AbstractCommand</span><span class="p">,</span> <span class="n">icommands</span>
+
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="k">import</span> <span class="n">tabulate</span>
+
+<span class="kn">from</span> <span class="nn">db</span> <span class="k">import</span> <span class="n">ActiveUsers</span><span class="p">,</span> <span class="n">TypeHistory</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserHistory</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;cli&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CommandLineInterface"><a class="viewcode-back" href="../server.html#cli.CommandLineInterface">[документация]</a><span class="k">class</span> <span class="nc">CommandLineInterface</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Интерфейс командной строки.</span>
+
+<span class="sd">    Принимает команды и передает их на обработку</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CommandLineInterface.main_loop"><a class="viewcode-back" href="../server.html#cli.CommandLineInterface.main_loop">[документация]</a>    <span class="k">def</span> <span class="nf">main_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Основной цикл ждет ввода команды или Ctrl+C для выхода.&quot;&quot;&quot;</span>
+        <span class="n">icommands</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;Введите команду</span><span class="se">\n</span><span class="s1">:&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">icommands</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Команда не распознана. help - вывести поддерживаемые команды.&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;User closed&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="QuitCommand"><a class="viewcode-back" href="../server.html#cli.QuitCommand">[документация]</a><span class="k">class</span> <span class="nc">QuitCommand</span><span class="p">(</span><span class="n">AbstractCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Завершение работы сервера.</span>
+
+<span class="sd">    Команда выхода из интерфейса сервера</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: имя команды в интерфейсе</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;quit&#39;</span>
+
+<div class="viewcode-block" id="QuitCommand.execute"><a class="viewcode-back" href="../server.html#cli.QuitCommand.execute">[документация]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Выполнение команды.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cli: объект класса :py:class:`~CommandLineInterface`</span>
+<span class="sd">            command: имя команды для выполнения</span>
+<span class="sd">            **kwargs: дополнительные параметры</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="UserListCommand"><a class="viewcode-back" href="../server.html#cli.UserListCommand">[документация]</a><span class="k">class</span> <span class="nc">UserListCommand</span><span class="p">(</span><span class="n">AbstractCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Список известных пользователей.</span>
+
+<span class="sd">    Выводит полный список всех пользователей</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: имя команды в интерфейсе</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;users&#39;</span>
+
+<div class="viewcode-block" id="UserListCommand.execute"><a class="viewcode-back" href="../server.html#cli.UserListCommand.execute">[документация]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Выполнение команды.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cli: объект класса :py:class:`~CommandLineInterface`</span>
+<span class="sd">            command: имя команды для выполнения</span>
+<span class="sd">            **kwargs: дополнительные параметры</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает результат выполнения</span>
+<span class="sd">            bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">tab</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;Пользователь&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="s1">&#39;Последний вход&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">last_login</span><span class="p">})</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span>
+            <span class="n">tab</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span>
+            <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;rst&#39;</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div></div>
+
+
+<div class="viewcode-block" id="ConnectedUsersCommand"><a class="viewcode-back" href="../server.html#cli.ConnectedUsersCommand">[документация]</a><span class="k">class</span> <span class="nc">ConnectedUsersCommand</span><span class="p">(</span><span class="n">AbstractCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Список подключенных пользователей.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: имя команды в интерфейсе</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;connected&#39;</span>
+
+<div class="viewcode-block" id="ConnectedUsersCommand.execute"><a class="viewcode-back" href="../server.html#cli.ConnectedUsersCommand.execute">[документация]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Выполнение команды.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cli: объект класса :py:class:`~CommandLineInterface`</span>
+<span class="sd">            command: имя команды для выполнения</span>
+<span class="sd">            **kwargs: дополнительные параметры</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает результат выполнения</span>
+<span class="sd">            bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">auser</span> <span class="ow">in</span> <span class="n">ActiveUsers</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">tab</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;Пользователь&#39;</span><span class="p">:</span> <span class="n">auser</span><span class="o">.</span><span class="n">oper</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                <span class="s1">&#39;HOST:PORT&#39;</span><span class="p">:</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{auser.ip_addr}</span><span class="s1">:</span><span class="si">{auser.port}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Последний вход&#39;</span><span class="p">:</span> <span class="n">auser</span><span class="o">.</span><span class="n">oper</span><span class="o">.</span><span class="n">last_login</span><span class="p">,</span>
+            <span class="p">})</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span>
+            <span class="n">tab</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span>
+            <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;rst&#39;</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div></div>
+
+
+<div class="viewcode-block" id="LoginHistoryCommand"><a class="viewcode-back" href="../server.html#cli.LoginHistoryCommand">[документация]</a><span class="k">class</span> <span class="nc">LoginHistoryCommand</span><span class="p">(</span><span class="n">AbstractCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;История входов пользователя.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: имя команды в интерфейсе</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;loghist&#39;</span>
+
+<div class="viewcode-block" id="LoginHistoryCommand.execute"><a class="viewcode-back" href="../server.html#cli.LoginHistoryCommand.execute">[документация]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Выполнение команды.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cli: объект класса :py:class:`~CommandLineInterface`</span>
+<span class="sd">            command: имя команды для выполнения</span>
+<span class="sd">            **kwargs: дополнительные параметры</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает результат выполнения</span>
+<span class="sd">            bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;Введите имя пользователя для просмотра истории.</span><span class="se">\n</span><span class="s1">Для вывода всей истории, просто нажмите Enter</span><span class="se">\n</span><span class="s1">:&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">qs</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">user</span><span class="o">.</span><span class="n">history</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">type_row</span> <span class="o">==</span> <span class="n">TypeHistory</span><span class="o">.</span><span class="n">login</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qs</span> <span class="o">=</span> <span class="n">UserHistory</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">story</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">:</span>
+            <span class="n">tab</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;Пользователь&#39;</span><span class="p">:</span> <span class="n">story</span><span class="o">.</span><span class="n">oper</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                <span class="s1">&#39;Время входа&#39;</span><span class="p">:</span> <span class="n">story</span><span class="o">.</span><span class="n">created</span><span class="p">,</span>
+                <span class="s1">&#39;HOST:PORT&#39;</span><span class="p">:</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{story.ip_addr}</span><span class="s1">:</span><span class="si">{story.port}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="p">})</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span>
+            <span class="n">tab</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span>
+            <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;rst&#39;</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div></div>
+
+
+<span class="n">icommands</span><span class="o">.</span><span class="n">reg_cmd</span><span class="p">(</span><span class="n">QuitCommand</span><span class="p">)</span>
+<span class="n">icommands</span><span class="o">.</span><span class="n">reg_cmd</span><span class="p">(</span><span class="n">UserListCommand</span><span class="p">)</span>
+<span class="n">icommands</span><span class="o">.</span><span class="n">reg_cmd</span><span class="p">(</span><span class="n">ConnectedUsersCommand</span><span class="p">)</span>
+<span class="n">icommands</span><span class="o">.</span><span class="n">reg_cmd</span><span class="p">(</span><span class="n">LoginHistoryCommand</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

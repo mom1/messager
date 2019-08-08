@@ -1,0 +1,766 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>db &mdash; документация Talkative (messager) client </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) client
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../client.html">Client</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) client</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>db</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код db</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># @Author: MaxST</span>
+<span class="c1"># @Date:   2019-05-25 22:33:58</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-08 23:46:06</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">sa</span>
+<span class="kn">from</span> <span class="nn">dynaconf</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="k">import</span> <span class="n">desc</span><span class="p">,</span> <span class="n">func</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.engine</span> <span class="k">import</span> <span class="n">Engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="k">import</span> <span class="n">declared_attr</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative.api</span> <span class="k">import</span> <span class="n">as_declarative</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.hybrid</span> <span class="k">import</span> <span class="n">hybrid_property</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="k">import</span> <span class="n">backref</span><span class="p">,</span> <span class="n">relationship</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy_utils</span> <span class="k">import</span> <span class="n">PasswordType</span>
+
+<span class="kn">from</span> <span class="nn">errors</span> <span class="k">import</span> <span class="p">(</span><span class="n">ContactExists</span><span class="p">,</span> <span class="n">ContactNotExists</span><span class="p">,</span> <span class="n">NotFoundContact</span><span class="p">,</span>
+                    <span class="n">NotFoundUser</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;client__db&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DBManager"><a class="viewcode-back" href="../client.html#db.DBManager">[документация]</a><span class="k">class</span> <span class="nc">DBManager</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Менеджер инициатор БД.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            envs: имя области БД</span>
+<span class="sd">            *args: доп. параметры</span>
+<span class="sd">            **kwargs: доп. параметры</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envs</span> <span class="o">=</span> <span class="n">envs</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DBManager.set_sqlite_pragma"><a class="viewcode-back" href="../client.html#db.DBManager.set_sqlite_pragma">[документация]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@sa</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">listens_for</span><span class="p">(</span><span class="n">Engine</span><span class="p">,</span> <span class="s1">&#39;connect&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_sqlite_pragma</span><span class="p">(</span><span class="n">dbapi_connection</span><span class="p">,</span> <span class="n">connection_record</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Параметры подключения к БД.</span>
+
+<span class="sd">        Пока не знаю как от этого отделаться при других бекэндах</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dbapi_connection: [description]</span>
+<span class="sd">            connection_record: [description] (default: {None})</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="n">dbapi_connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA synchronous = 0&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA mmap_size = 268435456&#39;</span><span class="p">)</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;PRAGMA cache_size = 20480&#39;</span><span class="p">)</span>  <span class="c1"># 20 mb</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Установка БД.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: доп. параметры</span>
+<span class="sd">            **kwargs: доп. параметры</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">db_settings</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;DATABASES.</span><span class="si">{self.envs}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">&#39;DATABASES setting required&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">db_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;NAME&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span>
+            <span class="n">f</span><span class="s1">&#39;{db_settings.get(&quot;ENGINE&quot;, &quot;sqlite&quot;)}:///</span><span class="si">{db_name}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">echo</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DEBUG_SQL&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">connect_args</span><span class="o">=</span><span class="n">db_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CONNECT_ARGS&#39;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">orm</span><span class="o">.</span><span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)()</span>
+        <span class="n">Core</span><span class="o">.</span><span class="n">set_session</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="n">ActiveUsers</span><span class="o">.</span><span class="n">delete_all</span><span class="p">()</span></div>
+
+
+<span class="nd">@as_declarative</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Базовый класс для таблиц.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Общее поле оно же ссылка</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">__tablename__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="sd">&quot;&quot;&quot;Имя таблицы в БД для класса</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            имя таблицы это имя класса в ловер-кейсе</span>
+<span class="sd">            str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Понятный репр для понимания.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;&lt;{type(self).__name__}s({&quot;, &quot;.join(i.key + &quot;=&quot; + str(getattr(self, i.key)) for i in self.__table__.columns)})&gt;&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+
+
+<div class="viewcode-block" id="Core"><a class="viewcode-back" href="../client.html#db.Core">[документация]</a><span class="k">class</span> <span class="nc">Core</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Ядро для всех таблиц.</span>
+
+<span class="sd">    Содержит общие для всех поля и функционал</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        building_type: Тип записи что бы знать из какой таблицы</span>
+<span class="sd">        created: Дата время создания записи</span>
+<span class="sd">        updated: Дата время изменения записи</span>
+<span class="sd">        active: Признак активной записи</span>
+<span class="sd">        sort: поле сортировки</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">building_type</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">created</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">sa</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+    <span class="n">updated</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">sa</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">sa</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+    <span class="n">active</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">sort</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="k">def</span> <span class="nf">__mapper_args__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="sd">&quot;&quot;&quot;Полиморфный маппер.</span>
+
+<span class="sd">        Заполняет building_type именем класса</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;Core&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;polymorphic_on&#39;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">building_type</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;polymorphic_identity&#39;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()}</span>
+
+<div class="viewcode-block" id="Core.fill"><a class="viewcode-back" href="../client.html#db.Core.fill">[документация]</a>    <span class="k">def</span> <span class="nf">fill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Заполнение полей объекта.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: дикт где ключи имена, а значения значение полей таблицы</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает тек. объект</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Core.set_session"><a class="viewcode-back" href="../client.html#db.Core.set_session">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">set_session</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Установка текущей сессии.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            session: :class:`.Session`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span></div>
+
+<div class="viewcode-block" id="Core.query"><a class="viewcode-back" href="../client.html#db.Core.query">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает объект для фильтрации и отборов.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: доп. параметры.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает объект для отборов</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Core.all"><a class="viewcode-back" href="../client.html#db.Core.all">[документация]</a>    <span class="nd">@classmethod</span>  <span class="c1"># noqa</span>
+    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает все записи объекта/таблицы.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Core.first"><a class="viewcode-back" href="../client.html#db.Core.first">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает первую запись из отбора.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">first</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Core.create"><a class="viewcode-back" href="../client.html#db.Core.create">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Создание новой записи.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: дикт где ключи имена, а значения значение полей таблицы</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает созданный объект</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Core.save"><a class="viewcode-back" href="../client.html#db.Core.save">[документация]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Сохранение объекта.</span>
+
+<span class="sd">        Сохранение всех изменений</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает сохраненный объект</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Core.get"><a class="viewcode-back" href="../client.html#db.Core.get">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">id_</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Получить один объект по ид.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id_: идентификатор записи для получения</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает найденный объект</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">id_</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Core.filter"><a class="viewcode-back" href="../client.html#db.Core.filter">[документация]</a>    <span class="nd">@classmethod</span>  <span class="c1"># noqa</span>
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Фильтрация таблицы.</span>
+
+<span class="sd">        Стандартная фильтрация с указание полей и значений</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: параметры фильтрации</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Возвращает результат фильтрации</span>
+<span class="sd">            object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Core.filter_by"><a class="viewcode-back" href="../client.html#db.Core.filter_by">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">filter_by</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Фильтр с упрощенным синтаксисом.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Core.delete"><a class="viewcode-back" href="../client.html#db.Core.delete">[документация]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Удаление текущей записи.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Core.delete_qs"><a class="viewcode-back" href="../client.html#db.Core.delete_qs">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">delete_qs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">qs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Удаление списка записей.</span>
+
+<span class="sd">        По одной что бы удалились связанные записи в родительской таблице</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">:</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Core.delete_all"><a class="viewcode-back" href="../client.html#db.Core.delete_all">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">delete_all</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Удалить все записи из заблицы.&quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">delete_qs</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">all</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Core.save_all"><a class="viewcode-back" href="../client.html#db.Core.save_all">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">save_all</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">qs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Сохранить все записи из списка.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            qs: список объектов бд</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="User"><a class="viewcode-back" href="../client.html#db.User">[документация]</a><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Core</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Таблица пользователей.</span>
+
+<span class="sd">    Содержит основной функционал взаимодействия.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Идентификатор</span>
+<span class="sd">        username: Имя пользователя</span>
+<span class="sd">        descr: Описание</span>
+<span class="sd">        password: Пароль шифрованный поддерживает сравнение</span>
+<span class="sd">        auth_key: Ключ авторизации</span>
+<span class="sd">        last_login: Последний вход на сервер (дата время)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Core</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">descr</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">300</span><span class="p">))</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">PasswordType</span><span class="p">(</span><span class="n">schemes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pbkdf2_sha512&#39;</span><span class="p">]),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">auth_key</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">())</span>
+    <span class="n">last_login</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+
+<div class="viewcode-block" id="User.by_name"><a class="viewcode-back" href="../client.html#db.User.by_name">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">by_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">username</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает объект пользователя по его имени.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">username</span><span class="p">)</span> <span class="o">==</span> <span class="n">username</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">first</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="User.get_last_login"><a class="viewcode-back" href="../client.html#db.User.get_last_login">[документация]</a>    <span class="k">def</span> <span class="nf">get_last_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Хитрый способ получения времени последнего входа.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">UserHistory</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">oper</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">UserHistory</span><span class="o">.</span><span class="n">created</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">(),</span> <span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;Newer login&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="User.has_contact"><a class="viewcode-back" href="../client.html#db.User.has_contact">[документация]</a>    <span class="k">def</span> <span class="nf">has_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contact_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Проверка на контакт.</span>
+
+<span class="sd">        Проверяет есть ли переданное имя в контактах текущего пользователя</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            contact_name: проверяемое имя</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Результат проверки</span>
+<span class="sd">            bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">contact</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span> <span class="k">if</span> <span class="n">contact_name</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">contact</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">Contact</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">contact</span><span class="o">=</span><span class="n">contact</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="User.add_contact"><a class="viewcode-back" href="../client.html#db.User.add_contact">[документация]</a>    <span class="k">def</span> <span class="nf">add_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contact_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Добавляет пользователя с переданным именем в контакты текущего пользователя.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            contact_name: имя добавляемого контакта</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cont</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundUser</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_contact</span><span class="p">(</span><span class="n">contact_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ContactExists</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contacts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Contact</span><span class="p">(</span><span class="n">contact</span><span class="o">=</span><span class="n">cont</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UserHistory</span><span class="p">(</span><span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">add_contact</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">contact_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="User.del_contact"><a class="viewcode-back" href="../client.html#db.User.del_contact">[документация]</a>    <span class="k">def</span> <span class="nf">del_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contact_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Удаляет контакт.</span>
+
+<span class="sd">        Удаляет контакт из контактов текущего пользователя</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            contact_name: имя контакта</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cont</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundContact</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_contact</span><span class="p">(</span><span class="n">contact_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ContactNotExists</span><span class="p">(</span><span class="n">contact_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contacts</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">contact</span><span class="o">=</span><span class="n">cont</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UserHistory</span><span class="p">(</span><span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">del_contact</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">contact_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">sent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Количество отправленных сообщений.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">UserHistory</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">oper</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">mes_sent</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">accepted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Количество полученных сообщений.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">UserHistory</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">oper</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">mes_accepted</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+<div class="viewcode-block" id="User.not_contacts"><a class="viewcode-back" href="../client.html#db.User.not_contacts">[документация]</a>    <span class="k">def</span> <span class="nf">not_contacts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает не контактов.&quot;&quot;&quot;</span>
+        <span class="n">subquery</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">contact_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">owner_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">~</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">subquery</span><span class="p">),</span> <span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="TypeHistory"><a class="viewcode-back" href="../client.html#db.TypeHistory">[документация]</a><span class="k">class</span> <span class="nc">TypeHistory</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Перечислитель типов записей в истории.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        login: Вход</span>
+<span class="sd">        logout: Выход</span>
+<span class="sd">        ch_pass: Смена пароля</span>
+<span class="sd">        add_contact: Добавлен контакт</span>
+<span class="sd">        del_contact: Удален контакт</span>
+<span class="sd">        mes_sent: Отправленно сообщение</span>
+<span class="sd">        mes_accepted: Принято сообщение</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">login</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">logout</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">ch_pass</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">add_contact</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">del_contact</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">mes_sent</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">mes_accepted</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">mes_history</span> <span class="o">=</span> <span class="mi">8</span></div>
+
+
+<div class="viewcode-block" id="UserHistory"><a class="viewcode-back" href="../client.html#db.UserHistory">[документация]</a><span class="k">class</span> <span class="nc">UserHistory</span><span class="p">(</span><span class="n">Core</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;История пользователя.</span>
+
+<span class="sd">    Хранит информацию о действиях пользователя</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Идентификатор</span>
+<span class="sd">        oper_id: ИД пользователя</span>
+<span class="sd">        ip_addr: ИП адрес</span>
+<span class="sd">        type_row: тип истории</span>
+<span class="sd">        port: Порт подключения</span>
+<span class="sd">        note: примечание</span>
+<span class="sd">        oper: обратная ссылка на пользователя</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Core</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+    <span class="n">oper_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+    <span class="n">ip_addr</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>
+    <span class="n">type_row</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="n">TypeHistory</span><span class="p">))</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">())</span>
+
+    <span class="n">oper</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;history&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">oper_id</span><span class="p">])</span>
+
+<div class="viewcode-block" id="UserHistory.proc_message"><a class="viewcode-back" href="../client.html#db.UserHistory.proc_message">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">proc_message</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">scr</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Фиксация отправленного или пришедшего сообщения.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scr: отправитель</span>
+<span class="sd">            dest: получатель</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">oper</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">scr</span><span class="p">),</span> <span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">mes_sent</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">oper</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">dest</span><span class="p">),</span> <span class="n">type_row</span><span class="o">=</span><span class="n">TypeHistory</span><span class="o">.</span><span class="n">mes_accepted</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ActiveUsers"><a class="viewcode-back" href="../client.html#db.ActiveUsers">[документация]</a><span class="k">class</span> <span class="nc">ActiveUsers</span><span class="p">(</span><span class="n">Core</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Активные пользователи.</span>
+
+<span class="sd">    Пользователи находящиеся онлайн</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Идентификатор</span>
+<span class="sd">        oper_id: пользователь</span>
+<span class="sd">        ip_addr: ИП адрес пользователя</span>
+<span class="sd">        port: Порт подключения</span>
+<span class="sd">        oper: обратная ссылка на пользователя</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Core</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+    <span class="n">oper_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+    <span class="n">ip_addr</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+
+    <span class="n">oper</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;user_activity&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">oper_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Contact"><a class="viewcode-back" href="../client.html#db.Contact">[документация]</a><span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="n">Core</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Список контактов.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Идентификатор</span>
+<span class="sd">        owner_id: Владелец</span>
+<span class="sd">        contact_id: Контакт</span>
+<span class="sd">        owner: обратная ссылка на владельца</span>
+<span class="sd">        contact: Обратная ссылка на контакт</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Core</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+    <span class="n">owner_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+    <span class="n">contact_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="n">backref</span><span class="p">(</span><span class="s1">&#39;contacts&#39;</span><span class="p">,</span> <span class="n">order_by</span><span class="o">=</span><span class="s1">&#39;Contact.contact_id&#39;</span><span class="p">),</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">owner_id</span><span class="p">])</span>
+    <span class="n">contact</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">contact_id</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Contact.get_by_owner_contact"><a class="viewcode-back" href="../client.html#db.Contact.get_by_owner_contact">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_by_owner_contact</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">contact</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Возвращает записи фильтрованные по владельцу и контакту.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="n">owner</span><span class="p">,</span> <span class="n">contact</span><span class="o">=</span><span class="n">contact</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="UserMessages"><a class="viewcode-back" href="../client.html#db.UserMessages">[документация]</a><span class="k">class</span> <span class="nc">UserMessages</span><span class="p">(</span><span class="n">Core</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Пользовательские сообщения.</span>
+
+<span class="sd">    Хранилище сообщений</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        id: Идентификатор</span>
+<span class="sd">        sender_id: ИД отправителя</span>
+<span class="sd">        receiver_id: ИД получателя</span>
+<span class="sd">        message: текст сообщения</span>
+<span class="sd">        sender: Отправитель</span>
+<span class="sd">        receiver: Получатель</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Core</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># noqa</span>
+    <span class="n">sender_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+    <span class="n">receiver_id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;user.id&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">sa</span><span class="o">.</span><span class="n">Text</span><span class="p">())</span>
+
+    <span class="n">sender</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;sents_messages&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">sender_id</span><span class="p">])</span>
+    <span class="n">receiver</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;received_messages&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">receiver_id</span><span class="p">])</span>
+
+<div class="viewcode-block" id="UserMessages.chat_hiltory"><a class="viewcode-back" href="../client.html#db.UserMessages.chat_hiltory">[документация]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">chat_hiltory</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Получение истории чата.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            username: имя пользователя</span>
+<span class="sd">            limit: ограничение по количеству сообщений (default: {100})</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            лист сообщений</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">username</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">username</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">query</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">((</span><span class="bp">cls</span><span class="o">.</span><span class="n">sender</span> <span class="o">==</span> <span class="n">user</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">receiver</span> <span class="o">==</span> <span class="n">user</span><span class="p">))</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">created</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div></div>
+
+
+<span class="c1"># Отладка</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pprint</span>
+    <span class="n">pp</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">PrettyPrinter</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">database</span> <span class="o">=</span> <span class="n">DBManager</span><span class="p">(</span><span class="s1">&#39;server&#39;</span><span class="p">)</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">login_user</span><span class="p">(</span><span class="s1">&#39;1111&#39;</span><span class="p">,</span> <span class="n">ip_addr</span><span class="o">=</span><span class="s1">&#39;192.168.1.113&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">login_user</span><span class="p">(</span><span class="s1">&#39;McG2&#39;</span><span class="p">,</span> <span class="n">ip_addr</span><span class="o">=</span><span class="s1">&#39;192.168.1.112&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8081</span><span class="p">)</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">login_user</span><span class="p">(</span><span class="s1">&#39;test1&#39;</span><span class="p">,</span> <span class="n">ip_addr</span><span class="o">=</span><span class="s1">&#39;192.168.1.100&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8082</span><span class="p">)</span>
+    <span class="c1"># Все пользователи</span>
+    <span class="c1"># pp.pprint(User.all())</span>
+    <span class="c1"># Активные пользователи</span>
+    <span class="c1"># pp.pprint(ActiveUsers.all())</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">logout_user</span><span class="p">(</span><span class="s1">&#39;McG2&#39;</span><span class="p">,</span> <span class="n">ip_addr</span><span class="o">=</span><span class="s1">&#39;192.168.1.113&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8081</span><span class="p">)</span>
+    <span class="c1"># История по пользователю</span>
+    <span class="n">McG2</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="s1">&#39;McG2&#39;</span><span class="p">)</span>
+    <span class="c1"># pp.pprint(McG2.history)</span>
+    <span class="c1"># История по всем</span>
+    <span class="c1"># pp.pprint(UserHistory.all())</span>
+    <span class="c1"># Работа с контактами</span>
+    <span class="n">cont_1111</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="s1">&#39;1111&#39;</span><span class="p">)</span>
+    <span class="n">test1</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="s1">&#39;test1&#39;</span><span class="p">)</span>
+    <span class="n">McG2</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="s1">&#39;1111&#39;</span><span class="p">)</span>
+    <span class="n">McG2</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="s1">&#39;test1&#39;</span><span class="p">)</span>
+    <span class="n">cont_1111</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="s1">&#39;McG2&#39;</span><span class="p">)</span>
+    <span class="n">McG2</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="s1">&#39;Noop&#39;</span><span class="p">)</span>
+
+    <span class="c1"># pp.pprint(McG2.contacts)</span>
+    <span class="c1"># pp.pprint(cont_1111.contacts)</span>
+    <span class="n">McG2</span><span class="o">.</span><span class="n">del_contact</span><span class="p">(</span><span class="s1">&#39;test1&#39;</span><span class="p">)</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">McG2</span><span class="o">.</span><span class="n">contacts</span><span class="p">)</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">McG2</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
+    <span class="n">UserHistory</span><span class="o">.</span><span class="n">proc_message</span><span class="p">(</span><span class="s1">&#39;McG2&#39;</span><span class="p">,</span> <span class="s1">&#39;1111&#39;</span><span class="p">)</span>
+    <span class="c1"># История</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">McG2</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="s1">&#39;sent:&#39;</span><span class="p">,</span> <span class="n">McG2</span><span class="o">.</span><span class="n">sent</span><span class="p">,</span> <span class="s1">&#39;accepted:&#39;</span><span class="p">,</span> <span class="n">McG2</span><span class="o">.</span><span class="n">accepted</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cont_1111</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="s1">&#39;sent:&#39;</span><span class="p">,</span> <span class="n">cont_1111</span><span class="o">.</span><span class="n">sent</span><span class="p">,</span> <span class="s1">&#39;accepted:&#39;</span><span class="p">,</span> <span class="n">cont_1111</span><span class="o">.</span><span class="n">accepted</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

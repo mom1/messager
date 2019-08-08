@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-07-27 16:26:55
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-03 21:04:13
+# @Last Modified time: 2019-08-09 00:07:01
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -17,7 +17,8 @@ logger = logging.getLogger('client__contacts')
 
 
 class GetContactsCommand(AbstractCommand):
-    """Получить список контактов"""
+    """Получить список контактов."""
+
     name = 'contacts'
 
     def execute(self, client, *args, **kwargs):
@@ -36,10 +37,26 @@ class GetContactsCommand(AbstractCommand):
 
 
 class EditContactsCommand(AbstractCommand):
-    """Редактирование контактов"""
+    """Редактирование контактов."""
+
     name = 'edit'
 
     def execute(self, client, *args, **kwargs):
+        """Выполнение изменение контактов.
+
+        #. add - добавляет контакт
+        #. del - удаляет контакт
+
+        Args:
+            client: [description]
+            *args: [description]
+            **kwargs: [description]
+
+        Returns:
+            [description]
+            bool
+
+        """
         command = input('add - добавить контакт\ndel - удалить контакт\n:').strip()
         name_contact = input('Введите имя\n:').strip()
         with client.db_lock:

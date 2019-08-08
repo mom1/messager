@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 22:52:03
+# @Last Modified time: 2019-08-08 23:32:25
 import base64
 import binascii
 import hashlib
@@ -37,7 +37,15 @@ client = None
 
 
 class SocketMixin(object):
+    """Миксин взаимодействия с сокетом."""
+
     def send_message(self, mes):
+        """Отправка сообщения.
+
+        Args:
+            mes: :py:class:`~jim_mes.Message`
+
+        """
         with sock_lock:
             try:
                 self.sock.send(bytes(mes))
@@ -50,6 +58,12 @@ class SocketMixin(object):
                 logger.critical('Потеряно соединение с сервером.', exc_info=True)
 
     def read_data(self):
+        """Прием сообщения.
+
+        Returns:
+            :py:class:`~jim_mes.Message`
+
+        """
         with sock_lock:
             try:
                 data = self.sock.recv(settings.get('max_package_length', 1024))
@@ -63,19 +77,33 @@ class SocketMixin(object):
 
 
 class Client(SocketMixin, metaclass=ClientVerifier):
-    # Центральный класс пока не понимаю зачем я его сделал
-    # нужно переписать
+    """Центральный класс пока не понимаю зачем я его сделал.
+
+    нужно переписать
+
+    """
+
     def __init__(self, *args, **kwargs):
+        """Инициализация."""
         self.sock = None
         self.db_lock = database_lock
         super().__init__()
         self.init_socket()
 
     def init_socket(self):
+        """Инициализация сокета."""
         self.sock = socket.socket()
         self.sock.settimeout(1)
 
     def connect(self):
+        """Соединение с сервером.
+
+        И основной цикл
+
+        Raises:
+            ServerError: При ошибочном запросе
+
+        """
         global client
         client = None
         connected = False
@@ -176,13 +204,14 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         self.exit_client()
 
     def exit_client(self):
+        """Отправка информации о выходе."""
         self.send_message(Message.exit_request())
         logger.debug('User closed')
         time.sleep(0.5)
         exit(0)
 
     def update_user_list(self):
-        """Функция запроса списка известных пользователей"""
+        """Функция запроса списка известных пользователей."""
         logger.debug(f'Запрос списка известных пользователей {settings.USER_NAME}')
         self.send_message(Message(**{
             settings.ACTION: settings.USERS_REQUEST,
@@ -196,7 +225,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
             logger.error('Ошибка запроса списка известных пользователей.')
 
     def update_contacts_list(self):
-        """Функция запрос контакт листа"""
+        """Функция запрос контакт листа."""
         logger.debug(f'Запрос контакт листа для пользователя {settings.USER_NAME}')
         self.send_message(Message(**{
             settings.ACTION: settings.GET_CONTACTS,
@@ -216,13 +245,19 @@ class Client(SocketMixin, metaclass=ClientVerifier):
 
 
 class ClientReader(threading.Thread, SocketMixin, QObject):
-    """ Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль."""
+    """Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль."""
 
     new_message = pyqtSignal(Message)
     up_all_users = pyqtSignal(Message)
     response_key = pyqtSignal(Message)
 
     def __init__(self, parent):
+        """Инициализация.
+
+        Args:
+            parent: родительский поток
+
+        """
         self.parent = parent
         self.sock = parent.sock
         self.db_lock = database_lock
@@ -282,27 +317,33 @@ class ClientReader(threading.Thread, SocketMixin, QObject):
         return True
 
     def notify(self, event):
-        """Уведомление о событии
+        """Уведомление о событии.
 
-        [description]
-        :param event: [description]
-        :type event: [type]
+        Args:
+            event: имя события
+
         """
         obs = self._observers.get(event, []) or []
         for observer in obs:
             observer.update(self, event)
-        # self.new_message.emit(message[SENDER])
 
 
 class ClientSender(threading.Thread, SocketMixin):
     """Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем."""
+
     def __init__(self, sock):
+        """Инициализация.
+
+        Args:
+            sock: сокет для работы миксина
+
+        """
         self.sock = sock
         self.db_lock = database_lock
         super().__init__()
 
     def run(self):
-        """Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения"""
+        """Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения."""
         main_commands.print_help()
         while True:
             command = input('Введите команду: ')
@@ -310,6 +351,13 @@ class ClientSender(threading.Thread, SocketMixin):
                 print('Команда не распознана. help - вывести поддерживаемые команды.')
 
     def update(self, reader, event):
+        """Уведомление о новом сообщении.
+
+        Args:
+            reader: чтец
+            event: событие
+
+        """
         if event == settings.get('event_new_message'):
             sender = getattr(reader.message, settings.SENDER, None)
             print(f'\r\nMessage from {sender}:\n{reader.message}')

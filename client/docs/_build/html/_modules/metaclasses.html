@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>metaclasses &mdash; документация Talkative (messager) client </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) client
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../client.html">Client</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) client</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>metaclasses</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код metaclasses</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># @Author: MaxST</span>
+<span class="c1"># @Date:   2019-07-23 12:44:33</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-09 00:17:20</span>
+<span class="kn">import</span> <span class="nn">dis</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+
+<div class="viewcode-block" id="ClientVerifier"><a class="viewcode-back" href="../client.html#metaclasses.ClientVerifier">[документация]</a><span class="k">class</span> <span class="nc">ClientVerifier</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Верификатор клиента.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attr_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Тут находим объявление сокета и проверяем его инициализацию.</span>
+
+<span class="sd">        кэшируем имя атрибута</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">except_</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;__classcell__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">),</span> <span class="s1">&#39;Создание сокетов на уровне классов запрещенно&#39;</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">except_</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">instrs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dis</span><span class="o">.</span><span class="n">Bytecode</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+            <span class="n">glob_soc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">opname</span> <span class="o">==</span> <span class="s1">&#39;LOAD_GLOBAL&#39;</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">argval</span> <span class="o">==</span> <span class="s1">&#39;socket&#39;</span><span class="p">,</span> <span class="n">instrs</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">instrs</span><span class="p">[</span><span class="n">instrs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">glob_soc</span><span class="p">):]</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">opname</span> <span class="o">==</span> <span class="s1">&#39;STORE_ATTR&#39;</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span> <span class="ow">and</span> <span class="n">glob_soc</span> <span class="k">else</span> <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span>
+            <span class="n">tcp_param</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">instrs</span><span class="p">[</span><span class="n">instrs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">glob_soc</span><span class="p">):</span><span class="n">instrs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span><span class="p">)]</span> <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">opname</span> <span class="o">==</span> <span class="s1">&#39;LOAD_ATTR&#39;</span> <span class="ow">and</span> <span class="n">j</span><span class="o">.</span><span class="n">arg</span> <span class="o">==</span> <span class="mi">2</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">glob_soc</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">tcp_param</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">tcp_param</span><span class="o">.</span><span class="n">argval</span> <span class="o">==</span> <span class="s1">&#39;SOCK_STREAM&#39;</span><span class="p">,</span> <span class="s1">&#39;Использование сокетов возможно только по TCP&#39;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attr_dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attr_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Т.к в предыдущей функции использовался дикт.</span>
+
+<span class="sd">        Мы могли пропустить вызовы интересующего метода</span>
+<span class="sd">        тут еще раз просматриваем все и ищем вызовы.</span>
+<span class="sd">        Но т.к. __new__ и __init__ вызываются последовательно</span>
+<span class="sd">        для каждого класса остается дыра в виде вызова в родительском классе.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span><span class="p">:</span>
+            <span class="n">checks_meth</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;accept&#39;</span><span class="p">,</span> <span class="s1">&#39;listen&#39;</span><span class="p">)</span>
+            <span class="n">except_</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;__classcell__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">attr_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">except_</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">instrs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dis</span><span class="o">.</span><span class="n">Bytecode</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+                <span class="n">socks</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">instrs</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">argval</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">store_soc</span><span class="o">.</span><span class="n">argval</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">sock</span> <span class="ow">in</span> <span class="n">socks</span><span class="p">:</span>
+                    <span class="n">calls</span> <span class="o">=</span> <span class="n">instrs</span><span class="p">[</span><span class="n">instrs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="c1"># python 3.7 !!!LOAD_METHOD!!!</span>
+                    <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">calls</span><span class="o">.</span><span class="n">argval</span> <span class="ow">in</span> <span class="n">checks_meth</span> <span class="ow">and</span> <span class="n">calls</span><span class="o">.</span><span class="n">opname</span> <span class="o">==</span> <span class="s1">&#39;LOAD_METHOD&#39;</span><span class="p">),</span> <span class="n">f</span><span class="s1">&#39;Для сокетов запрещенно вызывать методы </span><span class="si">{checks_meth}</span><span class="s1">&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attr_dict</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

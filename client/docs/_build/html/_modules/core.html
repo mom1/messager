@@ -1,0 +1,552 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>core &mdash; документация Talkative (messager) client </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) client
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../client.html">Client</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) client</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>core</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код core</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># @Author: maxst</span>
+<span class="c1"># @Date:   2019-07-22 23:36:43</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-08 23:32:25</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">hmac</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">commands</span> <span class="k">import</span> <span class="n">main_commands</span>
+
+<span class="kn">from</span> <span class="nn">Cryptodome.Cipher</span> <span class="k">import</span> <span class="n">PKCS1_OAEP</span>
+<span class="kn">from</span> <span class="nn">Cryptodome.PublicKey</span> <span class="k">import</span> <span class="n">RSA</span>
+<span class="kn">from</span> <span class="nn">dynaconf</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtCore</span> <span class="k">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">pyqtSignal</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtWidgets</span> <span class="k">import</span> <span class="n">QApplication</span>
+
+<span class="kn">from</span> <span class="nn">db</span> <span class="k">import</span> <span class="n">DBManager</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserHistory</span><span class="p">,</span> <span class="n">UserMessages</span>
+<span class="kn">from</span> <span class="nn">errors</span> <span class="k">import</span> <span class="n">ContactExists</span><span class="p">,</span> <span class="n">ServerError</span>
+<span class="kn">from</span> <span class="nn">gui</span> <span class="k">import</span> <span class="n">ClientGui</span>
+<span class="kn">from</span> <span class="nn">jim_mes</span> <span class="k">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">metaclasses</span> <span class="k">import</span> <span class="n">ClientVerifier</span>
+
+<span class="n">app_name</span> <span class="o">=</span> <span class="s1">&#39;client&#39;</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">app_name</span><span class="p">)</span>
+
+<span class="n">sock_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<span class="n">database_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="n">client</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="SocketMixin"><a class="viewcode-back" href="../client.html#core.SocketMixin">[документация]</a><span class="k">class</span> <span class="nc">SocketMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Миксин взаимодействия с сокетом.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SocketMixin.send_message"><a class="viewcode-back" href="../client.html#core.SocketMixin.send_message">[документация]</a>    <span class="k">def</span> <span class="nf">send_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Отправка сообщения.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mes: :py:class:`~jim_mes.Message`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">sock_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">mes</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">errno</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Потеряно соединение с сервером.&#39;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">&#39;Потеряно соединение с сервером.&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">BrokenPipeError</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Потеряно соединение с сервером.&#39;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">&#39;Потеряно соединение с сервером.&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SocketMixin.read_data"><a class="viewcode-back" href="../client.html#core.SocketMixin.read_data">[документация]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Прием сообщения.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :py:class:`~jim_mes.Message`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">sock_lock</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_package_length&#39;</span><span class="p">,</span> <span class="mi">1024</span><span class="p">))</span>
+            <span class="c1"># Вышел таймаут соединения если errno = None, иначе обрыв соединения.</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">errno</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Потеряно соединение с сервером.&#39;</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Message</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">if</span> <span class="n">data</span> <span class="k">else</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../client.html#core.Client">[документация]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="n">SocketMixin</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ClientVerifier</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Центральный класс пока не понимаю зачем я его сделал.</span>
+
+<span class="sd">    нужно переписать</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span> <span class="o">=</span> <span class="n">database_lock</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_socket</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Client.init_socket"><a class="viewcode-back" href="../client.html#core.Client.init_socket">[документация]</a>    <span class="k">def</span> <span class="nf">init_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация сокета.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.connect"><a class="viewcode-back" href="../client.html#core.Client.connect">[документация]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Соединение с сервером.</span>
+
+<span class="sd">        И основной цикл</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ServerError: При ошибочном запросе</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">client</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">connected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Попытка подключения №{i + 1}&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HOST&#39;</span><span class="p">),</span> <span class="n">settings</span><span class="o">.</span><span class="n">as_int</span><span class="p">(</span><span class="s1">&#39;PORT&#39;</span><span class="p">)))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ConnectionRefusedError</span><span class="p">):</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">connected</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">connected</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">&#39;Не удалось установить соединение с сервером&#39;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Start with {settings.get(&quot;host&quot;)}:{settings.get(&quot;port&quot;)}&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">DBManager</span><span class="p">(</span><span class="n">app_name</span><span class="p">)</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+        <span class="n">hash_</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">pbkdf2_hmac</span><span class="p">(</span>
+            <span class="s1">&#39;sha512&#39;</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span>
+            <span class="mi">10000</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">auth_key</span> <span class="o">=</span> <span class="n">hash_</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">),</span> <span class="n">auth_key</span><span class="o">=</span><span class="n">hash_</span><span class="p">)</span>
+        <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="o">.</span><span class="n">presence</span><span class="p">())</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data</span><span class="p">()</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">RESPONSE</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">response</span> <span class="o">==</span> <span class="mi">205</span><span class="p">:</span>
+                <span class="c1"># ?????</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">response</span> <span class="o">==</span> <span class="mi">400</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ServerError</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">response</span> <span class="o">==</span> <span class="mi">511</span><span class="p">:</span>
+                <span class="c1"># Если всё нормально, то продолжаем процедуру авторизации.</span>
+                <span class="n">ans_data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">digest</span> <span class="o">=</span> <span class="n">hmac</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">auth_key</span><span class="p">,</span> <span class="n">ans_data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">response</span><span class="o">=</span><span class="mi">511</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">settings</span><span class="o">.</span><span class="n">DATA</span><span class="p">:</span> <span class="n">binascii</span><span class="o">.</span><span class="n">b2a_base64</span><span class="p">(</span><span class="n">digest</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+                <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Авторизация не пройдена&#39;</span><span class="p">)</span>
+                    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">RESPONSE</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Принят неизвестный код подтверждения </span><span class="si">{response}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Установлено соединение с сервером. Ответ сервера: </span><span class="si">{message}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Установлено соединение с сервером.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_user_list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_contacts_list</span><span class="p">()</span>
+
+        <span class="n">receiver</span> <span class="o">=</span> <span class="n">ClientReader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">receiver</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">receiver</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">receiver</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;console&#39;</span><span class="p">):</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">ClientSender</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">)</span>
+            <span class="n">receiver</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;event_new_message&#39;</span><span class="p">))</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;gui&#39;</span><span class="p">):</span>
+            <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">ClientGui</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">receiver</span><span class="o">.</span><span class="n">new_message</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+            <span class="n">receiver</span><span class="o">.</span><span class="n">up_all_users</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+            <span class="n">receiver</span><span class="o">.</span><span class="n">response_key</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+
+        <span class="c1"># Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение или пользователь</span>
+        <span class="c1"># ввёл exit. Поскольку все события обрабатываются в потоках, достаточно просто завершить цикл.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">receiver</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">client</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">client</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                    <span class="k">break</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit_client</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Client.exit_client"><a class="viewcode-back" href="../client.html#core.Client.exit_client">[документация]</a>    <span class="k">def</span> <span class="nf">exit_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Отправка информации о выходе.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="o">.</span><span class="n">exit_request</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;User closed&#39;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.update_user_list"><a class="viewcode-back" href="../client.html#core.Client.update_user_list">[документация]</a>    <span class="k">def</span> <span class="nf">update_user_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Функция запроса списка известных пользователей.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Запрос списка известных пользователей </span><span class="si">{settings.USER_NAME}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USERS_REQUEST</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">USER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+        <span class="p">}))</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">202</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">database_lock</span><span class="p">:</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">save_all</span><span class="p">((</span><span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;placeholder&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">LIST_INFO</span><span class="p">,</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">User</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Ошибка запроса списка известных пользователей.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.update_contacts_list"><a class="viewcode-back" href="../client.html#core.Client.update_contacts_list">[документация]</a>    <span class="k">def</span> <span class="nf">update_contacts_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Функция запрос контакт листа.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Запрос контакт листа для пользователя </span><span class="si">{settings.USER_NAME}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">GET_CONTACTS</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">USER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+        <span class="p">}))</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">202</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">database_lock</span><span class="p">:</span>
+                <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">contact</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">LIST_INFO</span><span class="p">,</span> <span class="p">[]):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">user</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="n">contact</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="n">ContactExists</span><span class="p">:</span>
+                        <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Ошибка запроса списка контактов пользователей.&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ClientReader"><a class="viewcode-back" href="../client.html#core.ClientReader">[документация]</a><span class="k">class</span> <span class="nc">ClientReader</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">,</span> <span class="n">SocketMixin</span><span class="p">,</span> <span class="n">QObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль.&quot;&quot;&quot;</span>
+
+    <span class="n">new_message</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="n">Message</span><span class="p">)</span>
+    <span class="n">up_all_users</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="n">Message</span><span class="p">)</span>
+    <span class="n">response_key</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="n">Message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: родительский поток</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">sock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span> <span class="o">=</span> <span class="n">database_lock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decrypter</span> <span class="o">=</span> <span class="n">PKCS1_OAEP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">RSA</span><span class="o">.</span><span class="n">import_key</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;USER_KEY&#39;</span><span class="p">)))</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">QObject</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ClientReader.run"><a class="viewcode-back" href="../client.html#core.ClientReader.run">[документация]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Основной цикл приёмника сообщений, принимает сообщения, выводит в консоль. Завершается при потере соединения.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+                <span class="n">sender</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">SENDER</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">mes_ecrypted</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">))</span>
+                <span class="n">decrypted_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrypter</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">mes_ecrypted</span><span class="p">)</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+                    <span class="n">UserHistory</span><span class="o">.</span><span class="n">proc_message</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+                    <span class="n">UserMessages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                        <span class="n">sender</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">sender</span><span class="p">),</span>
+                        <span class="n">receiver</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">),</span>
+                        <span class="n">message</span><span class="o">=</span><span class="n">decrypted_message</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">notify</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;event_new_message&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">new_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Получено сообщение от пользователя </span><span class="si">{sender}</span><span class="s1">:</span><span class="se">\n</span><span class="si">{self.message}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">205</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">update_user_list</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">up_all_users</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">511</span><span class="p">:</span>
+                <span class="n">pub_key</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">rest_user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">ACCOUNT_NAME</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+                <span class="n">rest_user</span><span class="o">.</span><span class="n">pub_key</span> <span class="o">=</span> <span class="n">pub_key</span>
+                <span class="n">rest_user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">response_key</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Получено некорректное сообщение с сервера: </span><span class="si">{self.message}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientReader.attach"><a class="viewcode-back" href="../client.html#core.ClientReader.attach">[документация]</a>    <span class="k">def</span> <span class="nf">attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observer</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">observer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{observer}</span><span class="s1"> подписался на событие </span><span class="si">{event}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ClientReader.detach"><a class="viewcode-back" href="../client.html#core.ClientReader.detach">[документация]</a>    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observer</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">observer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{observer}</span><span class="s1"> отписался от события </span><span class="si">{event}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ClientReader.notify"><a class="viewcode-back" href="../client.html#core.ClientReader.notify">[документация]</a>    <span class="k">def</span> <span class="nf">notify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Уведомление о событии.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event: имя события</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">observer</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+            <span class="n">observer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ClientSender"><a class="viewcode-back" href="../client.html#core.ClientSender">[документация]</a><span class="k">class</span> <span class="nc">ClientSender</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">,</span> <span class="n">SocketMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sock: сокет для работы миксина</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">sock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_lock</span> <span class="o">=</span> <span class="n">database_lock</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ClientSender.run"><a class="viewcode-back" href="../client.html#core.ClientSender.run">[документация]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения.&quot;&quot;&quot;</span>
+        <span class="n">main_commands</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;Введите команду: &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">main_commands</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="bp">self</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Команда не распознана. help - вывести поддерживаемые команды.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientSender.update"><a class="viewcode-back" href="../client.html#core.ClientSender.update">[документация]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Уведомление о новом сообщении.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reader: чтец</span>
+<span class="sd">            event: событие</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;event_new_message&#39;</span><span class="p">):</span>
+            <span class="n">sender</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">SENDER</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">Message from </span><span class="si">{sender}</span><span class="s1">:</span><span class="se">\n</span><span class="si">{reader.message}</span><span class="s1">&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

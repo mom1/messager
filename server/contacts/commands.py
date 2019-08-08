@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 22:30:44
+# @Last Modified time: 2019-08-08 21:27:18
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -16,11 +16,13 @@ logger = logging.getLogger('server__contacts')
 
 
 class AddContactCommand(AbstractCommand):
-    """Обрабатывает запросы на добавление контакта"""
+    """Обрабатывает запросы на добавление контакта."""
+
     name = settings.ADD_CONTACT
 
     @login_required
     def execute(self, serv, msg, *args, **kwargs):
+        """Выполнение."""
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
         user = User.by_name(src_user)
@@ -36,11 +38,13 @@ class AddContactCommand(AbstractCommand):
 
 
 class DelContactCommand(AbstractCommand):
-    """Обрабатывает запросы на удаление контакта"""
+    """Обрабатывает запросы на удаление контакта."""
+
     name = settings.DEL_CONTACT
 
     @login_required
     def execute(self, serv, msg, *args, **kwargs):
+        """Выполнение."""
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
         user = User.by_name(src_user)
@@ -54,11 +58,13 @@ class DelContactCommand(AbstractCommand):
 
 
 class ListContactsCommand(AbstractCommand):
-    """Обрабатывает запросы на получение списка контактов пользователя"""
+    """Обрабатывает запросы на получение списка контактов пользователя."""
+
     name = settings.GET_CONTACTS
 
     @login_required
     def execute(self, serv, msg, *args, **kwargs):
+        """Выполнение."""
         src_user = getattr(msg, settings.USER, None)
         user = User.by_name(src_user)
         serv.write_client_data(serv.names.get(src_user), Msg.success(202, **{settings.LIST_INFO: [c.contact.username for c in user.contacts]}))
@@ -67,11 +73,13 @@ class ListContactsCommand(AbstractCommand):
 
 
 class RequestKeyCommand(AbstractCommand):
-    """Обрабатывает запросы на получение списка контактов пользователя"""
+    """Обрабатывает запросы на получение списка контактов пользователя."""
+
     name = settings.PUBLIC_KEY_REQUEST
 
     @login_required
     def execute(self, serv, msg, *args, **kwargs):
+        """Выполнение."""
         dest_user = getattr(msg, settings.DESTINATION, None)
         src_user = getattr(msg, settings.SENDER, None)
         user = User.by_name(dest_user)

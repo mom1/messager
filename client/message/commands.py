@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-23 08:56:24
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-07-27 23:49:25
+# @Last Modified time: 2019-08-09 00:15:17
 import logging
 from commands import AbstractCommand, main_commands
 
@@ -17,9 +17,10 @@ logger = logging.getLogger('client__message')
 
 class MessageCommand(AbstractCommand):
     """Отправить сообщение. Кому и текст будет запрошены отдельно."""
+
     name = 'message'
 
-    def execute(self, client, *args, **kwargs):
+    def execute(self, client, *args, **kwargs):  # noqa
         to = input('Введите получателя сообщения\n:').strip()
         message_txt = input('Введите сообщение для отправки\n:')
         message = Message(**{
@@ -38,10 +39,11 @@ class MessageCommand(AbstractCommand):
 
 
 class HistoryCommand(AbstractCommand):
-    """История сообщений"""
+    """История сообщений."""
+
     name = 'hist'
 
-    def execute(self, client, *args, **kwargs):
+    def execute(self, client, *args, **kwargs):  # noqa
         command = input('in - показать входящие\nout - показать исходящие\nпросто Enter - показать все\n:').strip()
         tab = []
         with client.db_lock:

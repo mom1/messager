@@ -1,0 +1,1847 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Server &mdash; документация Talkative (messager) server </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/translations.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="genindex.html" />
+    <link rel="search" title="Поиск" href="search.html" />
+    <link rel="next" title="server.jim_mes package" href="server.jim_mes.html" />
+    <link rel="prev" title="Добро пожаловать в документацию сервера Talkative (messager)!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Talkative (messager) server
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Server</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-cli">server.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-commands">server.commands module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-core">server.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-db">server.db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-decorators">server.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-descriptors">server.descriptors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-errors">server.errors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-gui">server.gui module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-metaclasses">server.metaclasses module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="server.jim_mes.html">server.jim_mes package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Talkative (messager) server</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Server</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/server.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="server">
+<h1>Server<a class="headerlink" href="#server" title="Ссылка на этот заголовок">¶</a></h1>
+<p>Серверный модуль мессенджера. Обрабатывает словари - сообщения, хранит публичные ключи клиентов.</p>
+<p>Использование:</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">server</span> <span class="pre">[-h]</span> <span class="pre">[--config</span> <span class="pre">[CONFIG]]</span> <span class="pre">[-e</span> <span class="pre">[ENCODING]]</span> <span class="pre">[-a</span> <span class="pre">[HOST]]</span> <span class="pre">[-p</span> <span class="pre">[PORT]]</span> <span class="pre">[-v]</span> <span class="pre">[-g</span> <span class="pre">|</span> <span class="pre">-c]</span></code></p>
+<p>Опциональные аргументы:</p>
+<dl class="option-list">
+<dt><kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></dt>
+<dd><p>show this help message and exit</p>
+</dd>
+<dt><kbd><span class="option">--config <var>CONFIG</var></span></kbd></dt>
+<dd><p>File config</p>
+</dd>
+<dt><kbd><span class="option">-e <var>ENCODING</var></span>, <span class="option">--encoding <var>ENCODING</var></span></kbd></dt>
+<dd><p>Encoding (default «utf-8»)</p>
+</dd>
+<dt><kbd><span class="option">-a <var>HOST</var></span>, <span class="option">--host <var>HOST</var></span></kbd></dt>
+<dd><p>IP (default «127.0.0.1»)</p>
+</dd>
+<dt><kbd><span class="option">-p <var>PORT</var></span>, <span class="option">--port <var>PORT</var></span></kbd></dt>
+<dd><p>Port (default «7777»)</p>
+</dd>
+<dt><kbd><span class="option">-v</span>, <span class="option">--verbose</span></kbd></dt>
+<dd><p>Increase verbosity of log output (default «10»)</p>
+</dd>
+<dt><kbd><span class="option">-g</span>, <span class="option">--gui</span></kbd></dt>
+<dd><p>Start GUI Configuration</p>
+</dd>
+<dt><kbd><span class="option">-c</span>, <span class="option">--console</span></kbd></dt>
+<dd><p>Start cli</p>
+</dd>
+</dl>
+<div class="section" id="module-cli">
+<span id="server-cli-module"></span><h2>server.cli module<a class="headerlink" href="#module-cli" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="cli.CommandLineInterface">
+<em class="property">class </em><code class="sig-prename descclassname">cli.</code><code class="sig-name descname">CommandLineInterface</code><a class="reference internal" href="_modules/cli.html#CommandLineInterface"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.CommandLineInterface" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Интерфейс командной строки.</p>
+<p>Принимает команды и передает их на обработку</p>
+<dl class="method">
+<dt id="cli.CommandLineInterface.main_loop">
+<code class="sig-name descname">main_loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#CommandLineInterface.main_loop"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.CommandLineInterface.main_loop" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Основной цикл ждет ввода команды или Ctrl+C для выхода.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cli.ConnectedUsersCommand">
+<em class="property">class </em><code class="sig-prename descclassname">cli.</code><code class="sig-name descname">ConnectedUsersCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#ConnectedUsersCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.ConnectedUsersCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Список подключенных пользователей.</p>
+<dl class="attribute">
+<dt id="cli.ConnectedUsersCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#cli.ConnectedUsersCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды в интерфейсе</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cli.ConnectedUsersCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">cli</em>, <em class="sig-param">command</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#ConnectedUsersCommand.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.ConnectedUsersCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение команды.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cli</strong> – объект класса <a class="reference internal" href="#cli.CommandLineInterface" title="cli.CommandLineInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommandLineInterface</span></code></a></p></li>
+<li><p><strong>command</strong> – имя команды для выполнения</p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает результат выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'connected'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cli.LoginHistoryCommand">
+<em class="property">class </em><code class="sig-prename descclassname">cli.</code><code class="sig-name descname">LoginHistoryCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#LoginHistoryCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.LoginHistoryCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>История входов пользователя.</p>
+<dl class="attribute">
+<dt id="cli.LoginHistoryCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#cli.LoginHistoryCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды в интерфейсе</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cli.LoginHistoryCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">cli</em>, <em class="sig-param">command</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#LoginHistoryCommand.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.LoginHistoryCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение команды.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cli</strong> – объект класса <a class="reference internal" href="#cli.CommandLineInterface" title="cli.CommandLineInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommandLineInterface</span></code></a></p></li>
+<li><p><strong>command</strong> – имя команды для выполнения</p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает результат выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'loghist'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cli.QuitCommand">
+<em class="property">class </em><code class="sig-prename descclassname">cli.</code><code class="sig-name descname">QuitCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#QuitCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.QuitCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Завершение работы сервера.</p>
+<p>Команда выхода из интерфейса сервера</p>
+<dl class="attribute">
+<dt id="cli.QuitCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#cli.QuitCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды в интерфейсе</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cli.QuitCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">cli</em>, <em class="sig-param">command</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#QuitCommand.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.QuitCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение команды.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cli</strong> – объект класса <a class="reference internal" href="#cli.CommandLineInterface" title="cli.CommandLineInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommandLineInterface</span></code></a></p></li>
+<li><p><strong>command</strong> – имя команды для выполнения</p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'quit'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cli.UserListCommand">
+<em class="property">class </em><code class="sig-prename descclassname">cli.</code><code class="sig-name descname">UserListCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#UserListCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.UserListCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Список известных пользователей.</p>
+<p>Выводит полный список всех пользователей</p>
+<dl class="attribute">
+<dt id="cli.UserListCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#cli.UserListCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды в интерфейсе</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cli.UserListCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">cli</em>, <em class="sig-param">command</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#UserListCommand.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#cli.UserListCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение команды.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cli</strong> – объект класса <a class="reference internal" href="#cli.CommandLineInterface" title="cli.CommandLineInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommandLineInterface</span></code></a></p></li>
+<li><p><strong>command</strong> – имя команды для выполнения</p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает результат выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'users'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-commands">
+<span id="server-commands-module"></span><h2>server.commands module<a class="headerlink" href="#module-commands" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="commands.AbstractCommand">
+<em class="property">class </em><code class="sig-prename descclassname">commands.</code><code class="sig-name descname">AbstractCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#AbstractCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.AbstractCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Абстрактный класс команды.</p>
+<dl class="method">
+<dt id="commands.AbstractCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">serv</em>, <em class="sig-param">message</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#AbstractCommand.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.AbstractCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="commands.Comander">
+<em class="property">class </em><code class="sig-prename descclassname">commands.</code><code class="sig-name descname">Comander</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Comander"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Comander" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Основной командир, распределяет команды.</p>
+<dl class="attribute">
+<dt id="commands.Comander.commands">
+<code class="sig-name descname">commands</code><a class="headerlink" href="#commands.Comander.commands" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Хранилище команд</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.Comander.print_help">
+<code class="sig-name descname">print_help</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Comander.print_help"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Comander.print_help" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Функция выводящия справку по использованию.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.Comander.reg_cmd">
+<code class="sig-name descname">reg_cmd</code><span class="sig-paren">(</span><em class="sig-param">command</em>, <em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Comander.reg_cmd"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Comander.reg_cmd" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Регистрация команды.</p>
+<p>Регистрирует команду по переданному имени или атрибуту name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> – класс команды унаследованный от <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCommand</span></code></a></p></li>
+<li><p><strong>name</strong> – имя для регистрации (default: {None})</p></li>
+</ul>
+</dd>
+<dt class="field-even">Исключение</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Если имя для регистрации уже занято</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.Comander.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">serv</em>, <em class="sig-param">request</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Comander.run"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Comander.run" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Основной цикл запуска команд.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>serv</strong> – экземпляр класса <a class="reference internal" href="#core.Server" title="core.Server"><code class="xref py py-class docutils literal notranslate"><span class="pre">Server</span></code></a></p></li>
+<li><p><strong>request</strong> – экземпляр класса <code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></p></li>
+<li><p><strong>*args</strong> – дополнительные параметры для команды</p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры для команды</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращаем ответ команды
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.Comander.unreg_cmd">
+<code class="sig-name descname">unreg_cmd</code><span class="sig-paren">(</span><em class="sig-param">command</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Comander.unreg_cmd"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Comander.unreg_cmd" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Отмена регистрации команды.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>command</strong> – имя команды для удаления</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="commands.ExitCommand">
+<em class="property">class </em><code class="sig-prename descclassname">commands.</code><code class="sig-name descname">ExitCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#ExitCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.ExitCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Выход пользователя.</p>
+<dl class="attribute">
+<dt id="commands.ExitCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#commands.ExitCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.ExitCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#commands.ExitCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'exit'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="commands.Presence">
+<em class="property">class </em><code class="sig-prename descclassname">commands.</code><code class="sig-name descname">Presence</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Presence"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Presence" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Пользователь представился.</p>
+<p>Обработка клиентского представления</p>
+<dl class="attribute">
+<dt id="commands.Presence.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#commands.Presence.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.Presence.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">serv</em>, <em class="sig-param">message</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#Presence.execute"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.Presence.execute" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выполнение.</p>
+<ol class="arabic simple">
+<li><p>Проверка на повторную регистрацию</p></li>
+<li><p>Аутентификация пользователя</p></li>
+<li><p>Логирование</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>serv</strong> – экземпляр класса <a class="reference internal" href="#core.Server" title="core.Server"><code class="xref py py-class docutils literal notranslate"><span class="pre">Server</span></code></a></p></li>
+<li><p><strong>message</strong> – экземпляр класса <code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></p></li>
+<li><p><strong>**kwargs</strong> – дополнительные параметры для команды</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Успех выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'presence'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="commands.UserListCommand">
+<em class="property">class </em><code class="sig-prename descclassname">commands.</code><code class="sig-name descname">UserListCommand</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands.html#UserListCommand"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#commands.UserListCommand" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#commands.AbstractCommand" title="commands.AbstractCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">commands.AbstractCommand</span></code></a></p>
+</div></blockquote>
+<p>Список известных пользователей.</p>
+<dl class="attribute">
+<dt id="commands.UserListCommand.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#commands.UserListCommand.name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>имя команды</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="commands.UserListCommand.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#commands.UserListCommand.execute" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">name</code><em class="property"> = 'get_users'</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-core">
+<span id="server-core-module"></span><h2>server.core module<a class="headerlink" href="#module-core" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="core.Server">
+<em class="property">class </em><code class="sig-prename descclassname">core.</code><code class="sig-name descname">Server</code><a class="reference internal" href="_modules/core.html#Server"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">threading.Thread</span></code></p>
+</div></blockquote>
+<p>Основной транспортный сервер.</p>
+<p>Не блокирующий сервер приема сообщений и обработки</p>
+<dl class="attribute">
+<dt id="core.Server.port">
+<code class="sig-name descname">port</code><a class="headerlink" href="#core.Server.port" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Дескриптор значения порта для подключения</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Server.clients">
+<code class="sig-name descname">clients</code><a class="headerlink" href="#core.Server.clients" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Лист сокетов подключенных клиентов</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Server.messages">
+<code class="sig-name descname">messages</code><a class="headerlink" href="#core.Server.messages" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Список сообщений для обработки</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Server.started">
+<code class="sig-name descname">started</code><a class="headerlink" href="#core.Server.started" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Признак запущенности сервера :)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Server.db_lock">
+<code class="sig-name descname">db_lock</code><a class="headerlink" href="#core.Server.db_lock" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Блокировщик потока доступа к БД</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="core.Server._observers">
+<code class="sig-name descname">_observers</code><a class="headerlink" href="#core.Server._observers" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Подписчики на события сервера (языковая реализация)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.attach">
+<code class="sig-name descname">attach</code><span class="sig-paren">(</span><em class="sig-param">observer</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.attach"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.attach" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Подписка на события сервера.</p>
+<p>список событий не фиксирован</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observer</strong> – Объект наблюдатель.</p></li>
+<li><p><strong>event</strong> – Строка имени события.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Признак удачного выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.detach">
+<code class="sig-name descname">detach</code><span class="sig-paren">(</span><em class="sig-param">observer</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.detach"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.detach" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Отписаться от события.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observer</strong> – Объект наблюдатель.</p></li>
+<li><p><strong>event</strong> – Строка имени события.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Признак удачного выполнения
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.init_socket">
+<code class="sig-name descname">init_socket</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.init_socket"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.init_socket" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация сокета.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.notify">
+<code class="sig-name descname">notify</code><span class="sig-paren">(</span><em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.notify"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.notify" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Уведомление о событии.</p>
+<p>У подписчика вызывается метод <strong>update</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>event</strong> – Строка имени произошедшего события.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">port</code><em class="property"> = 7777</em></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="core.Server.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param">send_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.process"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.process" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Обработка сообщений и команд.</p>
+<p>Перебор сообщений и отправка их основному объекту команд</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>send_data</strong> – Набор сокетов клиентов готовых к приему сообщений</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.read_client_data">
+<code class="sig-name descname">read_client_data</code><span class="sig-paren">(</span><em class="sig-param">client</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.read_client_data"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.read_client_data" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Чтение из сокета.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>client</strong> – Сокет клиента из которого будет производится чтение</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.run"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.run" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Запуск основного цикла.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.service_update_lists">
+<code class="sig-name descname">service_update_lists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.service_update_lists"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.service_update_lists" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Сервисное сообщение 205 с требованием клиентам обновить списки.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.Server.write_client_data">
+<code class="sig-name descname">write_client_data</code><span class="sig-paren">(</span><em class="sig-param">client</em>, <em class="sig-param">mes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core.html#Server.write_client_data"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#core.Server.write_client_data" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Запись в сокет.</p>
+<p>При возникновении BrokenPipeError удаляем клиента из списка прослушивания</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client</strong> – Сокет клиента в который будет производится запись</p></li>
+<li><p><strong>mes</strong> – Объект сообщения который будет записан</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-db">
+<span id="server-db-module"></span><h2>server.db module<a class="headerlink" href="#module-db" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="db.ActiveUsers">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">ActiveUsers</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#ActiveUsers"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.ActiveUsers" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#db.Core" title="db.Core"><code class="xref py py-class docutils literal notranslate"><span class="pre">db.Core</span></code></a></p>
+</div></blockquote>
+<p>Активные пользователи.</p>
+<p>Пользователи находящиеся онлайн</p>
+<dl class="attribute">
+<dt id="db.ActiveUsers.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#db.ActiveUsers.id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Идентификатор</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.oper_id">
+<code class="sig-name descname">oper_id</code><a class="headerlink" href="#db.ActiveUsers.oper_id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>пользователь</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.ip_addr">
+<code class="sig-name descname">ip_addr</code><a class="headerlink" href="#db.ActiveUsers.ip_addr" title="Ссылка на это определение">¶</a></dt>
+<dd><p>ИП адрес пользователя</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.port">
+<code class="sig-name descname">port</code><a class="headerlink" href="#db.ActiveUsers.port" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Порт подключения</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.oper">
+<code class="sig-name descname">oper</code><a class="headerlink" href="#db.ActiveUsers.oper" title="Ссылка на это определение">¶</a></dt>
+<dd><p>обратная ссылка на пользователя</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.active">
+<code class="sig-name descname">active</code><a class="headerlink" href="#db.ActiveUsers.active" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.building_type">
+<code class="sig-name descname">building_type</code><a class="headerlink" href="#db.ActiveUsers.building_type" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.created">
+<code class="sig-name descname">created</code><a class="headerlink" href="#db.ActiveUsers.created" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">ip_addr</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">oper</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">oper_id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">port</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.sort">
+<code class="sig-name descname">sort</code><a class="headerlink" href="#db.ActiveUsers.sort" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.ActiveUsers.updated">
+<code class="sig-name descname">updated</code><a class="headerlink" href="#db.ActiveUsers.updated" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.Contact">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">Contact</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Contact"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Contact" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#db.Core" title="db.Core"><code class="xref py py-class docutils literal notranslate"><span class="pre">db.Core</span></code></a></p>
+</div></blockquote>
+<p>Список контактов.</p>
+<dl class="attribute">
+<dt id="db.Contact.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#db.Contact.id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Идентификатор</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.owner_id">
+<code class="sig-name descname">owner_id</code><a class="headerlink" href="#db.Contact.owner_id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Владелец</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.contact_id">
+<code class="sig-name descname">contact_id</code><a class="headerlink" href="#db.Contact.contact_id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Контакт</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.owner">
+<code class="sig-name descname">owner</code><a class="headerlink" href="#db.Contact.owner" title="Ссылка на это определение">¶</a></dt>
+<dd><p>обратная ссылка на владельца</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.contact">
+<code class="sig-name descname">contact</code><a class="headerlink" href="#db.Contact.contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Обратная ссылка на контакт</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.active">
+<code class="sig-name descname">active</code><a class="headerlink" href="#db.Contact.active" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.building_type">
+<code class="sig-name descname">building_type</code><a class="headerlink" href="#db.Contact.building_type" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">contact</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">contact_id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.created">
+<code class="sig-name descname">created</code><a class="headerlink" href="#db.Contact.created" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.Contact.get_by_owner_contact">
+<em class="property">classmethod </em><code class="sig-name descname">get_by_owner_contact</code><span class="sig-paren">(</span><em class="sig-param">owner</em>, <em class="sig-param">contact</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Contact.get_by_owner_contact"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Contact.get_by_owner_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Возвращает записи фильтрованные по владельцу и контакту.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">owner</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">owner_id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.sort">
+<code class="sig-name descname">sort</code><a class="headerlink" href="#db.Contact.sort" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.Contact.updated">
+<code class="sig-name descname">updated</code><a class="headerlink" href="#db.Contact.updated" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.Core">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">Core</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+</div></blockquote>
+<p>Ядро для всех таблиц.</p>
+<p>Содержит общие для всех поля и функционал</p>
+<dl class="attribute">
+<dt id="db.Core.building_type">
+<code class="sig-name descname">building_type</code><a class="headerlink" href="#db.Core.building_type" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Тип записи что бы знать из какой таблицы</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Core.created">
+<code class="sig-name descname">created</code><a class="headerlink" href="#db.Core.created" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Дата время создания записи</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Core.updated">
+<code class="sig-name descname">updated</code><a class="headerlink" href="#db.Core.updated" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Дата время изменения записи</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Core.active">
+<code class="sig-name descname">active</code><a class="headerlink" href="#db.Core.active" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Признак активной записи</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Core.sort">
+<code class="sig-name descname">sort</code><a class="headerlink" href="#db.Core.sort" title="Ссылка на это определение">¶</a></dt>
+<dd><p>поле сортировки</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">active</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.Core.all">
+<em class="property">classmethod </em><code class="sig-name descname">all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.all"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.all" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Возвращает все записи объекта/таблицы.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">building_type</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.Core.create">
+<em class="property">classmethod </em><code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.create"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.create" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Создание новой записи.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – дикт где ключи имена, а значения значение полей таблицы</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает созданный объект
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">created</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.Core.delete">
+<code class="sig-name descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.delete"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.delete" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удаление текущей записи.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.delete_all">
+<em class="property">classmethod </em><code class="sig-name descname">delete_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.delete_all"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.delete_all" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удалить все записи из заблицы.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.delete_qs">
+<em class="property">classmethod </em><code class="sig-name descname">delete_qs</code><span class="sig-paren">(</span><em class="sig-param">qs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.delete_qs"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.delete_qs" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удаление списка записей.</p>
+<p>По одной что бы удалились связанные записи в родительской таблице</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.fill">
+<code class="sig-name descname">fill</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.fill"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.fill" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Заполнение полей объекта.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – дикт где ключи имена, а значения значение полей таблицы</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает тек. объект
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.filter">
+<em class="property">classmethod </em><code class="sig-name descname">filter</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.filter"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.filter" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Фильтрация таблицы.</p>
+<p>Стандартная фильтрация с указание полей и значений</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – параметры фильтрации</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает результат фильтрации
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.filter_by">
+<em class="property">classmethod </em><code class="sig-name descname">filter_by</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.filter_by"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.filter_by" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Фильтр с упрощенным синтаксисом.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.first">
+<em class="property">classmethod </em><code class="sig-name descname">first</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.first"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.first" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Возвращает первую запись из отбора.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.get">
+<em class="property">classmethod </em><code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param">id_</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.get"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.get" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Получить один объект по ид.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>id_</strong> – идентификатор записи для получения</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает найденный объект
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.Core.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#db.Core.id" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.Core.query">
+<em class="property">classmethod </em><code class="sig-name descname">query</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.query"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.query" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Возвращает объект для фильтрации и отборов.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>*args</strong> – доп. параметры.</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Возвращает объект для отборов
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.save"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.save" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Сохранение объекта.</p>
+<p>Сохранение всех изменений</p>
+<dl class="field-list simple">
+<dt class="field-odd">Результат</dt>
+<dd class="field-odd"><p>Возвращает сохраненный объект
+object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.Core.set_session">
+<em class="property">classmethod </em><code class="sig-name descname">set_session</code><span class="sig-paren">(</span><em class="sig-param">session</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#Core.set_session"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.Core.set_session" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Установка текущей сессии.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>session</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">sort</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">updated</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.DBManager">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">DBManager</code><span class="sig-paren">(</span><em class="sig-param">envs</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#DBManager"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.DBManager" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Менеджер инициатор БД.</p>
+<dl class="method">
+<dt id="db.DBManager.set_sqlite_pragma">
+<em class="property">static </em><code class="sig-name descname">set_sqlite_pragma</code><span class="sig-paren">(</span><em class="sig-param">dbapi_connection</em>, <em class="sig-param">connection_record=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#DBManager.set_sqlite_pragma"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.DBManager.set_sqlite_pragma" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Параметры подключения к БД.</p>
+<p>Пока не знаю как от этого отделаться при других бекэндах</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dbapi_connection</strong> – [description]</p></li>
+<li><p><strong>connection_record</strong> – [description] (default: {None})</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.TypeHistory">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">TypeHistory</code><a class="reference internal" href="_modules/db.html#TypeHistory"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.TypeHistory" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+</div></blockquote>
+<p>Перечислитель типов записей в истории.</p>
+<dl class="attribute">
+<dt id="db.TypeHistory.login">
+<code class="sig-name descname">login</code><a class="headerlink" href="#db.TypeHistory.login" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Вход</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.logout">
+<code class="sig-name descname">logout</code><a class="headerlink" href="#db.TypeHistory.logout" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Выход</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.ch_pass">
+<code class="sig-name descname">ch_pass</code><a class="headerlink" href="#db.TypeHistory.ch_pass" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Смена пароля</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.add_contact">
+<code class="sig-name descname">add_contact</code><a class="headerlink" href="#db.TypeHistory.add_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Добавлен контакт</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.del_contact">
+<code class="sig-name descname">del_contact</code><a class="headerlink" href="#db.TypeHistory.del_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удален контакт</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.mes_sent">
+<code class="sig-name descname">mes_sent</code><a class="headerlink" href="#db.TypeHistory.mes_sent" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Отправленно сообщение</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.TypeHistory.mes_accepted">
+<code class="sig-name descname">mes_accepted</code><a class="headerlink" href="#db.TypeHistory.mes_accepted" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Принято сообщение</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">add_contact</code><em class="property"> = 4</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">ch_pass</code><em class="property"> = 3</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">del_contact</code><em class="property"> = 5</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">login</code><em class="property"> = 1</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">logout</code><em class="property"> = 2</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">mes_accepted</code><em class="property"> = 7</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">mes_sent</code><em class="property"> = 6</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.User">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">User</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#db.Core" title="db.Core"><code class="xref py py-class docutils literal notranslate"><span class="pre">db.Core</span></code></a></p>
+</div></blockquote>
+<p>Таблица пользователей.</p>
+<p>Содержит основной функционал взаимодействия.</p>
+<dl class="attribute">
+<dt id="db.User.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#db.User.id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Идентификатор</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.username">
+<code class="sig-name descname">username</code><a class="headerlink" href="#db.User.username" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Имя пользователя</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.descr">
+<code class="sig-name descname">descr</code><a class="headerlink" href="#db.User.descr" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Описание</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.password">
+<code class="sig-name descname">password</code><a class="headerlink" href="#db.User.password" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Пароль шифрованный поддерживает сравнение</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.auth_key">
+<code class="sig-name descname">auth_key</code><a class="headerlink" href="#db.User.auth_key" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Ключ авторизации</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.pub_key">
+<code class="sig-name descname">pub_key</code><a class="headerlink" href="#db.User.pub_key" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Публичный ключ шифрования</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.last_login">
+<code class="sig-name descname">last_login</code><a class="headerlink" href="#db.User.last_login" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Последний вход на сервер (дата время)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.accepted">
+<code class="sig-name descname">accepted</code><a class="headerlink" href="#db.User.accepted" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Количество полученных сообщений.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.active">
+<code class="sig-name descname">active</code><a class="headerlink" href="#db.User.active" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.User.add_contact">
+<code class="sig-name descname">add_contact</code><span class="sig-paren">(</span><em class="sig-param">contact_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.add_contact"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.add_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Добавляет пользователя с переданным именем в контакты текущего пользователя.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>contact_name</strong> – имя добавляемого контакта</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">auth_key</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.building_type">
+<code class="sig-name descname">building_type</code><a class="headerlink" href="#db.User.building_type" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.User.by_name">
+<em class="property">classmethod </em><code class="sig-name descname">by_name</code><span class="sig-paren">(</span><em class="sig-param">username</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.by_name"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.by_name" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Возвращает объект пользователя по его имени.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.created">
+<code class="sig-name descname">created</code><a class="headerlink" href="#db.User.created" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.User.del_contact">
+<code class="sig-name descname">del_contact</code><span class="sig-paren">(</span><em class="sig-param">contact_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.del_contact"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.del_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удаляет контакт.</p>
+<p>Удаляет контакт из контактов текущего пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>contact_name</strong> – имя контакта</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">descr</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.User.get_last_login">
+<code class="sig-name descname">get_last_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.get_last_login"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.get_last_login" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Хитрый способ получения времени последнего входа.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.User.has_contact">
+<code class="sig-name descname">has_contact</code><span class="sig-paren">(</span><em class="sig-param">contact_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.has_contact"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.has_contact" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Проверка на контакт.</p>
+<p>Проверяет есть ли переданное имя в контактах текущего пользователя</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>contact_name</strong> – проверяемое имя</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Результат проверки
+bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">last_login</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.User.login_user">
+<em class="property">classmethod </em><code class="sig-name descname">login_user</code><span class="sig-paren">(</span><em class="sig-param">username</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.login_user"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.login_user" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Логирование при входе пользователя.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="db.User.logout_user">
+<em class="property">classmethod </em><code class="sig-name descname">logout_user</code><span class="sig-paren">(</span><em class="sig-param">username</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#User.logout_user"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.User.logout_user" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Логирование при выходе.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">password</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">pub_key</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.sent">
+<code class="sig-name descname">sent</code><a class="headerlink" href="#db.User.sent" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Количество отправленных сообщений.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.sort">
+<code class="sig-name descname">sort</code><a class="headerlink" href="#db.User.sort" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.User.updated">
+<code class="sig-name descname">updated</code><a class="headerlink" href="#db.User.updated" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">username</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="db.UserHistory">
+<em class="property">class </em><code class="sig-prename descclassname">db.</code><code class="sig-name descname">UserHistory</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#UserHistory"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.UserHistory" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#db.Core" title="db.Core"><code class="xref py py-class docutils literal notranslate"><span class="pre">db.Core</span></code></a></p>
+</div></blockquote>
+<p>История пользователя.</p>
+<p>Хранит информацию о действиях пользователя</p>
+<dl class="attribute">
+<dt id="db.UserHistory.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#db.UserHistory.id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Идентификатор</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.oper_id">
+<code class="sig-name descname">oper_id</code><a class="headerlink" href="#db.UserHistory.oper_id" title="Ссылка на это определение">¶</a></dt>
+<dd><p>ИД пользователя</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.ip_addr">
+<code class="sig-name descname">ip_addr</code><a class="headerlink" href="#db.UserHistory.ip_addr" title="Ссылка на это определение">¶</a></dt>
+<dd><p>ИП адрес</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.type_row">
+<code class="sig-name descname">type_row</code><a class="headerlink" href="#db.UserHistory.type_row" title="Ссылка на это определение">¶</a></dt>
+<dd><p>тип истории</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.port">
+<code class="sig-name descname">port</code><a class="headerlink" href="#db.UserHistory.port" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Порт подключения</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.note">
+<code class="sig-name descname">note</code><a class="headerlink" href="#db.UserHistory.note" title="Ссылка на это определение">¶</a></dt>
+<dd><p>примечание</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.oper">
+<code class="sig-name descname">oper</code><a class="headerlink" href="#db.UserHistory.oper" title="Ссылка на это определение">¶</a></dt>
+<dd><p>обратная ссылка на пользователя</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.active">
+<code class="sig-name descname">active</code><a class="headerlink" href="#db.UserHistory.active" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.building_type">
+<code class="sig-name descname">building_type</code><a class="headerlink" href="#db.UserHistory.building_type" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.created">
+<code class="sig-name descname">created</code><a class="headerlink" href="#db.UserHistory.created" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">ip_addr</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">note</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">oper</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">oper_id</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">port</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="db.UserHistory.proc_message">
+<em class="property">classmethod </em><code class="sig-name descname">proc_message</code><span class="sig-paren">(</span><em class="sig-param">scr</em>, <em class="sig-param">dest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/db.html#UserHistory.proc_message"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#db.UserHistory.proc_message" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Фиксация отправленного или пришедшего сообщения.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scr</strong> – отправитель</p></li>
+<li><p><strong>dest</strong> – получатель</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.sort">
+<code class="sig-name descname">sort</code><a class="headerlink" href="#db.UserHistory.sort" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="sig-name descname">type_row</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="db.UserHistory.updated">
+<code class="sig-name descname">updated</code><a class="headerlink" href="#db.UserHistory.updated" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-decorators">
+<span id="server-decorators-module"></span><h2>server.decorators module<a class="headerlink" href="#module-decorators" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="function">
+<dt id="decorators.get_name_by_frame">
+<code class="sig-prename descclassname">decorators.</code><code class="sig-name descname">get_name_by_frame</code><span class="sig-paren">(</span><em class="sig-param">frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/decorators.html#get_name_by_frame"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#decorators.get_name_by_frame" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Получить имя по фрейму.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>frame</strong> – Фрейм</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="decorators.log">
+<code class="sig-prename descclassname">decorators.</code><code class="sig-name descname">log</code><span class="sig-paren">(</span><em class="sig-param">func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/decorators.html#log"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#decorators.log" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Декоратор логирования.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="decorators.login_required">
+<code class="sig-prename descclassname">decorators.</code><code class="sig-name descname">login_required</code><span class="sig-paren">(</span><em class="sig-param">func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/decorators.html#login_required"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#decorators.login_required" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Декоратор проверяющий авторизацию.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>func</strong> – декорируемая функция</p>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Результат выполнения декорируемой функции</p>
+</dd>
+<dt class="field-odd">Исключение</dt>
+<dd class="field-odd"><p><strong>TypeError</strong> – если пользователь не авторизован</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-descriptors">
+<span id="server-descriptors-module"></span><h2>server.descriptors module<a class="headerlink" href="#module-descriptors" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Набор дескрипторов.</p>
+<dl class="class">
+<dt id="descriptors.PortDescr">
+<em class="property">class </em><code class="sig-prename descclassname">descriptors.</code><code class="sig-name descname">PortDescr</code><span class="sig-paren">(</span><em class="sig-param">port=7777</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/descriptors.html#PortDescr"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#descriptors.PortDescr" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Дескриптор порта.</p>
+<p>проверяет значение на вхождение в диапозон</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-errors">
+<span id="server-errors-module"></span><h2>server.errors module<a class="headerlink" href="#module-errors" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="exception">
+<dt id="errors.NotFoundUser">
+<em class="property">exception </em><code class="sig-prename descclassname">errors.</code><code class="sig-name descname">NotFoundUser</code><span class="sig-paren">(</span><em class="sig-param">user</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/errors.html#NotFoundUser"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#errors.NotFoundUser" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</div></blockquote>
+<p>Ошибка поиска пользователя.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-gui">
+<span id="server-gui-module"></span><h2>server.gui module<a class="headerlink" href="#module-gui" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="gui.AddUserWindow">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">AddUserWindow</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">server</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#AddUserWindow"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.AddUserWindow" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#gui.SaveGeometryMixin" title="gui.SaveGeometryMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gui.SaveGeometryMixin</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtWidgets.QDialog</span></code></p>
+</div></blockquote>
+<p>Класс окна добавления пользователя.</p>
+<dl class="method">
+<dt id="gui.AddUserWindow.init_ui">
+<code class="sig-name descname">init_ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#AddUserWindow.init_ui"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.AddUserWindow.init_ui" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация интерфейса.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.AddUserWindow.save_data">
+<code class="sig-name descname">save_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#AddUserWindow.save_data"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.AddUserWindow.save_data" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Функция проверки правильности ввода и сохранения в базу нового пользователя.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.ConfigWindow">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">ConfigWindow</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ConfigWindow"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ConfigWindow" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#gui.SaveGeometryMixin" title="gui.SaveGeometryMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gui.SaveGeometryMixin</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtWidgets.QDialog</span></code></p>
+</div></blockquote>
+<p>Класс окна настроек.</p>
+<dl class="method">
+<dt id="gui.ConfigWindow.init_ui">
+<code class="sig-name descname">init_ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ConfigWindow.init_ui"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ConfigWindow.init_ui" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация интерфейса.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ConfigWindow.save_server_config">
+<code class="sig-name descname">save_server_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ConfigWindow.save_server_config"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ConfigWindow.save_server_config" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Сохранение настроек сервера.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.HistoryWindow">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">HistoryWindow</code><span class="sig-paren">(</span><em class="sig-param">parent</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#HistoryWindow"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.HistoryWindow" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#gui.SaveGeometryMixin" title="gui.SaveGeometryMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gui.SaveGeometryMixin</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtWidgets.QDialog</span></code></p>
+</div></blockquote>
+<p>Класс окна с историей пользователей.</p>
+<dl class="method">
+<dt id="gui.HistoryWindow.init_ui">
+<code class="sig-name descname">init_ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#HistoryWindow.init_ui"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.HistoryWindow.init_ui" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация интерфейса.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.HistoryWindow.update_messages">
+<code class="sig-name descname">update_messages</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#HistoryWindow.update_messages"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.HistoryWindow.update_messages" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Обновление списка пользователей.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.SaveGeometryMixin">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">SaveGeometryMixin</code><a class="reference internal" href="_modules/gui.html#SaveGeometryMixin"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.SaveGeometryMixin" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Миксин сохранения геометрии.</p>
+<dl class="method">
+<dt id="gui.SaveGeometryMixin.closeEvent">
+<code class="sig-name descname">closeEvent</code><span class="sig-paren">(</span><em class="sig-param">e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#SaveGeometryMixin.closeEvent"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.SaveGeometryMixin.closeEvent" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Запись позиции и размера при закрытии.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>e</strong> – [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.SaveGeometryMixin.init_ui">
+<code class="sig-name descname">init_ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#SaveGeometryMixin.init_ui"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.SaveGeometryMixin.init_ui" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.SaveGeometryMixin.restore_size_pos">
+<code class="sig-name descname">restore_size_pos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#SaveGeometryMixin.restore_size_pos"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.SaveGeometryMixin.restore_size_pos" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Востановление размера и позиции.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.ServerGUI">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">ServerGUI</code><span class="sig-paren">(</span><em class="sig-param">server</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerGUI"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerGUI" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</div></blockquote>
+<p>Класс прослойка.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.ServerMainWindow">
+<em class="property">class </em><code class="sig-prename descclassname">gui.</code><code class="sig-name descname">ServerMainWindow</code><span class="sig-paren">(</span><em class="sig-param">server</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <a class="reference internal" href="#gui.SaveGeometryMixin" title="gui.SaveGeometryMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gui.SaveGeometryMixin</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">PyQt5.QtWidgets.QMainWindow</span></code></p>
+</div></blockquote>
+<p>Основное окно программы.</p>
+<dl class="method">
+<dt id="gui.ServerMainWindow.add_user_open">
+<code class="sig-name descname">add_user_open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.add_user_open"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.add_user_open" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Открытие окна добавления пользователя.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.config_open">
+<code class="sig-name descname">config_open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.config_open"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.config_open" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Открытие окна настроек сервера.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.history_open">
+<code class="sig-name descname">history_open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.history_open"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.history_open" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Открытие окна истории.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.init_ui">
+<code class="sig-name descname">init_ui</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.init_ui"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.init_ui" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Инициализация интерфейса.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.register_event">
+<code class="sig-name descname">register_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.register_event"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.register_event" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Регистрация событий.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">serv</em>, <em class="sig-param">event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.update"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.update" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Метод принимающий события.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>serv</strong> – Транспортный сервер</p></li>
+<li><p><strong>event</strong> – Имя события</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.ServerMainWindow.update_active_users">
+<code class="sig-name descname">update_active_users</code><span class="sig-paren">(</span><em class="sig-param">serv=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui.html#ServerMainWindow.update_active_users"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#gui.ServerMainWindow.update_active_users" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Обновление списка активных пользователей.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><p><strong>serv</strong> – Транспортный сервер (default: {None})</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-metaclasses">
+<span id="server-metaclasses-module"></span><h2>server.metaclasses module<a class="headerlink" href="#module-metaclasses" title="Ссылка на этот заголовок">¶</a></h2>
+<dl class="class">
+<dt id="metaclasses.ServerVerifier">
+<em class="property">class </em><code class="sig-prename descclassname">metaclasses.</code><code class="sig-name descname">ServerVerifier</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">bases</em>, <em class="sig-param">attr_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaclasses.html#ServerVerifier"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#metaclasses.ServerVerifier" title="Ссылка на это определение">¶</a></dt>
+<dd><blockquote>
+<div><p>Базовые классы: <code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code></p>
+</div></blockquote>
+<p>Проверка сервера.</p>
+<dl class="attribute">
+<dt id="metaclasses.ServerVerifier.store_soc">
+<code class="sig-name descname">store_soc</code><em class="property"> = Instruction(opname='STORE_ATTR', opcode=95, arg=1, argval='sock', argrepr='sock', offset=8, starts_line=None, is_jump_target=False)</em><a class="headerlink" href="#metaclasses.ServerVerifier.store_soc" title="Ссылка на это определение">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Ссылка на этот заголовок">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="server.jim_mes.html">server.jim_mes package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="server.jim_mes.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server.jim_mes.html#module-jim_mes.convert">server.jim_mes.convert module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server.jim_mes.html#module-jim_mes.jim">server.jim_mes.jim module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server.jim_mes.html#module-jim_mes">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="server.jim_mes.html" class="btn btn-neutral float-right" title="server.jim_mes package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Добро пожаловать в документацию сервера Talkative (messager)!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

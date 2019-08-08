@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+"""Графический интерфейс взаимодействия с пользователем."""
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-06 21:50:08
+# @Last Modified time: 2019-08-09 00:04:14
 
 import base64
 import logging
@@ -25,10 +26,14 @@ logger = logging.getLogger('gui')
 
 
 class SaveGeometryMixin(object):
+    """Миксин сохранения геометрии."""
+
     def init_ui(self):
+        """Инициализация."""
         self.restore_size_pos()
 
     def restore_size_pos(self):
+        """Востановление размера и позиции."""
         self.settings = QSettings(type(self).__name__, settings.USER_NAME)
         size = self.settings.value('size', None)
         pos = self.settings.value('pos', None)
@@ -38,7 +43,11 @@ class SaveGeometryMixin(object):
             self.move(pos)
 
     def closeEvent(self, e):  # noqa
-        # Write window size and position to config file
+        """Запись позиции и размера при закрытии.
+
+        Args:
+            e: [description]
+        """
         if hasattr(self, 'save_size'):
             self.save_size()
         self.settings.setValue('size', self.size())
@@ -47,67 +56,72 @@ class SaveGeometryMixin(object):
 
 
 class UserAuth(SaveGeometryMixin, QDialog):
-    def __init__(self):
+    """Окно авторизации пользователя."""
+
+    def __init__(self):  # noqa
         super().__init__()
         uic.loadUi(Path('client/templates/auth_client.ui'), self)
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         self.buttonBox.accepted.connect(self.accept_auth)
         self.show()
 
     def accept_auth(self):
+        """Подтверждение введеных данных."""
         self.accepted = True
 
     def get_auth(self):
+        """Вовзращает введеные данные."""
         return self.editName.text(), self.editPass.text()
 
 
 class ClientGui(QObject):
-    def __init__(self, client):
+    """Класс прослойка."""
+
+    def __init__(self, client):  # noqa
         super().__init__()
         global main_window
         main_window = ClientMainWindow(client)
 
-    def is_alive(self):
+    def is_alive(self):  # noqa
         return False
 
     @pyqtSlot(Message)
     def update(self, *args, **kwargs):
+        """Приемник событий.
+
+        пробрасывает события интерфейсу
+
+        Args:
+            *args: Параметры
+            **kwargs: Параметры
+
+        """
         main_window.update(*args, **kwargs)
 
 
 class ClientMainWindow(SaveGeometryMixin, QMainWindow):
-    STYLE_IN_MES = '''
-                    <p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
-                    <span style=" vertical-align:super;">
-                        {created}
-                    </span>
-                    </p>
-                    <p style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
-                        <span style=" color:{color};">
-                            {text}
-                        </span>
-                    </p>'''.format
-    STYLE_OUT_MES = '''
-                    <p align="right" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
-                        <span style=" vertical-align:super;">
-                            {created}
-                        </span>
-                    </p>
-                    <p align="right" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
-                        <span style=" color:{color};">
-                            {text}
-                        </span>
-                    </p>'''.format
+    """Основное окно.
 
-    def __init__(self, client):
+    Attributes:
+        STYLE_IN_MES: Стиль входящих сообщений
+        STYLE_OUT_MES: Стиль исходящих сообщений
+
+    """
+
+    STYLE_IN_MES = Path('client/templates/style_in_message.html')
+    STYLE_OUT_MES = Path('client/templates/style_out_message.html')
+
+    def __init__(self, client):  # noqa
         self.client = client
         super().__init__()
         uic.loadUi(Path('client/templates/client.ui'), self)
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         super().init_ui()
         self.setWindowTitle(f'You are: {settings.USER_NAME}')
         self.MsgBox = QMessageBox()
@@ -126,15 +140,18 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.show()
 
     def restore_size_pos(self):
+        """Восстановление состояния сплитера."""
         super().restore_size_pos()
         splitter_sizes = self.settings.value('splitter', None)
         if splitter_sizes is not None:
             self.splitter.restoreState(splitter_sizes)
 
     def save_size(self):
+        """Сохранение состояния сплитера."""
         self.settings.setValue('splitter', self.splitter.saveState())
 
     def update_contact(self):
+        """Обновление контактов."""
         user = User.by_name(settings.USER_NAME)
         if not user:
             return
@@ -156,6 +173,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             self.listContact.setCurrentIndex(index)
 
     def select_active_user(self):
+        """Выбор активного пользователя."""
         self.current_chat = self.listContact.currentIndex().data()
         if self.contacts_list_state == 'new':
             self.add_contact()
@@ -170,6 +188,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.fill_chat()
 
     def fill_chat(self):
+        """Заполнение чата."""
         messages = UserMessages.chat_hiltory(self.current_chat, 20)
 
         self.editMessages.clear()
@@ -178,15 +197,21 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         for i in range(-1, -stop, -1):
             message = messages[i]
             if message.receiver.username == self.current_chat:
-                style_mes = self.STYLE_OUT_MES
+                style_mes = self.STYLE_OUT_MES.read_text().format
                 color = settings.COLOR_MESSAGE_OUT
             else:
-                style_mes = self.STYLE_IN_MES
+                style_mes = self.STYLE_IN_MES.read_text().format
                 color = settings.COLOR_MESSAGE_IN
             mes_list.append(style_mes(color=color, text=message.message, created=message.created))
         self.editMessages.setHtml(''.join(mes_list))
 
     def update(self, message):
+        """Разборщик внешних событий.
+
+        Args:
+            message: :py:class:`~jim_mes.Message`
+
+        """
         if message.response == 205:
             if self.contacts_list_state == 'new':
                 self.update_contact()
@@ -198,6 +223,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             self.fill_chat()
 
     def send_message(self):
+        """Отправка сообщения."""
         if not self.current_chat or not self.editMessage.text():
             return
         if not self.encryptor:
@@ -214,6 +240,15 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.fill_chat()
 
     def make_message(self, text=''):
+        """Создать объект сообщения.
+
+        Args:
+            text: [description] (default: {''})
+
+        Returns:
+            :py:class:`~jim_mes.Message`
+
+        """
         return Message(**{
             settings.ACTION: settings.MESSAGE,
             settings.SENDER: settings.USER_NAME,
@@ -222,6 +257,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         })
 
     def switch_list_state(self):
+        """Переключатель окна с контактами в разные состояния."""
         self.editMessages.clear()
         self.lblContact.setText('')
         if self.contacts_list_state != 'new':
@@ -234,6 +270,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.update_contact()
 
     def add_contact(self):
+        """Добавление контакта."""
         user = User.by_name(settings.USER_NAME)
         try:
             user.add_contact(self.current_chat)
@@ -249,6 +286,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             self.switch_list_state()
 
     def del_contact(self):
+        """Удаление контакта."""
         user = User.by_name(settings.USER_NAME)
         name_contact = self.listContact.currentIndex().data()
         try:

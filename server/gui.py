@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-04 23:10:49
+# @Last Modified time: 2019-08-08 21:24:15
 import binascii
 import hashlib
 import sys
@@ -21,10 +21,14 @@ from db import ActiveUsers, DBManager, User
 
 
 class SaveGeometryMixin(object):
+    """Миксин сохранения геометрии."""
+
     def init_ui(self):
+        """Инициализация."""
         self.restore_size_pos()
 
     def restore_size_pos(self):
+        """Востановление размера и позиции."""
         self.settings = QSettings(type(self).__name__, 'server')
         size = self.settings.value('size', None)
         pos = self.settings.value('pos', None)
@@ -34,21 +38,41 @@ class SaveGeometryMixin(object):
             self.move(pos)
 
     def closeEvent(self, e):  # noqa
-        # Write window size and position to config file
+        """Запись позиции и размера при закрытии.
+
+        Args:
+            e: [description]
+        """
         self.settings.setValue('size', self.size())
         self.settings.setValue('pos', self.pos())
         e.accept()
 
 
 class ServerGUI(object):
+    """Класс прослойка."""
+
     def __init__(self, server):
+        """Инициализация.
+
+        Args:
+            server: транспортный сервер
+
+        """
         super().__init__()
         global main_window
         main_window = ServerMainWindow(server)
 
 
 class ServerMainWindow(SaveGeometryMixin, QMainWindow):
+    """Основное окно программы."""
+
     def __init__(self, server):
+        """Инициализация.
+
+        Args:
+            server: транспортный сервер
+
+        """
         self.server = server
         super().__init__()
         uic.loadUi(Path('server/templates/server_settings.ui'), self)
@@ -65,6 +89,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.init_ui()
 
     def register_event(self):
+        """Регистрация событий."""
         for event, _ in self.events.items():
             self.server.attach(self, event)
 
@@ -74,6 +99,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
                 action.triggered.connect(method)
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         super().init_ui()
         if self.server.started:
             self.statusBar().showMessage('Server Working')
@@ -83,11 +109,24 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.show()
 
     def update(self, serv, event):
+        """Метод принимающий события.
+
+        Args:
+            serv: Транспортный сервер
+            event: Имя события
+
+        """
         method = self.events.get(event)
         if method:
             method(serv)
 
     def update_active_users(self, serv=None):
+        """Обновление списка активных пользователей.
+
+        Args:
+            serv: Транспортный сервер (default: {None})
+
+        """
         list_user = QStandardItemModel()
         list_user.setHorizontalHeaderLabels(['Пользователь', 'HOST:PORT', 'Последний вход'])
         for auser in ActiveUsers.all():
@@ -104,33 +143,45 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.active_users.resizeRowsToContents()
 
     def history_open(self):
+        """Открытие окна истории."""
         global stat_window
         stat_window = HistoryWindow(main_window)
 
     def config_open(self):
+        """Открытие окна настроек сервера."""
         global config_window
         config_window = ConfigWindow(main_window)
 
     def add_user_open(self):
+        """Открытие окна добавления пользователя."""
         global add_user_window
         add_user_window = AddUserWindow(main_window, self.server)
 
 
 class HistoryWindow(SaveGeometryMixin, QDialog):
-    """Класс окна с историей пользователей"""
+    """Класс окна с историей пользователей."""
+
     def __init__(self, parent):
+        """Инициализация.
+
+        Args:
+            parent: родительское окно
+
+        """
         self.parent_gui = parent
         super().__init__()
         uic.loadUi(Path('server/templates/history_messages.ui'), self)
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         super().init_ui()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.update_messages()
         self.show()
 
     def update_messages(self):
+        """Обновление списка пользователей."""
         list_ = QStandardItemModel()
         list_.setHorizontalHeaderLabels(['Пользователь', 'Последний вход', 'Сообщений отправлено', 'Сообщений получено'])
         for auser in User.all():
@@ -150,20 +201,23 @@ class HistoryWindow(SaveGeometryMixin, QDialog):
 
 
 class ConfigWindow(SaveGeometryMixin, QDialog):
-    """Класс окна настроек """
+    """Класс окна настроек."""
+
     def __init__(self, parent):
+        """Инициализация."""
         self.parent_gui = parent
         super().__init__()
         uic.loadUi(Path('server/templates/config_server.ui'), self)
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         super().init_ui()
         self.setAttribute(Qt.WA_DeleteOnClose)
         db_def = Path(settings.get('DATABASES.SERVER.NAME'))
 
         def open_file_dialog():
-            """Функция обработчик открытия окна выбора папки"""
+            """Функция обработчик открытия окна выбора папки."""
             global dialog
             dialog = QFileDialog(config_window, 'Путь до папки с БД', str(db_def.parent.absolute()))
             path_d = dialog.getExistingDirectory()
@@ -181,6 +235,7 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
         self.show()
 
     def save_server_config(self):
+        """Сохранение настроек сервера."""
         for_save = {}
         msg_box = QMessageBox()
         db_path = Path(self.ledPath.text())
@@ -207,8 +262,10 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
 
 
 class AddUserWindow(SaveGeometryMixin, QDialog):
-    """Класс окна добавления пользователя"""
+    """Класс окна добавления пользователя."""
+
     def __init__(self, parent, server):
+        """Инициализация."""
         self.parent_gui = parent
         self.server = server
         super().__init__()
@@ -216,6 +273,7 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
         self.init_ui()
 
     def init_ui(self):
+        """Инициализация интерфейса."""
         super().init_ui()
         self.messages = QMessageBox()
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -223,7 +281,7 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
         self.show()
 
     def save_data(self):
-        """Функция проверки правильности ввода и сохранения в базу нового пользователя. """
+        """Функция проверки правильности ввода и сохранения в базу нового пользователя."""
         if not self.editUser.text():
             self.messages.critical(self, 'Ошибка', 'Не указано имя пользователя.')
             return
@@ -249,7 +307,8 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
 if __name__ == '__main__':
 
     class FakeServer():
-        def attach(self, *args, **kwargs):
+        """Фейк для тестов"""  # noqa
+        def attach(self, *args, **kwargs):  # noqa
             pass
 
     app = QApplication(sys.argv)
