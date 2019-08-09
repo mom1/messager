@@ -1,3 +1,0 @@
-default:
-  PORT: 8008
-  HOST: 0.0.0.0
