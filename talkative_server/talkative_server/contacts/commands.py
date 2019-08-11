@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 12:11:24
+# @Last Modified time: 2019-08-11 13:41:03
 import logging
 
 from dynaconf import settings

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 13:09:36
+# @Last Modified time: 2019-08-11 13:44:20
 import argparse
 import logging
 import logging.config
@@ -100,7 +100,7 @@ arg_parser()
 for item in cwd.glob('**/*/*.py'):
     if item.parent.stem == 'tests':
         continue
-    __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
+    __import__(f'talkative_server.{item.parent.stem}.{item.stem}', globals(), locals())
 
 serv = Server()
 serv.daemon = True
