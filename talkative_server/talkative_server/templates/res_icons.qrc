@@ -1,0 +1,7 @@
+<RCC>
+  <qresource>
+    <file>icons/history-clock-button_16.png</file>
+    <file>icons/refresh-button_16.png</file>
+    <file>icons/settings-work-tool_16.png</file>
+  </qresource>
+</RCC>

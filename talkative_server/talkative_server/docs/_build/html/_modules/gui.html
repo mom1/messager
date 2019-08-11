@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>gui &mdash; документация Talkative (messager) server </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) server
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../server.html">Server</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) server</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>gui</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код gui</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># @Author: MaxST</span>
+<span class="c1"># @Date:   2019-06-02 17:42:30</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-08 21:24:15</span>
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">ipaddress</span> <span class="k">import</span> <span class="n">ip_address</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span> <span class="nn">dynaconf</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">dynaconf.loaders</span> <span class="k">import</span> <span class="n">yaml_loader</span> <span class="k">as</span> <span class="n">loader</span>
+<span class="kn">from</span> <span class="nn">PyQt5</span> <span class="k">import</span> <span class="n">uic</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtCore</span> <span class="k">import</span> <span class="n">QSettings</span><span class="p">,</span> <span class="n">Qt</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtGui</span> <span class="k">import</span> <span class="n">QStandardItem</span><span class="p">,</span> <span class="n">QStandardItemModel</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtWidgets</span> <span class="k">import</span> <span class="p">(</span><span class="n">QApplication</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">,</span> <span class="n">QFileDialog</span><span class="p">,</span> <span class="n">QMainWindow</span><span class="p">,</span>
+                             <span class="n">QMessageBox</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">db</span> <span class="k">import</span> <span class="n">ActiveUsers</span><span class="p">,</span> <span class="n">DBManager</span><span class="p">,</span> <span class="n">User</span>
+
+
+<div class="viewcode-block" id="SaveGeometryMixin"><a class="viewcode-back" href="../server.html#gui.SaveGeometryMixin">[документация]</a><span class="k">class</span> <span class="nc">SaveGeometryMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Миксин сохранения геометрии.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SaveGeometryMixin.init_ui"><a class="viewcode-back" href="../server.html#gui.SaveGeometryMixin.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">restore_size_pos</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SaveGeometryMixin.restore_size_pos"><a class="viewcode-back" href="../server.html#gui.SaveGeometryMixin.restore_size_pos">[документация]</a>    <span class="k">def</span> <span class="nf">restore_size_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Востановление размера и позиции.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">QSettings</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;server&#39;</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s1">&#39;pos&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SaveGeometryMixin.closeEvent"><a class="viewcode-back" href="../server.html#gui.SaveGeometryMixin.closeEvent">[документация]</a>    <span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="sd">&quot;&quot;&quot;Запись позиции и размера при закрытии.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            e: [description]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s1">&#39;pos&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+        <span class="n">e</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="ServerGUI"><a class="viewcode-back" href="../server.html#gui.ServerGUI">[документация]</a><span class="k">class</span> <span class="nc">ServerGUI</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс прослойка.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            server: транспортный сервер</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">global</span> <span class="n">main_window</span>
+        <span class="n">main_window</span> <span class="o">=</span> <span class="n">ServerMainWindow</span><span class="p">(</span><span class="n">server</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ServerMainWindow"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow">[документация]</a><span class="k">class</span> <span class="nc">ServerMainWindow</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Основное окно программы.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            server: транспортный сервер</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;server/templates/server_settings.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">PRESENCE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_active_users</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">EXIT</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_active_users</span><span class="p">,</span>
+            <span class="s1">&#39;action_refresh&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_active_users</span><span class="p">,</span>
+            <span class="s1">&#39;action_history&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_open</span><span class="p">,</span>
+            <span class="s1">&#39;action_config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_open</span><span class="p">,</span>
+            <span class="s1">&#39;action_add_user&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_user_open</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ServerMainWindow.register_event"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.register_event">[документация]</a>    <span class="k">def</span> <span class="nf">register_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Регистрация событий.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">event</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolBar</span><span class="o">.</span><span class="n">actions</span><span class="p">():</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">objectName</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">method</span><span class="p">:</span>
+                <span class="n">action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">method</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.init_ui"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">statusBar</span><span class="p">()</span><span class="o">.</span><span class="n">showMessage</span><span class="p">(</span><span class="s1">&#39;Server Working&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">statusBar</span><span class="p">()</span><span class="o">.</span><span class="n">showMessage</span><span class="p">(</span><span class="s1">&#39;Server not Working&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_active_users</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.update"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.update">[документация]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serv</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Метод принимающий события.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            serv: Транспортный сервер</span>
+<span class="sd">            event: Имя события</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span><span class="p">:</span>
+            <span class="n">method</span><span class="p">(</span><span class="n">serv</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.update_active_users"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.update_active_users">[документация]</a>    <span class="k">def</span> <span class="nf">update_active_users</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Обновление списка активных пользователей.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            serv: Транспортный сервер (default: {None})</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">list_user</span> <span class="o">=</span> <span class="n">QStandardItemModel</span><span class="p">()</span>
+        <span class="n">list_user</span><span class="o">.</span><span class="n">setHorizontalHeaderLabels</span><span class="p">([</span><span class="s1">&#39;Пользователь&#39;</span><span class="p">,</span> <span class="s1">&#39;HOST:PORT&#39;</span><span class="p">,</span> <span class="s1">&#39;Последний вход&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">auser</span> <span class="ow">in</span> <span class="n">ActiveUsers</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">oper</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">ip_port</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{auser.ip_addr}</span><span class="s1">:</span><span class="si">{auser.port}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">ip_port</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">time_in</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">oper</span><span class="o">.</span><span class="n">last_login</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+            <span class="n">time_in</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">list_user</span><span class="o">.</span><span class="n">appendRow</span><span class="p">([</span><span class="n">user</span><span class="p">,</span> <span class="n">ip_port</span><span class="p">,</span> <span class="n">time_in</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_users</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span><span class="n">list_user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_users</span><span class="o">.</span><span class="n">resizeColumnsToContents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_users</span><span class="o">.</span><span class="n">resizeRowsToContents</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.history_open"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.history_open">[документация]</a>    <span class="k">def</span> <span class="nf">history_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Открытие окна истории.&quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">stat_window</span>
+        <span class="n">stat_window</span> <span class="o">=</span> <span class="n">HistoryWindow</span><span class="p">(</span><span class="n">main_window</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.config_open"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.config_open">[документация]</a>    <span class="k">def</span> <span class="nf">config_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Открытие окна настроек сервера.&quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">config_window</span>
+        <span class="n">config_window</span> <span class="o">=</span> <span class="n">ConfigWindow</span><span class="p">(</span><span class="n">main_window</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ServerMainWindow.add_user_open"><a class="viewcode-back" href="../server.html#gui.ServerMainWindow.add_user_open">[документация]</a>    <span class="k">def</span> <span class="nf">add_user_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Открытие окна добавления пользователя.&quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">add_user_window</span>
+        <span class="n">add_user_window</span> <span class="o">=</span> <span class="n">AddUserWindow</span><span class="p">(</span><span class="n">main_window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="HistoryWindow"><a class="viewcode-back" href="../server.html#gui.HistoryWindow">[документация]</a><span class="k">class</span> <span class="nc">HistoryWindow</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс окна с историей пользователей.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: родительское окно</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_gui</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;server/templates/history_messages.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="HistoryWindow.init_ui"><a class="viewcode-back" href="../server.html#gui.HistoryWindow.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAttribute</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">WA_DeleteOnClose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_messages</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HistoryWindow.update_messages"><a class="viewcode-back" href="../server.html#gui.HistoryWindow.update_messages">[документация]</a>    <span class="k">def</span> <span class="nf">update_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Обновление списка пользователей.&quot;&quot;&quot;</span>
+        <span class="n">list_</span> <span class="o">=</span> <span class="n">QStandardItemModel</span><span class="p">()</span>
+        <span class="n">list_</span><span class="o">.</span><span class="n">setHorizontalHeaderLabels</span><span class="p">([</span><span class="s1">&#39;Пользователь&#39;</span><span class="p">,</span> <span class="s1">&#39;Последний вход&#39;</span><span class="p">,</span> <span class="s1">&#39;Сообщений отправлено&#39;</span><span class="p">,</span> <span class="s1">&#39;Сообщений получено&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">auser</span> <span class="ow">in</span> <span class="n">User</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">last_login</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">last_login</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+            <span class="n">last_login</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">sent</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">sent</span><span class="p">))</span>
+            <span class="n">sent</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">accepted</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">auser</span><span class="o">.</span><span class="n">accepted</span><span class="p">))</span>
+            <span class="n">accepted</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">list_</span><span class="o">.</span><span class="n">appendRow</span><span class="p">([</span><span class="n">user</span><span class="p">,</span> <span class="n">last_login</span><span class="p">,</span> <span class="n">sent</span><span class="p">,</span> <span class="n">accepted</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tbMessages</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span><span class="n">list_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tbMessages</span><span class="o">.</span><span class="n">resizeColumnsToContents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tbMessages</span><span class="o">.</span><span class="n">resizeRowsToContents</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="ConfigWindow"><a class="viewcode-back" href="../server.html#gui.ConfigWindow">[документация]</a><span class="k">class</span> <span class="nc">ConfigWindow</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс окна настроек.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_gui</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;server/templates/config_server.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ConfigWindow.init_ui"><a class="viewcode-back" href="../server.html#gui.ConfigWindow.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAttribute</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">WA_DeleteOnClose</span><span class="p">)</span>
+        <span class="n">db_def</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DATABASES.SERVER.NAME&#39;</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">open_file_dialog</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot;Функция обработчик открытия окна выбора папки.&quot;&quot;&quot;</span>
+            <span class="k">global</span> <span class="n">dialog</span>
+            <span class="n">dialog</span> <span class="o">=</span> <span class="n">QFileDialog</span><span class="p">(</span><span class="n">config_window</span><span class="p">,</span> <span class="s1">&#39;Путь до папки с БД&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">db_def</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()))</span>
+            <span class="n">path_d</span> <span class="o">=</span> <span class="n">dialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">path_d</span><span class="p">:</span>
+                <span class="n">path_d</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path_d</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ledPath</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ledPath</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">path_d</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">btnPath</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">open_file_dialog</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledPath</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">db_def</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledNameDB</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">db_def</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledIp</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ip_address</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HOST&#39;</span><span class="p">))))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledPort</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PORT&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btnBox</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_server_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ConfigWindow.save_server_config"><a class="viewcode-back" href="../server.html#gui.ConfigWindow.save_server_config">[документация]</a>    <span class="k">def</span> <span class="nf">save_server_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Сохранение настроек сервера.&quot;&quot;&quot;</span>
+        <span class="n">for_save</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">msg_box</span> <span class="o">=</span> <span class="n">QMessageBox</span><span class="p">()</span>
+        <span class="n">db_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ledPath</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ledNameDB</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">db_name</span> <span class="k">if</span> <span class="n">db_name</span><span class="o">.</span><span class="n">suffix</span> <span class="k">else</span> <span class="n">db_name</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;db&#39;</span><span class="p">)</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">db_path</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">db_name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_gui</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ledPort</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">msg_box</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">config_window</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="c1"># set settings</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;HOST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ledIp</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;PORT&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">DATABASES</span><span class="o">.</span><span class="n">SERVER</span><span class="o">.</span><span class="n">NAME</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">for_save</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_dict</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+        <span class="n">for_save</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;DATABASES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_dict</span><span class="p">[</span><span class="s1">&#39;DATABASES&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="n">loader</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config/user_settings.yaml&#39;</span><span class="p">),</span> <span class="n">for_save</span><span class="p">,</span> <span class="n">merge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">msg_box</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="n">config_window</span><span class="p">,</span> <span class="s1">&#39;OK&#39;</span><span class="p">,</span> <span class="s1">&#39;Настройки успешно сохранены!&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="AddUserWindow"><a class="viewcode-back" href="../server.html#gui.AddUserWindow">[документация]</a><span class="k">class</span> <span class="nc">AddUserWindow</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс окна добавления пользователя.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_gui</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;server/templates/add_user.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AddUserWindow.init_ui"><a class="viewcode-back" href="../server.html#gui.AddUserWindow.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="n">QMessageBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAttribute</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">WA_DeleteOnClose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttonBox</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AddUserWindow.save_data"><a class="viewcode-back" href="../server.html#gui.AddUserWindow.save_data">[документация]</a>    <span class="k">def</span> <span class="nf">save_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Функция проверки правильности ввода и сохранения в базу нового пользователя.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">editUser</span><span class="o">.</span><span class="n">text</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="s1">&#39;Не указано имя пользователя.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">editPass2</span><span class="o">.</span><span class="n">text</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">editPass1</span><span class="o">.</span><span class="n">text</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="s1">&#39;Введённые пароли не совпадают.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">editUser</span><span class="o">.</span><span class="n">text</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="s1">&#39;Пользователь уже существует.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hash_</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">pbkdf2_hmac</span><span class="p">(</span>
+                <span class="s1">&#39;sha512&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">editPass1</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">editUser</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span>
+                <span class="mi">10000</span><span class="p">,</span>
+            <span class="p">))</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">editUser</span><span class="o">.</span><span class="n">text</span><span class="p">(),</span> <span class="n">password</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">editPass1</span><span class="o">.</span><span class="n">text</span><span class="p">(),</span> <span class="n">auth_key</span><span class="o">=</span><span class="n">hash_</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Успех&#39;</span><span class="p">,</span> <span class="s1">&#39;Пользователь успешно зарегистрирован.&#39;</span><span class="p">)</span>
+            <span class="c1"># Рассылаем клиентам сообщение о необходимости обновить справочники</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">service_update_lists</span><span class="p">()</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">FakeServer</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;Фейк для тестов&quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+        <span class="k">def</span> <span class="nf">attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># noqa</span>
+            <span class="k">pass</span>
+
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">DBManager</span><span class="p">(</span><span class="s1">&#39;server&#39;</span><span class="p">)</span>
+    <span class="n">mw</span> <span class="o">=</span> <span class="n">ServerGUI</span><span class="p">(</span><span class="n">FakeServer</span><span class="p">())</span>
+    <span class="c1"># mw.statusBar().showMessage(&#39;Test Statusbar Message&#39;)</span>
+    <span class="c1"># test_list = QStandardItemModel(mw)</span>
+    <span class="c1"># test_list.setHorizontalHeaderLabels([&#39;Имя Клиента&#39;, &#39;IP Адрес&#39;, &#39;Порт&#39;, &#39;Время подключения&#39;])</span>
+    <span class="c1"># test_list.appendRow([QStandardItem(&#39;1&#39;), QStandardItem(&#39;2&#39;), QStandardItem(&#39;3&#39;)])</span>
+    <span class="c1"># test_list.appendRow([QStandardItem(&#39;4&#39;), QStandardItem(&#39;5&#39;), QStandardItem(&#39;6&#39;)])</span>
+    <span class="c1"># mw.active_users.setModel(test_list)</span>
+    <span class="c1"># mw.active_users.resizeColumnsToContents()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">())</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

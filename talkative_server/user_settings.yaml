@@ -1,0 +1,51 @@
+DEFAULT:
+  ACCOUNT_NAME: account_name
+  ACTION: action
+  ADD_CONTACT: add
+  COLOR_MESSAGE_IN: '#a40000;'
+  COLOR_MESSAGE_OUT: green
+  CONSOLE: false
+  DATA: bin
+  DATABASES:
+    client:
+      CONNECT_ARGS:
+        check_same_thread: false
+      ENGINE: sqlite
+      NAME: db/db_client_{user}.db
+    default:
+      ENGINE: sqlite
+      NAME: db/db_talkative.db
+    server:
+      CONNECT_ARGS:
+        check_same_thread: false
+      ENGINE: sqlite
+      NAME: db/db_server.db
+  DEBUG: true
+  DEBUG_SQL: false
+  DEL_CONTACT: remove
+  DESTINATION: to
+  ENCODING: utf-8
+  ERROR: error
+  EVENT_NEW_MESSAGE: new_message
+  EXIT: exit
+  GET_CONTACTS: get_contacts
+  GUI: true
+  HOST: 127.0.0.1
+  LIST_INFO: data_list
+  LOGGING_LEVEL: 10
+  LOG_DIR: log
+  MAX_CONNECTIONS: 5
+  MAX_PACKAGE_LENGTH: 1024
+  MESSAGE: message
+  MESSAGE_TEXT: mess_text
+  PORT: 7777
+  PRESENCE: presence
+  PUBLIC_KEY: pubkey
+  PUBLIC_KEY_REQUEST: pubkey_need
+  RESPONSE: response
+  SENDER: from
+  TIME: time
+  USER: user
+  USERS_REQUEST: get_users
+  USER_NAME: null
+  VERBOSE: 10

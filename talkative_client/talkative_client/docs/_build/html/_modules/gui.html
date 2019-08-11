@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="ru" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="ru" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>gui &mdash; документация Talkative (messager) client </title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Алфавитный указатель" href="../genindex.html" />
+    <link rel="search" title="Поиск" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Talkative (messager) client
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../client.html">Client</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Talkative (messager) client</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Код модуля</a> &raquo;</li>
+        
+      <li>gui</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Исходный код gui</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Графический интерфейс взаимодействия с пользователем.&quot;&quot;&quot;</span>
+<span class="c1"># @Author: MaxST</span>
+<span class="c1"># @Date:   2019-07-31 09:03:14</span>
+<span class="c1"># @Last Modified by:   MaxST</span>
+<span class="c1"># @Last Modified time: 2019-08-09 00:04:14</span>
+
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span> <span class="nn">Cryptodome.Cipher</span> <span class="k">import</span> <span class="n">PKCS1_OAEP</span>
+<span class="kn">from</span> <span class="nn">Cryptodome.PublicKey</span> <span class="k">import</span> <span class="n">RSA</span>
+<span class="kn">from</span> <span class="nn">dynaconf</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">PyQt5</span> <span class="k">import</span> <span class="n">uic</span>
+<span class="kn">from</span> <span class="nn">PyQt5.Qt</span> <span class="k">import</span> <span class="n">QAction</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtCore</span> <span class="k">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">QSettings</span><span class="p">,</span> <span class="n">pyqtSlot</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtGui</span> <span class="k">import</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">QPixmap</span><span class="p">,</span> <span class="n">QStandardItem</span><span class="p">,</span> <span class="n">QStandardItemModel</span>
+<span class="kn">from</span> <span class="nn">PyQt5.QtWidgets</span> <span class="k">import</span> <span class="n">QDialog</span><span class="p">,</span> <span class="n">QMainWindow</span><span class="p">,</span> <span class="n">QMessageBox</span>
+
+<span class="kn">from</span> <span class="nn">db</span> <span class="k">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserHistory</span><span class="p">,</span> <span class="n">UserMessages</span>
+<span class="kn">from</span> <span class="nn">errors</span> <span class="k">import</span> <span class="n">ContactExists</span><span class="p">,</span> <span class="n">ContactNotExists</span><span class="p">,</span> <span class="n">NotFoundUser</span>
+<span class="kn">from</span> <span class="nn">jim_mes</span> <span class="k">import</span> <span class="n">Message</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;gui&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SaveGeometryMixin"><a class="viewcode-back" href="../client.html#gui.SaveGeometryMixin">[документация]</a><span class="k">class</span> <span class="nc">SaveGeometryMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Миксин сохранения геометрии.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SaveGeometryMixin.init_ui"><a class="viewcode-back" href="../client.html#gui.SaveGeometryMixin.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">restore_size_pos</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SaveGeometryMixin.restore_size_pos"><a class="viewcode-back" href="../client.html#gui.SaveGeometryMixin.restore_size_pos">[документация]</a>    <span class="k">def</span> <span class="nf">restore_size_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Востановление размера и позиции.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">QSettings</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s1">&#39;pos&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SaveGeometryMixin.closeEvent"><a class="viewcode-back" href="../client.html#gui.SaveGeometryMixin.closeEvent">[документация]</a>    <span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="sd">&quot;&quot;&quot;Запись позиции и размера при закрытии.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            e: [description]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;save_size&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_size</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s1">&#39;pos&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+        <span class="n">e</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="UserAuth"><a class="viewcode-back" href="../client.html#gui.UserAuth">[документация]</a><span class="k">class</span> <span class="nc">UserAuth</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Окно авторизации пользователя.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;client/templates/auth_client.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="UserAuth.init_ui"><a class="viewcode-back" href="../client.html#gui.UserAuth.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttonBox</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept_auth</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UserAuth.accept_auth"><a class="viewcode-back" href="../client.html#gui.UserAuth.accept_auth">[документация]</a>    <span class="k">def</span> <span class="nf">accept_auth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Подтверждение введеных данных.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="UserAuth.get_auth"><a class="viewcode-back" href="../client.html#gui.UserAuth.get_auth">[документация]</a>    <span class="k">def</span> <span class="nf">get_auth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Вовзращает введеные данные.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">editName</span><span class="o">.</span><span class="n">text</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">editPass</span><span class="o">.</span><span class="n">text</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="ClientGui"><a class="viewcode-back" href="../client.html#gui.ClientGui">[документация]</a><span class="k">class</span> <span class="nc">ClientGui</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Класс прослойка.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">global</span> <span class="n">main_window</span>
+        <span class="n">main_window</span> <span class="o">=</span> <span class="n">ClientMainWindow</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ClientGui.is_alive"><a class="viewcode-back" href="../client.html#gui.ClientGui.is_alive">[документация]</a>    <span class="k">def</span> <span class="nf">is_alive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="ClientGui.update"><a class="viewcode-back" href="../client.html#gui.ClientGui.update">[документация]</a>    <span class="nd">@pyqtSlot</span><span class="p">(</span><span class="n">Message</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Приемник событий.</span>
+
+<span class="sd">        пробрасывает события интерфейсу</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Параметры</span>
+<span class="sd">            **kwargs: Параметры</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">main_window</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ClientMainWindow"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow">[документация]</a><span class="k">class</span> <span class="nc">ClientMainWindow</span><span class="p">(</span><span class="n">SaveGeometryMixin</span><span class="p">,</span> <span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Основное окно.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        STYLE_IN_MES: Стиль входящих сообщений</span>
+<span class="sd">        STYLE_OUT_MES: Стиль исходящих сообщений</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">STYLE_IN_MES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;client/templates/style_in_message.html&#39;</span><span class="p">)</span>
+    <span class="n">STYLE_OUT_MES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;client/templates/style_out_message.html&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">uic</span><span class="o">.</span><span class="n">loadUi</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;client/templates/client.ui&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ClientMainWindow.init_ui"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.init_ui">[документация]</a>    <span class="k">def</span> <span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Инициализация интерфейса.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;You are: </span><span class="si">{settings.USER_NAME}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MsgBox</span> <span class="o">=</span> <span class="n">QMessageBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">=</span> <span class="s1">&#39;exists&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_contact</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">doubleClicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">select_active_user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editMessages</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lblContact</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btnSend</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addContact</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">switch_list_state</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Удалить&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">del_contact</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encryptor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.restore_size_pos"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.restore_size_pos">[документация]</a>    <span class="k">def</span> <span class="nf">restore_size_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Восстановление состояния сплитера.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">restore_size_pos</span><span class="p">()</span>
+        <span class="n">splitter_sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s1">&#39;splitter&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">splitter_sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">restoreState</span><span class="p">(</span><span class="n">splitter_sizes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.save_size"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.save_size">[документация]</a>    <span class="k">def</span> <span class="nf">save_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Сохранение состояния сплитера.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s1">&#39;splitter&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">saveState</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.update_contact"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.update_contact">[документация]</a>    <span class="k">def</span> <span class="nf">update_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Обновление контактов.&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">!=</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+            <span class="n">contacts_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">contact</span><span class="o">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">user</span><span class="o">.</span><span class="n">contacts</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">contacts_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">username</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">user</span><span class="o">.</span><span class="n">not_contacts</span><span class="p">()]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">contacts_model</span> <span class="o">=</span> <span class="n">QStandardItemModel</span><span class="p">()</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">contacts_list</span><span class="p">):</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">QStandardItem</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contacts_model</span><span class="o">.</span><span class="n">appendRow</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="o">==</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">setModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contacts_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.select_active_user"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.select_active_user">[документация]</a>    <span class="k">def</span> <span class="nf">select_active_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Выбор активного пользователя.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_contact</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">request</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">PUBLIC_KEY_REQUEST</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">SENDER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">DESTINATION</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">,</span>
+            <span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lblContact</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.current_chat}</span><span class="s1">:&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fill_chat</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.fill_chat"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.fill_chat">[документация]</a>    <span class="k">def</span> <span class="nf">fill_chat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Заполнение чата.&quot;&quot;&quot;</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">UserMessages</span><span class="o">.</span><span class="n">chat_hiltory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">editMessages</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">mes_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">stop</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">receiver</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">:</span>
+                <span class="n">style_mes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">STYLE_OUT_MES</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">format</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">COLOR_MESSAGE_OUT</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">style_mes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">STYLE_IN_MES</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">format</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">COLOR_MESSAGE_IN</span>
+            <span class="n">mes_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">style_mes</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">created</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">created</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editMessages</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mes_list</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.update"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.update">[документация]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Разборщик внешних событий.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message: :py:class:`~jim_mes.Message`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">205</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_contact</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">response</span> <span class="o">==</span> <span class="mi">511</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">ACCOUNT_NAME</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">encryptor</span> <span class="o">=</span> <span class="n">PKCS1_OAEP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">RSA</span><span class="o">.</span><span class="n">import_key</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">SENDER</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fill_chat</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.send_message"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.send_message">[документация]</a>    <span class="k">def</span> <span class="nf">send_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Отправка сообщения.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">editMessage</span><span class="o">.</span><span class="n">text</span><span class="p">():</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">encryptor</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Нет ключа для этого чата </span><span class="si">{self.current_chat}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">MsgBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="s1">&#39;Нет ключа для этого чата&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">mes_crypted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encryptor</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">editMessage</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_message</span><span class="p">(</span><span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">mes_crypted</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">db_lock</span><span class="p">:</span>
+            <span class="n">UserHistory</span><span class="o">.</span><span class="n">proc_message</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">)</span>
+            <span class="n">UserMessages</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">),</span> <span class="n">receiver</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">),</span> <span class="n">message</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">editMessage</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editMessage</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fill_chat</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.make_message"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.make_message">[документация]</a>    <span class="k">def</span> <span class="nf">make_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Создать объект сообщения.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text: [description] (default: {&#39;&#39;})</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :py:class:`~jim_mes.Message`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">MESSAGE</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">SENDER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">DESTINATION</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">,</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">MESSAGE_TEXT</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+        <span class="p">})</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.switch_list_state"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.switch_list_state">[документация]</a>    <span class="k">def</span> <span class="nf">switch_list_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Переключатель окна с контактами в разные состояния.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">editMessages</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lblContact</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">!=</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">=</span> <span class="s1">&#39;new&#39;</span>
+            <span class="n">icon</span> <span class="o">=</span> <span class="n">QIcon</span><span class="p">(</span><span class="n">QPixmap</span><span class="p">(</span><span class="s1">&#39;client/templates/img/list-contacts.png&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contacts_list_state</span> <span class="o">=</span> <span class="s1">&#39;exists&#39;</span>
+            <span class="n">icon</span> <span class="o">=</span> <span class="n">QIcon</span><span class="p">(</span><span class="n">QPixmap</span><span class="p">(</span><span class="s1">&#39;client/templates/img/add-contacts.png&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addContact</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="n">icon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_contact</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.add_contact"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.add_contact">[документация]</a>    <span class="k">def</span> <span class="nf">add_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Добавление контакта.&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">add_contact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">ADD_CONTACT</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">USER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ACCOUNT_NAME</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_chat</span><span class="p">,</span>
+            <span class="p">}))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">ContactExists</span><span class="p">,</span> <span class="n">NotFoundUser</span><span class="p">,</span> <span class="n">ContactNotExists</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">MsgBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_list_state</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ClientMainWindow.del_contact"><a class="viewcode-back" href="../client.html#gui.ClientMainWindow.del_contact">[документация]</a>    <span class="k">def</span> <span class="nf">del_contact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Удаление контакта.&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">by_name</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">)</span>
+        <span class="n">name_contact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listContact</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">del_contact</span><span class="p">(</span><span class="n">name_contact</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ACTION</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEL_CONTACT</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">USER</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">USER_NAME</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ACCOUNT_NAME</span><span class="p">:</span> <span class="n">name_contact</span><span class="p">,</span>
+            <span class="p">}))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">ContactExists</span><span class="p">,</span> <span class="n">NotFoundUser</span><span class="p">,</span> <span class="n">ContactNotExists</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">MsgBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Ошибка&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_contact</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, MaxST
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
