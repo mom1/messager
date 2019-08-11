@@ -2,23 +2,31 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 12:58:27
+# @Last Modified time: 2019-08-11 17:59:22
 import argparse
 import logging
 import logging.config
 import os
 import sys
 from pathlib import Path
-cwd = Path(__file__).parent
+
+if getattr(sys, 'frozen', False):
+    # frozen
+    cfile = Path(sys.executable).parent
+else:
+    cfile = Path(__file__).parent
+
+cwd = cfile
 os.environ['ROOT_PATH_FOR_DYNACONF'] = str(cwd)
+
 
 from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from dynaconf.loaders import yaml_loader as loader
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
-from .core import Client
-from .gui import UserAuth
+from talkative_client.core import Client
+from talkative_client.gui import UserAuth
 
 client_app = QApplication(sys.argv)
 auth = UserAuth()
@@ -69,7 +77,7 @@ def arg_parser():
                 user_name, passwd = auth.get_auth()
                 if not user_name or not passwd:
                     message.critical(auth, 'Ошибка', 'Логин или пароль не заданны')
-                    exit(0)
+                    sys.exit(0)
         else:
             user_name = settings.USER_NAME
             try:
@@ -77,7 +85,7 @@ def arg_parser():
                     user_name = input('Введите имя пользователя\n:')
                     passwd = input('Введите пароль\n:')
             except KeyboardInterrupt:
-                exit(0)
+                sys.exit(0)
     del auth
     settings.set('USER_NAME', user_name)
     settings.set('PASSWORD', passwd)
@@ -154,7 +162,12 @@ logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} w
 print(f'Клиентский модуль запущен с именем: {settings.USER_NAME}')
 
 # modules command and other
-for item in cwd.glob('**/*/*.py'):
+p = cwd
+if getattr(sys, 'frozen', False):
+    # frozen
+    p = cwd.joinpath(Path('lib/talkative_client'))
+
+for item in p.rglob('*.py'):
     if item.parent.stem == 'tests':
         continue
     __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())

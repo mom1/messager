@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-08-10 00:01:42
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-11 16:44:13
 import datetime
 import enum
 import logging
+import sys
 from pathlib import Path
 
 import sqlalchemy as sa
@@ -25,7 +26,6 @@ logger = logging.getLogger('server__db')
 
 class DBManager(object):
     """Менеджер инициатор БД."""
-
     def __init__(self, envs, *args, **kwargs):
         """Инициализация.
 
@@ -68,11 +68,11 @@ class DBManager(object):
         db = settings.get('DATABASES')
         if not db:
             logger.critical('DATABASES setting required')
-            exit(1)
+            sys.exit(1)
         db_settings = db.get(self.envs, db.get('default'))
         if not db_settings:
             logger.critical(f'DATABASE setting need for {self.envs}')
-            exit(1)
+            sys.exit(1)
         db_name = Path(db_settings.get('NAME'))
         db_name.parent.mkdir(parents=True, exist_ok=True)
         self.engine = sa.create_engine(
@@ -94,7 +94,6 @@ class Base(object):
         id: Общее поле оно же ссылка
 
     """
-
     @declared_attr
     def __tablename__(cls):  # noqa
         """Имя таблицы в БД для класса

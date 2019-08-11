@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "talkative_server"
-version = "0.1.0"
+version = "0.1.2"
 description = "It is example project for study"
 authors = ["MaxST <mstolpasov@gmail.com>"]
 homepage = "https://github.com/mom1/messager"
 repository = "https://github.com/mom1/messager"
+readme = "README.md"
 include = ["config/**/*"]
 
 [tool.poetry.dependencies]

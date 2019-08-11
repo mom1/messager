@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Author: MaxST
 # @Date:   2019-07-23 22:59:32
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-08-09 23:09:38
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-11 16:43:53
 import logging
+import sys
 
 from tabulate import tabulate
 
@@ -19,7 +20,6 @@ class CommandLineInterface(object):
     Принимает команды и передает их на обработку
 
     """
-
     def main_loop(self):
         """Основной цикл ждет ввода команды или Ctrl+C для выхода."""
         icommands.print_help()
@@ -53,7 +53,7 @@ class QuitCommand(AbstractCommand):
             **kwargs: дополнительные параметры
 
         """
-        exit(0)
+        sys.exit(0)
 
 
 class UserListCommand(AbstractCommand):

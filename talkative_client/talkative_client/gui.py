@@ -3,10 +3,11 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:38:26
+# @Last Modified time: 2019-08-11 16:40:02
 
 import base64
 import logging
+import sys
 from pathlib import Path
 
 from Cryptodome.Cipher import PKCS1_OAEP
@@ -23,6 +24,11 @@ from .errors import ContactExists, ContactNotExists, NotFoundUser
 from .jim_mes import Message
 
 logger = logging.getLogger('gui')
+if getattr(sys, 'frozen', False):
+    # frozen
+    cfile = Path(sys.executable).parent
+else:
+    cfile = Path(__file__).parent
 
 
 class SaveGeometryMixin(object):
@@ -60,11 +66,12 @@ class UserAuth(SaveGeometryMixin, QDialog):
 
     def __init__(self):  # noqa
         super().__init__()
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/auth_client.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/auth_client.ui')), self)
         self.init_ui()
 
     def init_ui(self):
         """Инициализация интерфейса."""
+        super().init_ui()
         self.buttonBox.accepted.connect(self.accept_auth)
         self.show()
 
@@ -79,7 +86,6 @@ class UserAuth(SaveGeometryMixin, QDialog):
 
 class ClientGui(QObject):
     """Класс прослойка."""
-
     def __init__(self, client):  # noqa
         super().__init__()
         global main_window
@@ -111,13 +117,13 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     """
 
-    STYLE_IN_MES = Path(__file__).parent.joinpath(Path('templates/style_in_message.html'))
-    STYLE_OUT_MES = Path(__file__).parent.joinpath(Path('templates/style_out_message.html'))
+    STYLE_IN_MES = cfile.joinpath(Path('templates/style_in_message.html'))
+    STYLE_OUT_MES = cfile.joinpath(Path('templates/style_out_message.html'))
 
     def __init__(self, client):  # noqa
         self.client = client
         super().__init__()
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/client.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/client.ui')), self)
         self.init_ui()
 
     def init_ui(self):
@@ -262,10 +268,10 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.lblContact.setText('')
         if self.contacts_list_state != 'new':
             self.contacts_list_state = 'new'
-            icon = QIcon(QPixmap(str(Path(__file__).parent.joinpath(Path('templates/img/list-contacts.png')))))
+            icon = QIcon(QPixmap(str(cfile.joinpath(Path('templates/img/list-contacts.png')))))
         else:
             self.contacts_list_state = 'exists'
-            icon = QIcon(QPixmap(str(Path(__file__).parent.joinpath(Path('templates/img/add-contacts.png')))))
+            icon = QIcon(QPixmap(str(cfile.joinpath(Path('templates/img/add-contacts.png')))))
         self.addContact.setIcon(icon)
         self.update_contact()
 

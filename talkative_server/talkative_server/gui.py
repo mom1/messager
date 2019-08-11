@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:47:35
+# @Last Modified time: 2019-08-11 14:29:56
 import binascii
 import hashlib
 import sys
@@ -18,6 +18,13 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
                              QMessageBox)
 
 from .db import ActiveUsers, DBManager, User
+
+
+if getattr(sys, 'frozen', False):
+    # frozen
+    cfile = Path(sys.executable).parent
+else:
+    cfile = Path(__file__).parent
 
 
 class SaveGeometryMixin(object):
@@ -76,7 +83,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.server = server
         super().__init__()
 
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/server_settings.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/server_settings.ui')), self)
 
         self.events = {
             settings.PRESENCE: self.update_active_users,
@@ -171,7 +178,7 @@ class HistoryWindow(SaveGeometryMixin, QDialog):
         """
         self.parent_gui = parent
         super().__init__()
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/history_messages.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/history_messages.ui')), self)
         self.init_ui()
 
     def init_ui(self):
@@ -208,7 +215,7 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
         """Инициализация."""
         self.parent_gui = parent
         super().__init__()
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/config_server.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/config_server.ui')), self)
         self.init_ui()
 
     def init_ui(self):
@@ -270,7 +277,7 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
         self.parent_gui = parent
         self.server = server
         super().__init__()
-        uic.loadUi(Path(__file__).parent.joinpath(Path('templates/add_user.ui')), self)
+        uic.loadUi(cfile.joinpath(Path('templates/add_user.ui')), self)
         self.init_ui()
 
     def init_ui(self):

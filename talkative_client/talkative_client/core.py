@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:37:53
+# @Last Modified time: 2019-08-11 16:43:24
 import base64
 import binascii
 import hashlib
@@ -70,7 +70,7 @@ class SocketMixin(object):
             except OSError as err:
                 if err.errno:
                     logger.critical(f'Потеряно соединение с сервером.')
-                    exit(1)
+                    sys.exit(1)
             else:
                 return Message(data) if data else None
 
@@ -118,7 +118,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
 
         if not connected:
             logger.critical('Не удалось установить соединение с сервером')
-            exit(1)
+            sys.exit(1)
 
         logger.debug(f'Start with {settings.get("host")}:{settings.get("port")}')
         self.database = DBManager(app_name)
@@ -158,7 +158,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
                 message = self.read_data()
                 if not message:
                     logger.error(f'Авторизация не пройдена')
-                    exit(1)
+                    sys.exit(1)
                 response = getattr(message, settings.RESPONSE, None)
                 user.active = True
                 user.save()
@@ -206,7 +206,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         self.send_message(Message.exit_request())
         logger.debug('User closed')
         time.sleep(0.5)
-        exit(0)
+        sys.exit(0)
 
     def update_user_list(self):
         """Функция запроса списка известных пользователей."""

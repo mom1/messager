@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 13:44:20
+# @Last Modified time: 2019-08-11 17:59:07
 import argparse
 import logging
 import logging.config
@@ -10,14 +10,21 @@ import sys
 import os
 import time
 from pathlib import Path
-cwd = Path(__file__).parent
+
+if getattr(sys, 'frozen', False):
+    # frozen
+    cfile = Path(sys.executable).parent
+else:
+    cfile = Path(__file__).parent
+
+cwd = cfile
 os.environ['ROOT_PATH_FOR_DYNACONF'] = str(cwd)
 
 from dynaconf import settings
 from PyQt5.QtWidgets import QApplication
-from .cli import CommandLineInterface
-from .core import Server
-from .gui import ServerGUI
+from talkative_server.cli import CommandLineInterface
+from talkative_server.core import Server
+from talkative_server.gui import ServerGUI
 
 
 def arg_parser():
@@ -97,7 +104,12 @@ def _configure_logger(verbose=0):
 arg_parser()
 
 # modules command and other
-for item in cwd.glob('**/*/*.py'):
+p = cwd
+if getattr(sys, 'frozen', False):
+    # frozen
+    p = cwd.joinpath(Path('lib/talkative_server'))
+
+for item in p.rglob('*.py'):
     if item.parent.stem == 'tests':
         continue
     __import__(f'talkative_server.{item.parent.stem}.{item.stem}', globals(), locals())

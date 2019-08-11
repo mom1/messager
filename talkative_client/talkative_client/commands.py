@@ -2,8 +2,9 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:37:32
+# @Last Modified time: 2019-08-11 16:42:56
 import logging
+import sys
 import time
 from collections import OrderedDict
 
@@ -21,7 +22,6 @@ class Comander(object):
         commands: Хранилище команд
 
     """
-
     def __init__(self, *args, **kwargs):
         """Инициализация."""
         super().__init__()
@@ -89,7 +89,6 @@ class Comander(object):
 
 class AbstractCommand(object):
     """Абстрактный класс команды."""
-
     def __init__(self, *args, **kwargs):
         """Инициализация."""
         super().__init__()
@@ -116,7 +115,7 @@ class ExitCommand(AbstractCommand):
         logger.info('Завершение работы по команде пользователя.')
         # Задержка неоходима, чтобы успело уйти сообщение о выходе
         time.sleep(0.5)
-        exit(0)
+        sys.exit(0)
 
 
 main_commands = Comander()
