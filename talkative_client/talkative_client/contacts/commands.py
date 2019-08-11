@@ -2,16 +2,16 @@
 # @Author: MaxST
 # @Date:   2019-07-27 16:26:55
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:38:50
+# @Last Modified time: 2019-08-11 12:16:07
 import logging
 
 from dynaconf import settings
 from tabulate import tabulate
 
-from .commands import AbstractCommand, main_commands
-from .db import User
-from .errors import ContactExists, ContactNotExists, NotFoundUser
-from .jim_mes import Message as Msg
+from talkative_client.commands import AbstractCommand, main_commands
+from talkative_client.db import User
+from talkative_client.errors import ContactExists, ContactNotExists, NotFoundUser
+from talkative_client.jim_mes import Message as Msg
 
 logger = logging.getLogger('client__contacts')
 

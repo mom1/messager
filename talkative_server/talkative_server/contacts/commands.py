@@ -2,15 +2,15 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-08 21:27:18
+# @Last Modified time: 2019-08-11 12:11:24
 import logging
-from commands import AbstractCommand, main_commands
 
 from dynaconf import settings
 
-from db import User
-from decorators import login_required
-from jim_mes import Message as Msg
+from talkative_server.commands import AbstractCommand, main_commands
+from talkative_server.db import User
+from talkative_server.decorators import login_required
+from talkative_server.jim_mes import Message as Msg
 
 logger = logging.getLogger('server__contacts')
 

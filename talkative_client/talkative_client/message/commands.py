@@ -2,15 +2,15 @@
 # @Author: maxst
 # @Date:   2019-07-23 08:56:24
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:39:21
+# @Last Modified time: 2019-08-11 12:16:05
 import logging
 
 from dynaconf import settings
 from tabulate import tabulate
 
-from .commands import AbstractCommand, main_commands
-from .db import User, UserHistory, UserMessages
-from .jim_mes import Message
+from talkative_client.commands import AbstractCommand, main_commands
+from talkative_client.db import User, UserHistory, UserMessages
+from talkative_client.jim_mes import Message
 
 logger = logging.getLogger('client__message')
 

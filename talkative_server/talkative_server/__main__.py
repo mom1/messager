@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 01:10:18
+# @Last Modified time: 2019-08-11 13:09:36
 import argparse
 import logging
 import logging.config
@@ -54,7 +54,8 @@ def arg_parser():
 
 def _configure_logger(verbose=0):
     class MaxLevelFilter(logging.Filter):
-        """Filters (lets through) all messages with level < LEVEL"""
+        """Filters (lets through) all messages with level < LEVEL."""
+
         def __init__(self, level):
             self.level = level
 
@@ -96,12 +97,10 @@ def _configure_logger(verbose=0):
 arg_parser()
 
 # modules command and other
-p = cwd
-for item in p.glob('**/*/*.py'):
-    if item.parent.stem in ('tests', 'jim_mes') or item.stem in ('__init__', ):
+for item in cwd.glob('**/*/*.py'):
+    if item.parent.stem == 'tests':
         continue
-    print(f'{item.parent.stem}.{item.stem}')
-    __import__(f'.{item.parent.stem}.{item.stem}', globals(), locals())
+    __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
 
 serv = Server()
 serv.daemon = True

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:59:17
+# @Last Modified time: 2019-08-11 12:58:27
 import argparse
 import logging
 import logging.config
@@ -131,16 +131,19 @@ def _process_key():
     """Загружаем ключи с файла, если же файла нет, то генерируем новую пару."""
     secret = f'.secret.{settings.USER_NAME}.yaml'
     settings.INCLUDES_FOR_DYNACONF.append(secret)
-    key = settings.get_fresh('USER_KEY')
+    key_file = Path.cwd().joinpath(Path(f'{secret}'))
+    settings.load_file(path=key_file)
+    key = settings.get('USER_KEY')
     if not key:
-        key_file = Path.cwd().joinpath(Path(f'{secret}'))
+
         keys = RSA.generate(2048, os.urandom)
         key = keys.export_key().decode('ascii')
         loader.write(key_file, {'DEFAULT': {
             'USER_KEY': key,
             'PASSWORD': settings.PASSWORD,
-        }}, merge=True)
-        key = settings.get_fresh('USER_KEY')
+        }})
+        settings.load_file(path=key_file)
+        key = settings.get('USER_KEY')
 
 
 arg_parser()
@@ -151,11 +154,10 @@ logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} w
 print(f'Клиентский модуль запущен с именем: {settings.USER_NAME}')
 
 # modules command and other
-p = cwd
-for item in p.glob('**/*/*.py'):
+for item in cwd.glob('**/*/*.py'):
     if item.parent.stem == 'tests':
         continue
-    __import__(f'{item.parent.stem}.{item.stem}', globals(), locals())
+    __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
 
 client = Client()
 client.connect()

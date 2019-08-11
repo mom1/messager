@@ -2,14 +2,14 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-08 21:28:26
+# @Last Modified time: 2019-08-11 12:12:07
 import logging
-from commands import AbstractCommand, main_commands
 
 from dynaconf import settings
 
-from db import UserHistory
-from decorators import login_required
+from talkative_server.commands import AbstractCommand, main_commands
+from talkative_server.db import UserHistory
+from talkative_server.decorators import login_required
 
 logger = logging.getLogger('server__message')
 
