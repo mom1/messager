@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>History</class>
  <widget class="QDialog" name="History">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -16,6 +19,9 @@
   <property name="windowIcon">
    <iconset>
     <normaloff>:/app/icons/history-clock-button_16.png</normaloff>:/app/icons/history-clock-button_16.png</iconset>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">

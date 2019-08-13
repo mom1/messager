@@ -98,6 +98,7 @@
    <addaction name="action_history"/>
    <addaction name="action_config"/>
    <addaction name="action_add_user"/>
+   <addaction name="action_restart_server"/>
   </widget>
   <action name="action_refresh">
    <property name="icon">
@@ -154,6 +155,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+I</string>
+   </property>
+  </action>
+  <action name="action_restart_server">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/restart.png</normaloff>icons/restart.png</iconset>
+   </property>
+   <property name="text">
+    <string>Перезапустить сервер</string>
+   </property>
+   <property name="toolTip">
+    <string>Перезапустить сервер</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>

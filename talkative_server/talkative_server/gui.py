@@ -2,10 +2,11 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 14:29:56
+# @Last Modified time: 2019-08-13 21:51:15
 import binascii
 import hashlib
 import sys
+import time
 from ipaddress import ip_address
 from pathlib import Path
 
@@ -19,7 +20,6 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
 
 from .db import ActiveUsers, DBManager, User
 
-
 if getattr(sys, 'frozen', False):
     # frozen
     cfile = Path(sys.executable).parent
@@ -29,7 +29,6 @@ else:
 
 class SaveGeometryMixin(object):
     """Миксин сохранения геометрии."""
-
     def init_ui(self):
         """Инициализация."""
         self.restore_size_pos()
@@ -57,7 +56,6 @@ class SaveGeometryMixin(object):
 
 class ServerGUI(object):
     """Класс прослойка."""
-
     def __init__(self, server):
         """Инициализация.
 
@@ -72,7 +70,6 @@ class ServerGUI(object):
 
 class ServerMainWindow(SaveGeometryMixin, QMainWindow):
     """Основное окно программы."""
-
     def __init__(self, server):
         """Инициализация.
 
@@ -92,6 +89,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
             'action_history': self.history_open,
             'action_config': self.config_open,
             'action_add_user': self.add_user_open,
+            'action_restart_server': self.action_restart_serv,
         }
         self.register_event()
         self.init_ui()
@@ -165,10 +163,20 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         global add_user_window
         add_user_window = AddUserWindow(main_window, self.server)
 
+    def action_restart_serv(self):
+        """Перезапуск сервера"""
+        server = type(self.server)
+        self.server.stop()
+        time.sleep(1)
+        while self.server.is_alive():
+            time.sleep(1)
+        self.server = server()
+        self.server.daemon = True
+        self.server.start()
+
 
 class HistoryWindow(SaveGeometryMixin, QDialog):
     """Класс окна с историей пользователей."""
-
     def __init__(self, parent):
         """Инициализация.
 
@@ -210,7 +218,6 @@ class HistoryWindow(SaveGeometryMixin, QDialog):
 
 class ConfigWindow(SaveGeometryMixin, QDialog):
     """Класс окна настроек."""
-
     def __init__(self, parent):
         """Инициализация."""
         self.parent_gui = parent
@@ -271,7 +278,6 @@ class ConfigWindow(SaveGeometryMixin, QDialog):
 
 class AddUserWindow(SaveGeometryMixin, QDialog):
     """Класс окна добавления пользователя."""
-
     def __init__(self, parent, server):
         """Инициализация."""
         self.parent_gui = parent
@@ -316,6 +322,7 @@ if __name__ == '__main__':
 
     class FakeServer():
         """Фейк для тестов"""  # noqa
+
         def attach(self, *args, **kwargs):  # noqa
             pass
 

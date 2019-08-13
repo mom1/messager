@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../../Изображения/mail_message_email_10026.ico</normaloff>../../../../Изображения/mail_message_email_10026.ico</iconset>
+    <normaloff>img/mail_message_email_10026.ico</normaloff>img/mail_message_email_10026.ico</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
@@ -57,13 +57,19 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
-              <widget class="QToolButton" name="addContact">
+              <widget class="QToolButton" name="menuBtn">
                <property name="text">
                 <string>...</string>
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>img/add-contacts.png</normaloff>img/add-contacts.png</iconset>
+                 <normaloff>img/menu-button.png</normaloff>img/menu-button.png</iconset>
+               </property>
+               <property name="popupMode">
+                <enum>QToolButton::InstantPopup</enum>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -100,16 +106,10 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="">
+         <widget class="QWidget" name="layoutWidget">
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
             <widget class="QFrame" name="frame">
-             <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
-             </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="0" column="0">
                <widget class="QLabel" name="lblContact">
@@ -214,7 +214,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>listContact</tabstop>
   <tabstop>editMessage</tabstop>
   <tabstop>btnSend</tabstop>
-  <tabstop>addContact</tabstop>
+  <tabstop>menuBtn</tabstop>
  </tabstops>
  <resources/>
  <connections>

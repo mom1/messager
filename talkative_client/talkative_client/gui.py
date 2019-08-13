@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 16:40:02
+# @Last Modified time: 2019-08-14 00:47:44
 
 import base64
 import logging
@@ -15,9 +15,10 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5 import uic
 from PyQt5.Qt import QAction
-from PyQt5.QtCore import QObject, QSettings, pyqtSlot
+from PyQt5.QtCore import QObject, QSettings, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import (QDialog, QFileDialog, QMainWindow, QMenu,
+                             QMessageBox)
 
 from .db import User, UserHistory, UserMessages
 from .errors import ContactExists, ContactNotExists, NotFoundUser
@@ -33,7 +34,6 @@ else:
 
 class SaveGeometryMixin(object):
     """Миксин сохранения геометрии."""
-
     def init_ui(self):
         """Инициализация."""
         self.restore_size_pos()
@@ -63,7 +63,6 @@ class SaveGeometryMixin(object):
 
 class UserAuth(SaveGeometryMixin, QDialog):
     """Окно авторизации пользователя."""
-
     def __init__(self):  # noqa
         super().__init__()
         uic.loadUi(cfile.joinpath(Path('templates/auth_client.ui')), self)
@@ -116,14 +115,15 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         STYLE_OUT_MES: Стиль исходящих сообщений
 
     """
-
-    STYLE_IN_MES = cfile.joinpath(Path('templates/style_in_message.html'))
-    STYLE_OUT_MES = cfile.joinpath(Path('templates/style_out_message.html'))
+    join = cfile.joinpath
+    STYLE_IN_MES = join(Path('templates/style_in_message.html'))
+    STYLE_OUT_MES = join(Path('templates/style_out_message.html'))
+    states = {}
 
     def __init__(self, client):  # noqa
         self.client = client
         super().__init__()
-        uic.loadUi(cfile.joinpath(Path('templates/client.ui')), self)
+        uic.loadUi(self.join(Path('templates/client.ui')), self)
         self.init_ui()
 
     def init_ui(self):
@@ -138,12 +138,45 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.editMessages.clear()
         self.lblContact.setText('')
         self.btnSend.clicked.connect(self.send_message)
-        self.addContact.clicked.connect(self.switch_list_state)
+        self.states = {
+            'exists': QIcon(QPixmap(str(self.join(Path('templates/img/list-contacts.png'))))),
+            'new': QIcon(QPixmap(str(self.join(Path('templates/img/add-contacts.png'))))),
+            'user': QIcon(QPixmap(str(self.join(Path('templates/img/user.png'))))),
+            'default': self.menuBtn.icon(),
+        }
+        menu = self.make_menu()
+        self.menuBtn.setMenu(menu)
         action = QAction('Удалить', self)
         action.triggered.connect(self.del_contact)
         self.listContact.addAction(action)
         self.encryptor = None
         self.show()
+
+    def make_menu(self):
+        """Формирует меню основной кнопки
+
+        Returns:
+            Возвращает подготовленное меню
+            QMenu
+        """
+        menu = QMenu(self)
+        action = menu.addAction('Контакы')
+        action.setIcon(self.states['exists'])
+        action.triggered.connect(lambda: self.switch_list_state('exists'))
+
+        action = menu.addAction('Новый контакт')
+        action.setIcon(self.states['new'])
+        action.triggered.connect(lambda: self.switch_list_state('new'))
+
+        action = menu.addAction('Профиль')
+        action.setIcon(self.states['new'])
+        action.triggered.connect(lambda: self.profile_open())
+
+        return menu
+
+    def profile_open(self):
+        global profile_window
+        profile_window = UserWindow(self)
 
     def restore_size_pos(self):
         """Восстановление состояния сплитера."""
@@ -162,13 +195,13 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         if not user:
             return
         if self.contacts_list_state != 'new':
-            contacts_list = [i.contact.username for i in user.contacts]
+            contacts_list = sorted(i.contact.username for i in user.contacts)
         else:
-            contacts_list = [i.username for i in user.not_contacts()]
+            contacts_list = sorted(i.username for i in user.not_contacts())
 
         self.contacts_model = QStandardItemModel()
         index = None
-        for i in sorted(contacts_list):
+        for i in contacts_list:
             item = QStandardItem(i)
             item.setEditable(False)
             self.contacts_model.appendRow(item)
@@ -262,18 +295,14 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             settings.MESSAGE_TEXT: text,
         })
 
-    def switch_list_state(self):
+    def switch_list_state(self, state=None):
         """Переключатель окна с контактами в разные состояния."""
         self.editMessages.clear()
         self.lblContact.setText('')
-        if self.contacts_list_state != 'new':
-            self.contacts_list_state = 'new'
-            icon = QIcon(QPixmap(str(cfile.joinpath(Path('templates/img/list-contacts.png')))))
-        else:
-            self.contacts_list_state = 'exists'
-            icon = QIcon(QPixmap(str(cfile.joinpath(Path('templates/img/add-contacts.png')))))
-        self.addContact.setIcon(icon)
-        self.update_contact()
+        if self.contacts_list_state != state:
+            self.contacts_list_state = state if state != 'default' else 'exists'
+            self.update_contact()
+            self.menuBtn.setIcon(self.states[state])
 
     def add_contact(self):
         """Добавление контакта."""
@@ -289,7 +318,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             self.MsgBox.critical(self, 'Ошибка', str(e))
             logger.error(e)
         else:
-            self.switch_list_state()
+            self.switch_list_state('default')
 
     def del_contact(self):
         """Удаление контакта."""
@@ -307,3 +336,33 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             logger.error(e)
         else:
             self.update_contact()
+
+
+class UserWindow(SaveGeometryMixin, QDialog):
+    """Класс окна профиля пользователя."""
+    def __init__(self, parent):
+        """Инициализация."""
+        self.parent_gui = parent
+        super().__init__()
+        uic.loadUi(cfile.joinpath(Path('templates/profile.ui')), self)
+        self.init_ui()
+
+    def init_ui(self):
+        """Инициализация интерфейса."""
+        super().init_ui()
+        self.messages = QMessageBox()
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.buttonBox.accepted.connect(self.save_data)
+        self.lblAvatar.mousePressEvent = self.choose_avatar
+        param = {'username': settings.USER_NAME}
+        self.lblUserName.setText(self.lblUserName.text().format(**param))
+        self.setWindowTitle(self.windowTitle().format(**param))
+        self.show()
+
+    def save_data(self):
+        pass
+
+    def choose_avatar(self, event=None):
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png *.jpg)')
+        pixmap = QPixmap(file_name)
+        self.lblAvatar.setPixmap(pixmap)

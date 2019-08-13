@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 17:59:22
+# @Last Modified time: 2019-08-13 08:35:50
 import argparse
 import logging
 import logging.config
@@ -168,7 +168,7 @@ if getattr(sys, 'frozen', False):
     p = cwd.joinpath(Path('lib/talkative_client'))
 
 for item in p.rglob('*.py'):
-    if item.parent.stem == 'tests':
+    if item.parent.stem == 'tests' or item.parent.stem == 'talkative_client':
         continue
     __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
 

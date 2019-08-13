@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-08-09 23:10:39
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-13 21:49:50
 import logging
 import select
 import socket
@@ -48,17 +48,6 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.started = False
         self.db_lock = database_lock
         self._observers = {}
-
-    def init_socket(self):
-        """Инициализация сокета."""
-        self.sock = socket.socket()
-        self.port = settings.as_int('PORT')
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((settings.get('host'), self.port))
-        self.sock.settimeout(0.5)
-        self.sock.listen(settings.get('max_connections'))
-        self.started = True
-        logger.info(f'start with {settings.get("host")}:{self.port}')
 
     def attach(self, observer, event):
         """Подписка на события сервера.
@@ -111,12 +100,23 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         for observer in obs:
             observer.update(self, event)
 
+    def init_socket(self):
+        """Инициализация сокета."""
+        self.sock = socket.socket()
+        self.port = settings.as_int('PORT')
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((settings.get('host'), self.port))
+        self.sock.settimeout(0.5)
+        self.sock.listen(settings.get('max_connections'))
+        self.started = True
+        logger.info(f'start with {settings.get("host")}:{self.port}')
+
     def run(self):
         """Запуск основного цикла."""
         self.init_socket()
         self.database = DBManager(app_name)
         try:
-            while True:
+            while self.started:
                 # Ждём подключения, если таймаут вышел, ловим исключение.
                 try:
                     client, client_address = self.sock.accept()
@@ -133,7 +133,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                     if self.clients:
                         recv_data, send_data, _ = select.select(self.clients, self.clients, [], 0)
                 except OSError:
-                    pass
+                    continue
 
                 # принимаем сообщения и если ошибка, исключаем клиента.
                 if recv_data:
@@ -144,6 +144,11 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             self.sock.close()
             self.started = False
             logger.debug('closed')
+
+    def stop(self):
+        self.started = False
+        self.sock.close()
+        logger.debug('stoped')
 
     def read_client_data(self, client):
         """Чтение из сокета.
