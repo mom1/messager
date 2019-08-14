@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-14 00:47:44
+# @Last Modified time: 2019-08-14 09:20:43
 
 import base64
 import logging
@@ -15,13 +15,13 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5 import uic
 from PyQt5.Qt import QAction
-from PyQt5.QtCore import QObject, QSettings, Qt, pyqtSlot
+from PyQt5.QtCore import QObject, QSettings, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QDialog, QFileDialog, QMainWindow, QMenu,
-                             QMessageBox)
+from PyQt5.QtWidgets import QDialog, QMainWindow, QMenu, QMessageBox
 
 from .db import User, UserHistory, UserMessages
 from .errors import ContactExists, ContactNotExists, NotFoundUser
+from .gui_profile import UserWindow
 from .jim_mes import Message
 
 logger = logging.getLogger('gui')
@@ -336,33 +336,3 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             logger.error(e)
         else:
             self.update_contact()
-
-
-class UserWindow(SaveGeometryMixin, QDialog):
-    """Класс окна профиля пользователя."""
-    def __init__(self, parent):
-        """Инициализация."""
-        self.parent_gui = parent
-        super().__init__()
-        uic.loadUi(cfile.joinpath(Path('templates/profile.ui')), self)
-        self.init_ui()
-
-    def init_ui(self):
-        """Инициализация интерфейса."""
-        super().init_ui()
-        self.messages = QMessageBox()
-        self.setAttribute(Qt.WA_DeleteOnClose)
-        self.buttonBox.accepted.connect(self.save_data)
-        self.lblAvatar.mousePressEvent = self.choose_avatar
-        param = {'username': settings.USER_NAME}
-        self.lblUserName.setText(self.lblUserName.text().format(**param))
-        self.setWindowTitle(self.windowTitle().format(**param))
-        self.show()
-
-    def save_data(self):
-        pass
-
-    def choose_avatar(self, event=None):
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png *.jpg)')
-        pixmap = QPixmap(file_name)
-        self.lblAvatar.setPixmap(pixmap)
