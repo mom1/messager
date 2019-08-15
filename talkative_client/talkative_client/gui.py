@@ -138,19 +138,37 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.editMessages.clear()
         self.lblContact.setText('')
         self.btnSend.clicked.connect(self.send_message)
+        self.btnBold.clicked.connect(self.set_bold)
+        self.btnItalic.clicked.connect(self.set_italic)
+        self.btnUnder.clicked.connect(self.set_underline)
         self.states = {
             'exists': QIcon(QPixmap(str(self.join(Path('templates/img/list-contacts.png'))))),
             'new': QIcon(QPixmap(str(self.join(Path('templates/img/add-contacts.png'))))),
             'user': QIcon(QPixmap(str(self.join(Path('templates/img/user.png'))))),
             'default': self.menuBtn.icon(),
         }
-        menu = self.make_menu()
-        self.menuBtn.setMenu(menu)
+        self.menuBtn.setMenu(self.make_menu())
+        self.btnSmiles.setMenu(self.make_menu_smile())
         action = QAction('Удалить', self)
         action.triggered.connect(self.del_contact)
         self.listContact.addAction(action)
         self.encryptor = None
         self.show()
+
+    def set_bold(self):
+        f = self.editMessages.currentFont()
+        f.setBold(not f.bold())
+        self.editMessages.setFont(f)
+
+    def set_italic(self):
+        f = self.editMessages.currentFont()
+        f.setItalic(not f.italic())
+        self.editMessages.setFont(f)
+
+    def set_underline(self):
+        f = self.editMessages.currentFont()
+        f.setUnderline(not f.underline())
+        self.editMessages.setFont(f)
 
     def make_menu(self):
         """Формирует меню основной кнопки
@@ -173,6 +191,64 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         action.triggered.connect(lambda: self.profile_open())
 
         return menu
+
+    def make_menu_smile(self):
+        """Формирует меню смайликов
+
+        Returns:
+            Возвращает подготовленное меню
+            QMenu
+        """
+        menu = QMenu(self)
+        pixmap = QPixmap(str(self.join(Path('templates/img/ab.gif'))))
+        icon = QIcon(pixmap)
+        action = menu.addAction(icon, '')
+
+        pixmap = QPixmap(str(self.join(Path('templates/img/ac.gif'))))
+        icon = QIcon(pixmap)
+        action = menu.addAction(icon, '')
+
+        pixmap = QPixmap(str(self.join(Path('templates/img/ai.gif'))))
+        icon = QIcon(pixmap)
+        action = menu.addAction(icon, '')
+
+        # b = QByteArray()
+        # buffer_ = QBuffer()
+
+        # import base64
+        # from io import BytesIO
+        # buffer_ = QBuffer()
+        # buffer_.open(QBuffer.ReadWrite)
+        # io.BytesIO(buffer_.data())
+
+        # buffered = BytesIO()
+        # pixmap.toImage().save(buffered, format='GIF')
+        # img_str = base64.b64encode(buffered.getvalue())
+        # ------------------
+        # byte_array = QByteArray()
+        # buffer_ = QBuffer(byte_array)
+        # buffer_.open(QBuffer.ReadWrite)
+        # pixmap.save(buffer_, 'JPEG')
+        # mes = '<img src="data:image/gif;base64,%s" />' % byte_array.toBase64()
+        # print(mes)
+        # ------------------
+        # import ipdb; ipdb.set_trace()
+        # QString("<img src=\"data:image/png;base64,") + byteArray.toBase64() + "\"/>";
+        # action.triggered.connect(lambda: self.create_mes_test(extra=mes))
+
+        # action = menu.addAction('Новый контакт')
+        # action.setIcon(self.states['new'])
+        # action.triggered.connect(lambda: self.switch_list_state('new'))
+
+        # action = menu.addAction('Профиль')
+        # action.setIcon(self.states['new'])
+        # action.triggered.connect(lambda: self.profile_open())
+
+        return menu
+
+    def create_mes_test(self, extra=None):
+        UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=extra)
+        self.fill_chat()
 
     def profile_open(self):
         global profile_window
