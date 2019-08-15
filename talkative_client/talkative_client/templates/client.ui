@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>img/mail_message_email_10026.ico</normaloff>img/mail_message_email_10026.ico</iconset>
+    <normaloff>img/speak.png</normaloff>img/speak.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
@@ -289,6 +289,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>btnSend</tabstop>
   <tabstop>menuBtn</tabstop>
  </tabstops>
+ <resources/>
  <connections>
   <connection>
    <sender>editMessage</sender>

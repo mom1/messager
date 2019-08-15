@@ -31,6 +31,10 @@
   <property name="windowTitle">
    <string>Авторизация</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>img/speak.png</normaloff>img/speak.png</iconset>
+  </property>
   <layout class="QFormLayout" name="formLayout">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout_2">
