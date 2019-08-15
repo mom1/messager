@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-15 03:59:16
+# @Last Modified time: 2019-08-15 09:11:45
 
 import base64
 import logging
@@ -203,52 +203,19 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         pixmap = QPixmap(str(self.join(Path('templates/img/ab.gif'))))
         icon = QIcon(pixmap)
         action = menu.addAction(icon, '')
+        action.triggered.connect(lambda: self.send_message(extra='<img src="%s" />' % ('talkative_client/templates/img/ab.gif')))
 
         pixmap = QPixmap(str(self.join(Path('templates/img/ac.gif'))))
         icon = QIcon(pixmap)
         action = menu.addAction(icon, '')
+        action.triggered.connect(lambda: self.send_message(extra='<img src="%s" />' % ('talkative_client/templates/img/ac.gif')))
 
         pixmap = QPixmap(str(self.join(Path('templates/img/ai.gif'))))
         icon = QIcon(pixmap)
         action = menu.addAction(icon, '')
-
-        # b = QByteArray()
-        # buffer_ = QBuffer()
-
-        # import base64
-        # from io import BytesIO
-        # buffer_ = QBuffer()
-        # buffer_.open(QBuffer.ReadWrite)
-        # io.BytesIO(buffer_.data())
-
-        # buffered = BytesIO()
-        # pixmap.toImage().save(buffered, format='GIF')
-        # img_str = base64.b64encode(buffered.getvalue())
-        # ------------------
-        # byte_array = QByteArray()
-        # buffer_ = QBuffer(byte_array)
-        # buffer_.open(QBuffer.ReadWrite)
-        # pixmap.save(buffer_, 'JPEG')
-        # mes = '<img src="data:image/gif;base64,%s" />' % byte_array.toBase64()
-        # print(mes)
-        # ------------------
-        # import ipdb; ipdb.set_trace()
-        # QString("<img src=\"data:image/png;base64,") + byteArray.toBase64() + "\"/>";
-        # action.triggered.connect(lambda: self.create_mes_test(extra=mes))
-
-        # action = menu.addAction('Новый контакт')
-        # action.setIcon(self.states['new'])
-        # action.triggered.connect(lambda: self.switch_list_state('new'))
-
-        # action = menu.addAction('Профиль')
-        # action.setIcon(self.states['new'])
-        # action.triggered.connect(lambda: self.profile_open())
+        action.triggered.connect(lambda: self.send_message(extra='<img src="%s" />' % ('talkative_client/templates/img/ai.gif')))
 
         return menu
-
-    def create_mes_test(self, extra=None):
-        UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=extra)
-        self.fill_chat()
 
     def profile_open(self):
         global profile_window
@@ -305,17 +272,18 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
     def fill_chat(self):
         """Заполнение чата."""
         messages = UserMessages.chat_hiltory(self.current_chat, 20)
-
+        style_mes_out = self.STYLE_OUT_MES.read_text().format
+        style_mes_in = self.STYLE_IN_MES.read_text().format
         self.editMessages.clear()
         mes_list = []
         stop = len(messages) + 1
         for i in range(-1, -stop, -1):
             message = messages[i]
             if message.receiver.username == self.current_chat:
-                style_mes = self.STYLE_OUT_MES.read_text().format
+                style_mes = style_mes_out
                 color = settings.COLOR_MESSAGE_OUT
             else:
-                style_mes = self.STYLE_IN_MES.read_text().format
+                style_mes = style_mes_in
                 color = settings.COLOR_MESSAGE_IN
             mes_list.append(style_mes(color=color, text=message.message, created=message.created))
         self.editMessages.setHtml(''.join(mes_list))
@@ -337,20 +305,21 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         elif getattr(message, settings.SENDER, None) == self.current_chat:
             self.fill_chat()
 
-    def send_message(self):
+    def send_message(self, extra=None):
         """Отправка сообщения."""
-        if not self.current_chat or not self.editMessage.text():
+        text = extra or self.editMessage.text()
+        if not self.current_chat or not text:
             return
         if not self.encryptor:
             logger.warn(f'Нет ключа для этого чата {self.current_chat}')
             self.MsgBox.critical(self, 'Ошибка', 'Нет ключа для этого чата')
             return
-        mes_crypted = self.encryptor.encrypt(self.editMessage.text().encode('utf8'))
+        mes_crypted = self.encryptor.encrypt(text.encode('utf8'))
         message = self.make_message(base64.b64encode(mes_crypted).decode('ascii'))
         self.client.send_message(message)
         with self.client.db_lock:
             UserHistory.proc_message(settings.USER_NAME, self.current_chat)
-            UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=self.editMessage.text())
+            UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=text)
         self.editMessage.clear()
         self.fill_chat()
 
