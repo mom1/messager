@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-13 08:35:50
+# @Last Modified time: 2019-08-18 02:13:40
 import argparse
 import logging
 import logging.config
@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from talkative_client.core import Client
 from talkative_client.gui import UserAuth
 
+sys.argv += ['-style', 'Fusion']
 client_app = QApplication(sys.argv)
 auth = UserAuth()
 message = QMessageBox()

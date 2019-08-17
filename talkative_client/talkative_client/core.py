@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 01:46:17
+# @Last Modified time: 2019-08-18 02:12:41
 import base64
 import binascii
 import hashlib
@@ -203,6 +203,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
             client.daemon = True
             client.start()
         elif settings.get('gui'):
+            sys.argv += ['-style', 'Fusion']
             app = QApplication(sys.argv)
             client = ClientGui(self)
             receiver.new_message.connect(client.update)

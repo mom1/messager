@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-13 08:18:15
+# @Last Modified time: 2019-08-18 02:12:12
 import argparse
 import logging
 import logging.config
@@ -123,6 +123,7 @@ time.sleep(1)
 if settings.get('console'):
     CommandLineInterface().main_loop()
 elif settings.get('gui'):
+    sys.argv += ['-style', 'Fusion']
     app = QApplication(sys.argv)
     ServerGUI(serv)
     sys.exit(app.exec_())
