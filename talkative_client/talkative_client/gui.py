@@ -3,11 +3,12 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 01:31:05
+# @Last Modified time: 2019-08-18 02:00:29
 
 import base64
 import logging
 import sys
+import time
 from pathlib import Path
 
 from Cryptodome.Cipher import PKCS1_OAEP
@@ -259,9 +260,9 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         if index:
             self.listContact.setCurrentIndex(index)
 
-    def select_active_user(self):
+    def select_active_user(self, index_model=None, current_chat=None):
         """Выбор активного пользователя."""
-        self.current_chat = self.listContact.currentIndex().data()
+        self.current_chat = current_chat or self.listContact.currentIndex().data()
         if self.contacts_list_state == 'new':
             self.add_contact()
         else:
@@ -307,8 +308,8 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
         """
         if message.response == 205:
-            if self.contacts_list_state == 'new':
-                self.update_contact()
+            self.update_contact()
+            self.select_active_user(current_chat=self.current_chat)
         elif message.response == 511:
             if self.current_chat == getattr(message, settings.ACCOUNT_NAME, ''):
                 key = getattr(message, settings.DATA, '')
@@ -322,9 +323,12 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         if not self.current_chat or not text:
             return
         if not self.encryptor:
-            logger.warn(f'Нет ключа для этого чата {self.current_chat}')
-            self.MsgBox.critical(self, 'Ошибка', 'Нет ключа для этого чата')
-            return
+            self.select_active_user()
+            time.sleep(1)
+            if not self.encryptor:
+                logger.warn(f'Нет ключа для этого чата {self.current_chat}')
+                self.MsgBox.critical(self, 'Ошибка', 'Нет ключа для этого чата')
+                return
         mes_crypted = self.encryptor.encrypt(text.encode('utf8'))
         message = self.make_message(base64.b64encode(mes_crypted).decode('ascii'))
         self.client.send_message(message)
