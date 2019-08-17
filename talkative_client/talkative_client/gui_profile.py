@@ -74,12 +74,13 @@ class UserWindow(QDialog):
 
         Args:
             event: Имя события (default: {None})
+
         """
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png)')
+
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png, *.jpg)')
         if file_name:
             image = Image.open(file_name)
-            image = image.thumbnail((self.lblAvatar.height(), self.lblAvatar.width()), Image.ANTIALIAS)
-            # image = image.crop((0, 0, 300, 300))
+            image = image.resize((self.lblAvatar.height(), self.lblAvatar.width()), Image.ANTIALIAS)
             img = ImageQt(image.convert('RGBA'))
             self.lblAvatar.setPixmap(QPixmap.fromImage(img))
             self.origin_img = self.lblAvatar.pixmap().toImage()
@@ -98,7 +99,7 @@ class UserWindow(QDialog):
         return buffer_.data()
 
     def apply_effects(self, effects=None):
-        """Применяет эффект к картинке"""
+        """Применяет эффект к картинке."""
 
         if not self.origin_img:
             return

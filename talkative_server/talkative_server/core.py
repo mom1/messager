@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 20:42:59
+# @Last Modified time: 2019-08-17 22:58:40
 import logging
 import select
 import socket
@@ -107,7 +107,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.port = settings.as_int('PORT')
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((settings.get('host'), self.port))
-        self.sock.settimeout(1)
+        self.sock.settimeout(0.5)
         self.sock.listen(settings.get('max_connections'))
         self.started = True
         logger.info(f'start with {settings.get("host")}:{self.port}')

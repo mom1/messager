@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-06 21:49:44
+# @Last Modified time: 2019-08-17 22:00:39
 import logging
 
 # Debug
@@ -21,28 +21,29 @@ LOGGING_LEVEL = logging.DEBUG
 LOG_DIR = 'log'
 
 # Прококол JIM основные ключи:
+ACCOUNT_NAME = 'account_name'
 ACTION = 'action'
+DATA = 'bin'
+DESTINATION = 'to'
+SENDER = 'from'
 TIME = 'time'
 USER = 'user'
-ACCOUNT_NAME = 'account_name'
-SENDER = 'from'
-DESTINATION = 'to'
-DATA = 'bin'
 
 # Прочие ключи, используемые в протоколе
-PRESENCE = 'presence'
-RESPONSE = 'response'
+ADD_CONTACT = 'add'
+AVA_INFO = 'edit_ava'
+DEL_CONTACT = 'remove'
 ERROR = 'error'
-MESSAGE = 'message'
-MESSAGE_TEXT = 'mess_text'
 EXIT = 'exit'
 GET_CONTACTS = 'get_contacts'
 LIST_INFO = 'data_list'
-DEL_CONTACT = 'remove'
-ADD_CONTACT = 'add'
-USERS_REQUEST = 'get_users'
+MESSAGE = 'message'
+MESSAGE_TEXT = 'mess_text'
+PRESENCE = 'presence'
 PUBLIC_KEY = 'pubkey'
 PUBLIC_KEY_REQUEST = 'pubkey_need'
+RESPONSE = 'response'
+USERS_REQUEST = 'get_users'
 
 EVENT_NEW_MESSAGE = 'new_message'
 
