@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-08-09 23:09:59
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-17 20:48:02
 import binascii
 import hmac
 import logging
@@ -26,7 +26,6 @@ class Comander(object):
         commands: Хранилище команд
 
     """
-
     def __init__(self, *args, **kwargs):
         """Инициализация."""
         super().__init__()
@@ -96,7 +95,6 @@ class Comander(object):
 
 class AbstractCommand(object):
     """Абстрактный класс команды."""
-
     def __init__(self, *args, **kwargs):
         """Инициализация."""
         super().__init__()
@@ -135,6 +133,7 @@ class Presence(AbstractCommand):
             bool
 
         """
+        mes = None
         if message.user_account_name not in serv.names:
             user = User.by_name(message.user_account_name)
             if not user:
@@ -147,7 +146,7 @@ class Presence(AbstractCommand):
                     serv.write_client_data(message.client, message_auth)
                 except OSError:
                     serv.clients.remove(message.client)
-                data = Message(message.client.recv(settings.get('max_package_length', 1024)))
+                data = serv.read_data(message.client)
                 client_digest = binascii.a2b_base64(getattr(data, settings.DATA, ''))
 
                 if data.response == 511 and hmac.compare_digest(digest, client_digest):

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: maxst
 # @Date:   2019-07-23 12:18:27
-# @Last Modified by:   maxst
-# @Last Modified time: 2019-08-09 23:10:51
+# @Last Modified by:   MaxST
+# @Last Modified time: 2019-08-17 20:43:16
 import dis
 import socket
 
@@ -30,7 +30,6 @@ class ServerVerifier(type):
             tcp_param = next((j for j in instrs[instrs.index(glob_soc):instrs.index(cls.store_soc)] if j.opname == 'LOAD_ATTR' and j.arg == 2), None) if glob_soc and cls.store_soc else None
 
             if tcp_param:
-                print(tcp_param.argval)
                 assert tcp_param.argval == 'SOCK_STREAM', 'Использование сокетов возможно только по TCP'
         return super().__new__(cls, name, bases, attr_dict)
 

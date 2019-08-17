@@ -2,13 +2,14 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 16:43:24
+# @Last Modified time: 2019-08-17 20:46:14
 import base64
 import binascii
 import hashlib
 import hmac
 import logging
 import socket
+import struct
 import sys
 import threading
 import time
@@ -47,7 +48,9 @@ class SocketMixin(object):
         """
         with sock_lock:
             try:
-                self.sock.send(bytes(mes))
+                msg = bytes(mes)
+                msg = struct.pack('>I', len(msg)) + msg
+                self.sock.send(msg)
             except OSError as err:
                 if err.errno:
                     print('Потеряно соединение с сервером.')
@@ -57,15 +60,14 @@ class SocketMixin(object):
                 logger.critical('Потеряно соединение с сервером.', exc_info=True)
 
     def read_data(self):
-        """Прием сообщения.
-
-        Returns:
-            :py:class:`~jim_mes.Message`
-
-        """
+        """Прием сообщения."""
         with sock_lock:
             try:
-                data = self.sock.recv(settings.get('max_package_length', 1024))
+                raw_msglen = self.recvall(4)
+                if not raw_msglen:
+                    return
+                msglen = struct.unpack('>I', raw_msglen)[0]
+                data = self.recvall(msglen)
             # Вышел таймаут соединения если errno = None, иначе обрыв соединения.
             except OSError as err:
                 if err.errno:
@@ -73,6 +75,24 @@ class SocketMixin(object):
                     sys.exit(1)
             else:
                 return Message(data) if data else None
+
+    def recvall(self, n):
+        """Функция для получения n байт или возврата None если получен EOF
+
+        Args:
+            n: Количество получаемых байт
+
+        Returns:
+            Полученные данные
+            bytes
+        """
+        data = b''
+        while len(data) < n:
+            packet = self.sock.recv(n - len(data))
+            if not packet:
+                return
+            data += packet
+        return data
 
 
 class Client(SocketMixin, metaclass=ClientVerifier):

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-14 09:16:25
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 17:37:18
+# @Last Modified time: 2019-08-17 20:47:07
 
 import io
 import logging
@@ -61,7 +61,8 @@ class UserWindow(QDialog):
 
     def save_data(self):
         user = User.by_name(settings.USER_NAME)
-        user.avatar = self.img_to_buff(self.lblAvatar.pixmap().toImage())
+        image = Image.open(io.BytesIO(self.img_to_buff(self.lblAvatar.pixmap().toImage())))
+        user.avatar = self.img_to_buff(ImageQt(image.convert('RGBA')))
         user.save()
 
     def restore_ava(self):
@@ -76,7 +77,10 @@ class UserWindow(QDialog):
         """
         file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png)')
         if file_name:
-            img = ImageQt(Image.open(file_name).convert('RGBA'))
+            image = Image.open(file_name)
+            image = image.thumbnail((self.lblAvatar.height(), self.lblAvatar.width()), Image.ANTIALIAS)
+            # image = image.crop((0, 0, 300, 300))
+            img = ImageQt(image.convert('RGBA'))
             self.lblAvatar.setPixmap(QPixmap.fromImage(img))
             self.origin_img = self.lblAvatar.pixmap().toImage()
 

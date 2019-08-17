@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 16:44:13
+# @Last Modified time: 2019-08-17 19:28:51
 import datetime
 import enum
 import logging
@@ -296,12 +296,13 @@ class User(Core):
     """
 
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
-    username = sa.Column(sa.String(30), unique=True, nullable=False)
-    descr = sa.Column(sa.String(300))
-    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
     auth_key = sa.Column(sa.String())
-    pub_key = sa.Column(sa.String())
+    avatar = sa.Column(sa.BLOB)
+    descr = sa.Column(sa.String(300))
     last_login = sa.Column(sa.DateTime)
+    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
+    pub_key = sa.Column(sa.String())
+    username = sa.Column(sa.String(30), unique=True, nullable=False)
 
     @classmethod
     def by_name(cls, username):

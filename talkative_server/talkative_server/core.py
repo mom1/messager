@@ -2,10 +2,11 @@
 # @Author: maxst
 # @Date:   2019-07-21 12:27:35
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-13 21:49:50
+# @Last Modified time: 2019-08-17 20:42:59
 import logging
 import select
 import socket
+import struct
 import threading
 
 from dynaconf import settings
@@ -106,7 +107,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.port = settings.as_int('PORT')
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((settings.get('host'), self.port))
-        self.sock.settimeout(0.5)
+        self.sock.settimeout(1)
         self.sock.listen(settings.get('max_connections'))
         self.started = True
         logger.info(f'start with {settings.get("host")}:{self.port}')
@@ -157,8 +158,21 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             client: Сокет клиента из которого будет производится чтение
 
         """
+        mes = self.read_data(client)
+        if mes:
+            if mes.action == settings.get('presence'):
+                mes.client = client
+            self.messages.append(mes)
+
+    def read_data(self, client):
+        mes = None
         try:
-            data = client.recv(settings.get('max_package_length', 1024))
+            raw_msglen = self.recvall(4, client)
+            if not raw_msglen:
+                return
+            msglen = struct.unpack('>I', raw_msglen)[0]
+            # Получение данных
+            data = self.recvall(msglen, client)
         except Exception:
             logger.info(f'Клиент {client.getpeername()} отключился от сервера.')
             self.clients.remove(client)
@@ -167,9 +181,26 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 return
             logger.debug(f'Client say: {data.decode(settings.get("encoding", "utf-8"))}')
             mes = Message(data)
-            if mes.action == settings.get('presence'):
-                mes.client = client
-            self.messages.append(mes)
+        return mes
+
+    def recvall(self, n, sock):
+        """Функция для получения n байт или возврата None если получен EOF
+
+        Args:
+            n: Количество получаемых байт
+            sock: Сокет для чтения
+
+        Returns:
+            Полученные данные
+            bytes
+        """
+        data = b''
+        while len(data) < n:
+            packet = sock.recv(n - len(data))
+            if not packet:
+                return
+            data += packet
+        return data
 
     def write_client_data(self, client, mes):
         """Запись в сокет.
@@ -182,7 +213,9 @@ class Server(threading.Thread, metaclass=ServerVerifier):
 
         """
         try:
-            client.sendall(bytes(mes))
+            msg = bytes(mes)
+            msg = struct.pack('>I', len(msg)) + msg
+            client.sendall(msg)
         except BrokenPipeError:
             self.clients.remove(client)
             client.close()
