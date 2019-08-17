@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-10 00:38:07
+# @Last Modified time: 2019-08-17 17:40:45
 import enum
 import logging
 from pathlib import Path
@@ -295,20 +295,22 @@ class User(Core):
 
     Attributes:
         id: Идентификатор
-        username: Имя пользователя
-        descr: Описание
-        password: Пароль шифрованный поддерживает сравнение
+        avatar: Аватарка
         auth_key: Ключ авторизации
+        descr: Описание
         last_login: Последний вход на сервер (дата время)
+        password: Пароль шифрованный поддерживает сравнение
+        username: Имя пользователя
 
     """
 
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
-    username = sa.Column(sa.String(30), unique=True, nullable=False)
-    descr = sa.Column(sa.String(300))
-    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
     auth_key = sa.Column(sa.String())
+    avatar = sa.Column(sa.BLOB)
+    descr = sa.Column(sa.String(300))
     last_login = sa.Column(sa.DateTime)
+    password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
+    username = sa.Column(sa.String(30), unique=True, nullable=False)
 
     @classmethod
     def by_name(cls, username):

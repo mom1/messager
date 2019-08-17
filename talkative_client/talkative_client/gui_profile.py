@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-14 09:16:25
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-15 01:14:43
+# @Last Modified time: 2019-08-17 17:37:18
 
 import io
 import logging
@@ -16,6 +16,8 @@ from PyQt5 import uic
 from PyQt5.QtCore import QBuffer, Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
+
+from .db import User
 
 logger = logging.getLogger('gui')
 if getattr(sys, 'frozen', False):
@@ -37,6 +39,11 @@ class UserWindow(QDialog):
     def init_ui(self):
         """Инициализация интерфейса."""
         self.messages = QMessageBox()
+        user = User.by_name(settings.USER_NAME)
+        if user.avatar:
+            ava = QPixmap()
+            ava.loadFromData(user.avatar)
+            self.lblAvatar.setPixmap(ava)
         self.origin_img = self.lblAvatar.pixmap().toImage()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.buttonBox.accepted.connect(self.save_data)
@@ -53,7 +60,9 @@ class UserWindow(QDialog):
         self.show()
 
     def save_data(self):
-        pass
+        user = User.by_name(settings.USER_NAME)
+        user.avatar = self.img_to_buff(self.lblAvatar.pixmap().toImage())
+        user.save()
 
     def restore_ava(self):
         if self.origin_img:
@@ -65,7 +74,7 @@ class UserWindow(QDialog):
         Args:
             event: Имя события (default: {None})
         """
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png *.jpg)')
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '', 'Images (*.png)')
         if file_name:
             img = ImageQt(Image.open(file_name).convert('RGBA'))
             self.lblAvatar.setPixmap(QPixmap.fromImage(img))
@@ -78,22 +87,27 @@ class UserWindow(QDialog):
             palette.extend((int(r * i / 255), int(g * i / 255), int(b * i / 255)))
         return palette
 
-    def apply_effects(self, effects=None):
-        """Применяет эффект к картинке"""
+    def img_to_buff(self, img):
         buffer_ = QBuffer()
         buffer_.open(QBuffer.ReadWrite)
+        img.save(buffer_, 'PNG')
+        return buffer_.data()
+
+    def apply_effects(self, effects=None):
+        """Применяет эффект к картинке"""
+
         if not self.origin_img:
             return
         whitish = (255, 240, 192)
         sepia = self.make_sepia_palette(whitish)
-        self.origin_img.save(buffer_, 'PNG')
-        image = Image.open(io.BytesIO(buffer_.data()))
+        image = Image.open(io.BytesIO(self.img_to_buff(self.origin_img)))
         effects = effects if effects else ['GREYSCALE']
         sepi = image
         if image.mode != 'L':
             sepi = image.convert('L')
             sepi.putpalette(sepia)
 
+        gray = ImageOps.grayscale(image)
         all_effects = {
             'BW': image.convert('L').convert('1', dither=Image.NONE),
             'BLUR': image.filter(ImageFilter.BLUR),
@@ -105,15 +119,13 @@ class UserWindow(QDialog):
             'INVERT': ImageOps.invert(image),
             'SOLARIZE': ImageOps.solarize(image),
             'SEPIA': sepi,
+            'HULK': ImageOps.colorize(gray, (0, 0, 0, 0), '#00ff00'),
+            'GREYSCALE': gray,
         }
         for effect in effects:
-            gray = ImageOps.grayscale(image)
-            all_effects['HULK'] = ImageOps.colorize(gray, (0, 0, 0, 0), '#00ff00')
-            all_effects['GREYSCALE'] = gray
             image = all_effects[effect]
         img_tmp = ImageQt(image.convert('RGBA'))
         self.lblAvatar.setPixmap(QPixmap.fromImage(img_tmp))
-        # return phedited
 
 
 if __name__ == '__main__':
