@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 01:10:53
+# @Last Modified time: 2019-08-18 01:31:05
 
 import base64
 import logging
@@ -133,6 +133,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.MsgBox = QMessageBox()
         self.contacts_list_state = 'exists'
         self.current_chat = None
+        self.lblAvatar.setVisible(False)
         self.update_contact()
         self.listContact.doubleClicked.connect(self.select_active_user)
         self.editMessages.clear()
@@ -270,7 +271,13 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                 settings.DESTINATION: self.current_chat,
             })
             self.client.send_message(request)
-        self.lblContact.setText(f'{self.current_chat}:')
+        self.lblContact.setText(f'{self.current_chat}')
+        user = User.by_name(self.current_chat)
+        if user.avatar:
+            ava = QPixmap()
+            ava.loadFromData(user.avatar)
+            self.lblAvatar.setPixmap(ava)
+            self.lblAvatar.setVisible(True)
         self.fill_chat()
 
     def fill_chat(self):
