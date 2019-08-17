@@ -2,8 +2,9 @@
 # @Author: MaxST
 # @Date:   2019-08-14 09:16:25
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 20:47:07
+# @Last Modified time: 2019-08-18 00:33:13
 
+import base64
 import io
 import logging
 import sys
@@ -18,6 +19,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 
 from .db import User
+from .jim_mes import Message
 
 logger = logging.getLogger('gui')
 if getattr(sys, 'frozen', False):
@@ -62,8 +64,17 @@ class UserWindow(QDialog):
     def save_data(self):
         user = User.by_name(settings.USER_NAME)
         image = Image.open(io.BytesIO(self.img_to_buff(self.lblAvatar.pixmap().toImage())))
-        user.avatar = self.img_to_buff(ImageQt(image.convert('RGBA')))
+        bimg = self.img_to_buff(ImageQt(image.convert('RGBA')))
+
+        user.avatar = bimg
         user.save()
+        image = image.resize((100, 100), Image.ANTIALIAS)
+        msg = Message(**{
+            settings.ACTION: settings.AVA_INFO,
+            settings.SENDER: settings.USER_NAME,
+            settings.DATA: base64.b64encode(bimg.toBase64()).decode('ascii'),
+        })
+        self.parent_gui.client.send_message(msg)
 
     def restore_ava(self):
         if self.origin_img:

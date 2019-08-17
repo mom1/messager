@@ -2,7 +2,8 @@
 # @Author: MaxST
 # @Date:   2019-07-27 15:40:19
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 13:41:03
+# @Last Modified time: 2019-08-18 00:30:13
+import base64
 import logging
 
 from dynaconf import settings
@@ -67,7 +68,8 @@ class ListContactsCommand(AbstractCommand):
         """Выполнение."""
         src_user = getattr(msg, settings.USER, None)
         user = User.by_name(src_user)
-        serv.write_client_data(serv.names.get(src_user), Msg.success(202, **{settings.LIST_INFO: [c.contact.username for c in user.contacts]}))
+        contacts = [c.contact.username for c in user.contacts]
+        serv.write_client_data(serv.names.get(src_user), Msg.success(202, **{settings.LIST_INFO: contacts}))
         logger.info(f'User {src_user} get list contacts')
         return True
 
@@ -93,7 +95,24 @@ class RequestKeyCommand(AbstractCommand):
         return True
 
 
+class EditAvatar(AbstractCommand):
+    """Изменение аватара."""
+
+    name = settings.AVA_INFO
+
+    @login_required
+    def execute(self, serv, msg, *args, **kwargs):
+        username = getattr(msg, settings.SENDER, None)
+        user = User.by_name(username)
+        ava = getattr(msg, settings.DATA, None)
+        if user and ava:
+            user.avatar = base64.b64decode(ava)
+            user.save()
+            serv.service_update_lists()
+
+
 main_commands.reg_cmd(AddContactCommand)
 main_commands.reg_cmd(DelContactCommand)
 main_commands.reg_cmd(ListContactsCommand)
 main_commands.reg_cmd(RequestKeyCommand)
+main_commands.reg_cmd(EditAvatar)

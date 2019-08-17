@@ -2,7 +2,8 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 20:48:02
+# @Last Modified time: 2019-08-18 00:57:36
+import base64
 import binascii
 import hmac
 import logging
@@ -119,9 +120,9 @@ class Presence(AbstractCommand):
     def execute(self, serv, message, **kwargs):
         """Выполнение.
 
-        #. Проверка на повторную регистрацию
-        #. Аутентификация пользователя
-        #. Логирование
+        1. Проверка на повторную регистрацию
+        1. Аутентификация пользователя
+        1. Логирование
 
         Args:
             serv: экземпляр класса :py:class:`~core.Server`
@@ -218,7 +219,10 @@ class UserListCommand(AbstractCommand):
 
         """
         src_user = getattr(msg, settings.USER, None)
-        serv.write_client_data(serv.names.get(src_user), Message.success(202, **{settings.LIST_INFO: [u.username for u in User.all()]}))
+        lst = []
+        for user in User.all():
+            lst.append((user.username, base64.b64encode(user.avatar).decode('ascii') if user.avatar else None))
+        serv.write_client_data(serv.names.get(src_user), Message.success(202, **{settings.LIST_INFO: lst}))
         return True
 
 

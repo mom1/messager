@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 20:46:14
+# @Last Modified time: 2019-08-18 01:12:36
 import base64
 import binascii
 import hashlib
@@ -17,7 +17,7 @@ import time
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.PublicKey import RSA
 from dynaconf import settings
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 
 from .commands import main_commands
@@ -111,7 +111,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
     def init_socket(self):
         """Инициализация сокета."""
         self.sock = socket.socket()
-        self.sock.settimeout(1)
+        self.sock.settimeout(1.5)
 
     def connect(self):
         """Соединение с сервером.
@@ -238,7 +238,16 @@ class Client(SocketMixin, metaclass=ClientVerifier):
         response = self.read_data()
         if response and response.response == 202:
             with database_lock:
-                User.save_all((User(username=user, password='placeholder') for user in getattr(response, settings.LIST_INFO, []) if User.filter_by(username=user).count() == 0))
+                lst = []
+                for username, ava in getattr(response, settings.LIST_INFO, []):
+                    user = User.by_name(username=username)
+                    if user:
+                        if ava:
+                            user.avatar = QByteArray.fromBase64(base64.b64decode(ava))
+                    else:
+                        user = User(username=username, password='placeholder', avatar=ava)
+                    lst.append(user)
+                User.save_all(lst)
         else:
             logger.error('Ошибка запроса списка известных пользователей.')
 

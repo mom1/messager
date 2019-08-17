@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 19:30:52
+# @Last Modified time: 2019-08-18 01:10:53
 
 import base64
 import logging
@@ -238,15 +238,19 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         if not user:
             return
         if self.contacts_list_state != 'new':
-            contacts_list = sorted(i.contact.username for i in user.contacts)
+            contacts_list = [(i.contact.username, i.contact.avatar) for i in user.contacts]
         else:
-            contacts_list = sorted(i.username for i in user.not_contacts())
+            contacts_list = [(i.username, i.avatar) for i in user.not_contacts()]
 
         self.contacts_model = QStandardItemModel()
         index = None
-        for i in contacts_list:
+
+        for i, ava in contacts_list:
             item = QStandardItem(i)
             item.setEditable(False)
+            pava = QPixmap()
+            pava.loadFromData(ava)
+            item.setIcon(QIcon(pava))
             self.contacts_model.appendRow(item)
             if self.current_chat and self.current_chat == i:
                 index = item.index()

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 17:40:45
+# @Last Modified time: 2019-08-18 01:15:54
 import enum
 import logging
 from pathlib import Path
@@ -356,7 +356,7 @@ class User(Core):
             raise ContactExists(contact_name)
         self.contacts.append(Contact(contact=cont))
         self.history.append(UserHistory(type_row=TypeHistory.add_contact, note=contact_name))
-        self.save()
+        return self.save()
 
     def del_contact(self, contact_name):
         """Удаляет контакт.
