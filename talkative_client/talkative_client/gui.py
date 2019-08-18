@@ -2,8 +2,8 @@
 """Графический интерфейс взаимодействия с пользователем."""
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
-# @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 02:00:29
+# @Last Modified by:   maxst
+# @Last Modified time: 2019-08-18 11:50:00
 
 import base64
 import logging
@@ -263,6 +263,8 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
     def select_active_user(self, index_model=None, current_chat=None):
         """Выбор активного пользователя."""
         self.current_chat = current_chat or self.listContact.currentIndex().data()
+        if not self.current_chat:
+            return
         if self.contacts_list_state == 'new':
             self.add_contact()
         else:
