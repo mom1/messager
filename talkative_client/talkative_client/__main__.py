@@ -2,13 +2,24 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 11:39:52
+# @Last Modified time: 2019-08-24 01:33:13
 import argparse
+import asyncio
 import logging
 import logging.config
 import os
 import sys
+import time
 from pathlib import Path
+
+from Cryptodome.PublicKey import RSA
+from dynaconf import settings
+from dynaconf.loaders import yaml_loader as loader
+from PyQt5.QtWidgets import QApplication, QMessageBox
+
+from talkative_client.async_core import ClientTransport
+from talkative_client.core import Client
+from talkative_client.gui import ClientGui, UserAuth
 
 if getattr(sys, 'frozen', False):
     # frozen
@@ -18,15 +29,6 @@ else:
 
 cwd = cfile
 os.environ['ROOT_PATH_FOR_DYNACONF'] = str(cwd)
-
-
-from Cryptodome.PublicKey import RSA
-from dynaconf import settings
-from dynaconf.loaders import yaml_loader as loader
-from PyQt5.QtWidgets import QApplication, QMessageBox
-
-from talkative_client.core import Client
-from talkative_client.gui import UserAuth
 
 sys.argv += ['-style', 'Fusion']
 client_app = QApplication(sys.argv)
@@ -42,6 +44,8 @@ def arg_parser():
     parser.add_argument('-e', '--encoding', nargs='?', help=f'Encoding (default "{settings.get("ENCODING")}")')
     parser.add_argument('-a', '--host', nargs='?', help=f'IP (default "{settings.get("HOST")}")')
     parser.add_argument('-p', '--port', nargs='?', help=f'Port (default "{settings.get("PORT")}")')
+    parser.add_argument('--no-async', dest='no_async', action='store_true', help='Start do not async client')
+    parser.set_defaults(no_async=False)
     parser.add_argument(
         '-v',
         '--verbose',
@@ -164,16 +168,49 @@ logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} w
 
 print(f'Клиентский модуль запущен с именем: {settings.USER_NAME}')
 
-# modules command and other
-p = cwd
-if getattr(sys, 'frozen', False):
-    # frozen
-    p = cwd.joinpath(Path('lib/talkative_client'))
+if settings.get('no_async'):
+    # modules command and other
+    p = cwd
+    if getattr(sys, 'frozen', False):
+        # frozen
+        p = cwd.joinpath(Path('lib/talkative_client'))
 
-for item in p.rglob('*.py'):
-    if item.parent.stem == 'tests' or item.parent.stem == 'talkative_client':
-        continue
-    __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
+    for item in p.rglob('*.py'):
+        if item.parent.stem == 'tests' or item.parent.stem == 'talkative_client':
+            continue
+        __import__(f'talkative_client.{item.parent.stem}.{item.stem}', globals(), locals())
 
-client = Client()
-client.connect()
+    client = Client()
+    client.connect()
+else:
+    client = ClientTransport()
+    client.daemon = True
+
+    class WaitAuth:
+        is_wait = True
+
+        def update(self, c, event, *args, **kwargs):
+            logger.info('WaitAuth', event)
+            if event == 'done_auth':
+                self.is_wait = False
+            elif event == 'fail__auth':
+                sys.exit()
+
+        def wait(self):
+            while self.is_wait:
+                time.sleep(2)
+
+    waiter = WaitAuth()
+    client.attach(waiter, 'done_auth')
+    client.attach(waiter, 'fail__auth')
+    client.start()
+    time.sleep(1)
+    waiter.wait()
+    sys.argv += ['-style', 'Fusion']
+    app = QApplication(sys.argv)
+    client_gui = ClientGui(client)
+    sys.exit(app.exec_())
+    # receiver.new_message.connect(client.update)
+    # receiver.up_all_users.connect(client.update)
+    # receiver.response_key.connect(client.update)
+    # sys.exit(app.exec_())

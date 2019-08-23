@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 10:24:16
+# @Last Modified time: 2019-08-23 22:32:43
 import logging
 
 # Debug
@@ -32,6 +32,7 @@ USER = 'user'
 # Прочие ключи, используемые в протоколе
 ADD_CONTACT = 'add'
 AVA_INFO = 'edit_ava'
+AUTH = 'auth'
 DEL_CONTACT = 'remove'
 ERROR = 'error'
 EXIT = 'exit'

@@ -2,14 +2,15 @@
 # @Author: MaxST
 # @Date:   2019-07-23 12:44:33
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-09 00:17:20
+# @Last Modified time: 2019-08-24 00:11:43
 import dis
 import socket
+
+from .descriptors import PortDescr
 
 
 class ClientVerifier(type):
     """Верификатор клиента."""
-
     def __new__(cls, name, bases, attr_dict):
         """Тут находим объявление сокета и проверяем его инициализацию.
 
@@ -20,7 +21,7 @@ class ClientVerifier(type):
         except_ = ('__classcell__', '__doc__')
         for key, val in attr_dict.items():
             assert not isinstance(val, socket.socket), 'Создание сокетов на уровне классов запрещенно'
-            if key in except_:
+            if key in except_ or isinstance(val, PortDescr):
                 continue
             instrs = tuple(dis.Bytecode(val))
             glob_soc = (tuple(filter(lambda x: x.opname == 'LOAD_GLOBAL' and x.argval == 'socket', instrs)) or (None, ))[0]
@@ -42,7 +43,7 @@ class ClientVerifier(type):
             checks_meth = ('accept', 'listen')
             except_ = ('__classcell__', '__doc__')
             for key, val in attr_dict.items():
-                if key in except_:
+                if key in except_ or isinstance(val, PortDescr):
                     continue
                 instrs = tuple(dis.Bytecode(val))
                 socks = (i for i in instrs if i.argval == cls.store_soc.argval)

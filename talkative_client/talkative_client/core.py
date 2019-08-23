@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 14:30:01
+# @Last Modified time: 2019-08-24 00:32:46
 import base64
 import binascii
 import hashlib
@@ -99,7 +99,7 @@ class SocketMixin(object):
 
 
 class Client(SocketMixin, metaclass=ClientVerifier):
-    """Центральный класс пока не понимаю зачем я его сделал.
+    """Центральный класс аля watchdog
 
     нужно переписать
 
@@ -176,7 +176,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
                 # Если всё нормально, то продолжаем процедуру авторизации.
                 ans_data = getattr(message, settings.DATA, '')
                 digest = hmac.new(user.auth_key, ans_data.encode('utf-8')).digest()
-                response = Message(response=511, **{settings.DATA: binascii.b2a_base64(digest).decode('ascii'), settings.USER: user.username})
+                response = Message(response=511, **{settings.DATA: binascii.b2a_base64(digest).decode('ascii'), settings.USER: user.username, settings.ACTION: settings.AUTH})
                 self.send_message(response)
                 message = self.read_data()
                 if not message:

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 00:34:59
+# @Last Modified time: 2019-08-23 23:40:46
 import logging
 
 # Debug
@@ -32,6 +32,7 @@ USER = 'user'
 # Прочие ключи, используемые в протоколе
 ADD_CONTACT = 'add'
 AVA_INFO = 'edit_ava'
+AUTH = 'auth'
 DEL_CONTACT = 'remove'
 ERROR = 'error'
 EXIT = 'exit'
@@ -73,6 +74,7 @@ DATABASES = {
 USER_NAME = None
 GUI = True  # do gui start default?
 CONSOLE = not GUI  # do console start default?
+NO_ASYNC = False
 
 # Colors
 COLOR_MESSAGE_IN = '#a40000;'

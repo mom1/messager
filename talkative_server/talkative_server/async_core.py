@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 16:57:30
+# @Last Modified time: 2019-08-24 01:43:25
 import asyncio
 import base64
 import binascii
@@ -70,7 +70,7 @@ class ServerA(threading.Thread, metaclass=ServerVerifier):
 
     async def async_start(self):
         self.loop = asyncio.get_running_loop()
-        self.server = await self.loop.create_server(lambda: AsyncProtocol(self), sock=self.sock)
+        self.server = await self.loop.create_server(lambda: AsyncServerProtocol(self), sock=self.sock)
 
         try:
             async with self.server:
@@ -126,7 +126,7 @@ class ServerA(threading.Thread, metaclass=ServerVerifier):
             logger.debug(f'Пустая команда {action}')
 
 
-class AsyncProtocol(asyncio.Protocol):
+class AsyncServerProtocol(asyncio.Protocol):
     """Протокол TCP
 
     Сначала читаем первые 4 байта в них содержится размер данных.
@@ -166,6 +166,16 @@ class AsyncProtocol(asyncio.Protocol):
         response = self._thread.run_command(self, mes)
         if response:
             logger.debug(f'send response')
+
+    def connection_lost(self, exc):
+        logger.info('The connection was closed')
+        ip, port = self.transport.get_extra_info('peername')
+        user = ActiveUsers.filter_by(ip_addr=ip, port=port).first()
+        if user:
+            self._thread.run_command(self, Message(**{
+                settings.ACION: settings.EXIT,
+                settings.USER: user.username,
+            }))
 
     def write(self, msg, transport=None):
         transport = transport or self.transport
@@ -265,12 +275,12 @@ class Presence:
         random_str = binascii.hexlify(os.urandom(64))
         digest = hmac.new(user.auth_key, random_str).digest()
         proto._thread.auth[user.username] = (digest, getattr(msg, settings.PUBLIC_KEY, ''))
-        proto.write(Message(response=511, **{settings.DATA: random_str.decode('ascii')}))
+        proto.write(Message(response=511, **{settings.ACTION: settings.AUTH, settings.DATA: random_str.decode('ascii')}))
         proto.notify(f'done_{settings.PRESENCE}')
 
 
 class Auth:
-    name = 511
+    name = 'auth'
 
     def update(self, event, proto, msg, *args, **kwargs):
         user = User.by_name(msg.user_account_name)
@@ -279,12 +289,12 @@ class Auth:
         client_digest = binascii.a2b_base64(getattr(msg, settings.DATA, ''))
         digest, pub_key = proto._thread.auth.pop(user.username, (None, None))
         if digest and hmac.compare_digest(digest, client_digest):
-            proto.write(Message.success(**{settings.DESTINATION: user.username}))
+            proto.write(Message(response=212, **{settings.ACTION: settings.AUTH}))
             client_ip, client_port = proto.transport.get_extra_info('peername')
             User.login_user(user.username, ip_addr=client_ip, port=client_port, pub_key=pub_key)
             proto.notify('auth_new_user')
         else:
-            proto.write(Message.error_resp('Ошибка авторизации'))
+            proto.write(Message(response=412, error='Ошибка авторизации', **{settings.ACTION: settings.AUTH}))
 
 
 class UserListCommand:
