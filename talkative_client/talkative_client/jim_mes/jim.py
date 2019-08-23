@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-07 11:20:56
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-09 00:13:53
+# @Last Modified time: 2019-08-23 10:02:12
 import time
 
 from Cryptodome.PublicKey import RSA
@@ -62,7 +62,10 @@ class Message(object):
     def user_account_name(self):
         """Имя пользователя."""
         try:
-            name = self.__raw.get('user', self.__raw.get(settings.DESTINATION))
+            for x in (settings.USER, settings.SENDER, settings.DESTINATION):
+                name = self.__raw.get(x)
+                if name:
+                    return name
         except ValueError:
             return None
         return name
@@ -119,6 +122,7 @@ class Message(object):
         Args:
             user: имя пользователя (default: {None})
             type_: тип (default: {'status'})
+            pub_key: публичный ключ
             **kwargs: доп. параметры
 
         Returns:

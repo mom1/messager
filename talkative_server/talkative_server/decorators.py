@@ -2,12 +2,15 @@
 # @Author: maxst
 # @Date:   2019-07-21 11:33:54
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-08 21:05:12
+# @Last Modified time: 2019-08-23 12:21:55
 import inspect
 import logging
 from functools import wraps
 
 from dynaconf import settings
+
+from .db import User
+from .jim_mes import Message
 
 logger = logging.getLogger('decorators')
 
@@ -72,6 +75,27 @@ def login_required(func):
         if not client:
             logger.critical('Ошибка login_required')
             raise TypeError
+        return func(*args, **kwargs)
+
+    return checker
+
+
+def login_required_db(func):
+    def checker(*args, **kwargs):
+        user = None
+        for x in args:
+            if isinstance(x, Message):
+                user = User.by_name(x.user_account_name)
+                break
+        for k, v in kwargs.items():
+            if isinstance(v, Message):
+                user = User.by_name(x.user_account_name)
+                break
+
+        if not user or not user.user_activity:
+            logger.critical('Ошибка login_required')
+            raise TypeError
+
         return func(*args, **kwargs)
 
     return checker

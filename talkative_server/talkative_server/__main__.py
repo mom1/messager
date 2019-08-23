@@ -2,14 +2,22 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 02:12:12
+# @Last Modified time: 2019-08-23 11:11:30
 import argparse
 import logging
 import logging.config
-import sys
 import os
+import sys
 import time
 from pathlib import Path
+
+from dynaconf import settings
+from PyQt5.QtWidgets import QApplication
+
+from talkative_server.async_core import ServerA
+from talkative_server.cli import CommandLineInterface
+from talkative_server.core import Server
+from talkative_server.gui import ServerGUI
 
 if getattr(sys, 'frozen', False):
     # frozen
@@ -20,12 +28,6 @@ else:
 cwd = cfile
 os.environ['ROOT_PATH_FOR_DYNACONF'] = str(cwd)
 
-from dynaconf import settings
-from PyQt5.QtWidgets import QApplication
-from talkative_server.cli import CommandLineInterface
-from talkative_server.core import Server
-from talkative_server.gui import ServerGUI
-
 
 def arg_parser():
     parser = argparse.ArgumentParser()
@@ -34,6 +36,8 @@ def arg_parser():
     parser.add_argument('-e', '--encoding', nargs='?', help=f'Encoding (default "{settings.get("ENCODING")}")')
     parser.add_argument('-a', '--host', nargs='?', help=f'IP (default "{settings.get("HOST")}")')
     parser.add_argument('-p', '--port', nargs='?', help=f'Port (default "{settings.get("PORT")}")')
+    parser.add_argument('--no-async', dest='no_async', action='store_true', help='Start do not async server')
+    parser.set_defaults(no_async=False)
     parser.add_argument(
         '-v',
         '--verbose',
@@ -62,12 +66,11 @@ def arg_parser():
 def _configure_logger(verbose=0):
     class MaxLevelFilter(logging.Filter):
         """Filters (lets through) all messages with level < LEVEL."""
-
         def __init__(self, level):
             self.level = level
 
         def filter(self, record):  # noqa
-            return record.levelno < self.level
+            return record.levelno <= self.level and record.module in ('server', 'Converter', 'decorators', 'asyncio', 'async_core', 'core')
 
     root_logger = logging.root
     level = settings.get('LOGGING_LEVEL')
@@ -81,12 +84,14 @@ def _configure_logger(verbose=0):
     error_handler = logging.FileHandler(log_error, encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
     log_file = Path(f'{log_dir}/Server.log')
+    file_log = logging.FileHandler(log_file, encoding=settings.get('encoding'))
+    file_log.addFilter(MaxLevelFilter(logging.INFO))
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         handlers=[
             error_handler,
-            logging.FileHandler(log_file, encoding=settings.get('encoding')),
+            file_log,
             stream_handler,
         ],
     )
@@ -114,7 +119,11 @@ for item in p.rglob('*.py'):
         continue
     __import__(f'talkative_server.{item.parent.stem}.{item.stem}', globals(), locals())
 
-serv = Server()
+if settings.get('no_async'):
+    serv = Server()
+else:
+    serv = ServerA()
+
 serv.daemon = True
 serv.start()
 

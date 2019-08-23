@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 22:00:39
+# @Last Modified time: 2019-08-23 10:24:16
 import logging
 
 # Debug
@@ -73,6 +73,7 @@ DATABASES = {
 USER_NAME = None
 GUI = True  # do gui start default?
 CONSOLE = not GUI  # do console start default?
+NO_ASYNC = False
 
 # Colors
 COLOR_MESSAGE_IN = '#a40000;'

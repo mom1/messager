@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 02:12:41
+# @Last Modified time: 2019-08-23 14:30:01
 import base64
 import binascii
 import hashlib
@@ -88,7 +88,10 @@ class SocketMixin(object):
         """
         data = b''
         while len(data) < n:
-            packet = self.sock.recv(n - len(data))
+            try:
+                packet = self.sock.recv(n - len(data))
+            except socket.timeout:
+                return data
             if not packet:
                 return
             data += packet
@@ -157,6 +160,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
             user = User(username=settings.USER_NAME, password=settings.get('password'), auth_key=hash_)
         user.save()
         self.send_message(Message.presence())
+
         message = self.read_data()
 
         response = getattr(message, settings.RESPONSE, None)
@@ -172,9 +176,8 @@ class Client(SocketMixin, metaclass=ClientVerifier):
                 # Если всё нормально, то продолжаем процедуру авторизации.
                 ans_data = getattr(message, settings.DATA, '')
                 digest = hmac.new(user.auth_key, ans_data.encode('utf-8')).digest()
-                response = Message(response=511, **{settings.DATA: binascii.b2a_base64(digest).decode('ascii')})
+                response = Message(response=511, **{settings.DATA: binascii.b2a_base64(digest).decode('ascii'), settings.USER: user.username})
                 self.send_message(response)
-
                 message = self.read_data()
                 if not message:
                     logger.error(f'Авторизация не пройдена')
@@ -184,7 +187,7 @@ class Client(SocketMixin, metaclass=ClientVerifier):
                 user.save()
             else:
                 logger.error(f'Принят неизвестный код подтверждения {response}')
-                break
+                return
 
         logger.debug(f'Установлено соединение с сервером. Ответ сервера: {message}')
         print(f'Установлено соединение с сервером.')

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 02:13:40
+# @Last Modified time: 2019-08-23 11:39:52
 import argparse
 import logging
 import logging.config
@@ -102,7 +102,7 @@ def _configure_logger(verbose=0):
             self.level = level
 
         def filter(self, record):  # noqa
-            return record.levelno <= self.level
+            return record.levelno <= self.level and record.module in ('client', 'Converter', 'decorators', 'asyncio', 'async_core', 'core')
 
     root_logger = logging.root
     level = settings.get('LOGGING_LEVEL')
@@ -116,12 +116,14 @@ def _configure_logger(verbose=0):
     error_handler = logging.FileHandler(log_file_err, encoding=settings.get('encoding'))
     error_handler.setLevel(logging.ERROR)
     log_file = Path(f'{log_dir}/Client_{settings.USER_NAME}.log')
+    file_handler = logging.FileHandler(log_file, encoding=settings.get('encoding'))
+    file_handler.addFilter(MaxLevelFilter(logging.INFO))
     logging.basicConfig(
         level=level,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         handlers=[
             error_handler,
-            logging.FileHandler(log_file, encoding=settings.get('encoding')),
+            file_handler,
             stream_handler,
         ],
     )

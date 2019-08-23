@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 19:28:51
+# @Last Modified time: 2019-08-23 09:05:56
 import datetime
 import enum
 import logging
@@ -486,6 +486,12 @@ class ActiveUsers(Core):
     port = sa.Column(sa.Integer)
 
     oper = relationship('User', backref='user_activity', foreign_keys=[oper_id])
+
+    @classmethod
+    def by_name(cls, username):
+        """Возвращает объект пользователя по его имени."""
+        user = User.by_name(username)
+        return cls.query().filter(cls.oper == user).first()
 
 
 class Contact(Core):

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-13 21:51:15
+# @Last Modified time: 2019-08-23 12:33:48
 import binascii
 import hashlib
 import sys
@@ -114,7 +114,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.update_active_users()
         self.show()
 
-    def update(self, serv, event):
+    def update(self, serv, event, *args, **kwargs):
         """Метод принимающий события.
 
         Args:
@@ -124,15 +124,10 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         """
         method = self.events.get(event)
         if method:
-            method(serv)
+            method(serv, *args, **kwargs)
 
-    def update_active_users(self, serv=None):
-        """Обновление списка активных пользователей.
-
-        Args:
-            serv: Транспортный сервер (default: {None})
-
-        """
+    def update_active_users(self, *args, **kwargs):
+        """Обновление списка активных пользователей."""
         list_user = QStandardItemModel()
         list_user.setHorizontalHeaderLabels(['Пользователь', 'HOST:PORT', 'Последний вход'])
         for auser in ActiveUsers.all():
