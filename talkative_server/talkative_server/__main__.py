@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 17:46:01
+# @Last Modified time: 2019-08-25 00:43:57
 import argparse
 import logging
 import logging.config
@@ -121,11 +121,11 @@ for item in p.rglob('*.py'):
 
 if settings.get('no_async'):
     serv = Server()
+    serv.daemon = True
+    serv.start()
 else:
     serv = ServerA()
 
-serv.daemon = True
-serv.start()
 
 time.sleep(1)
 

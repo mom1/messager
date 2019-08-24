@@ -2,11 +2,12 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 09:05:56
+# @Last Modified time: 2019-08-24 23:05:36
 import datetime
 import enum
 import logging
 import sys
+import threading
 from pathlib import Path
 
 import sqlalchemy as sa
@@ -16,12 +17,13 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 from sqlalchemy_utils import PasswordType
 
 from .errors import NotFoundUser
 
 logger = logging.getLogger('server__db')
+database_lock = threading.Lock()
 
 
 class DBManager(object):
@@ -81,8 +83,10 @@ class DBManager(object):
             connect_args=db_settings.get('CONNECT_ARGS'),
         )
         Base.metadata.create_all(self.engine)
-        session = sa.orm.sessionmaker(bind=self.engine)()
-        Core.set_session(session)
+        session_factory = sessionmaker(bind=self.engine)
+        session = scoped_session(session_factory)
+
+        Core.set_session(session())
         ActiveUsers.delete_all()
 
 

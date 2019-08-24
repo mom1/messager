@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 12:33:48
+# @Last Modified time: 2019-08-25 00:50:53
 import binascii
 import hashlib
 import sys
@@ -13,7 +13,7 @@ from pathlib import Path
 from dynaconf import settings
 from dynaconf.loaders import yaml_loader as loader
 from PyQt5 import uic
-from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtCore import QSettings, Qt, pyqtSlot
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
                              QMessageBox)
@@ -79,11 +79,12 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         """
         self.server = server
         super().__init__()
-
+        self.server.update.connect(self.update)
+        self.server.start()
         uic.loadUi(cfile.joinpath(Path('templates/server_settings.ui')), self)
 
         self.events = {
-            settings.PRESENCE: self.update_active_users,
+            'auth_new_user': self.update_active_users,
             settings.EXIT: self.update_active_users,
             'action_refresh': self.update_active_users,
             'action_history': self.history_open,
@@ -92,11 +93,12 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
             'action_restart_server': self.action_restart_serv,
         }
         self.register_event()
+        time.sleep(1)
         self.init_ui()
 
     def register_event(self):
         """Регистрация событий."""
-        for event, _ in self.events.items():
+        for event in self.events.keys():
             self.server.attach(self, event)
 
         for action in self.toolBar.actions():
@@ -114,17 +116,18 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.update_active_users()
         self.show()
 
-    def update(self, serv, event, *args, **kwargs):
+    @pyqtSlot(dict)
+    def update(self, kwargs):
         """Метод принимающий события.
 
         Args:
-            serv: Транспортный сервер
-            event: Имя события
+            kwargs: Параметры
 
         """
+        event = kwargs.get('event')
         method = self.events.get(event)
         if method:
-            method(serv, *args, **kwargs)
+            method(**kwargs)
 
     def update_active_users(self, *args, **kwargs):
         """Обновление списка активных пользователей."""

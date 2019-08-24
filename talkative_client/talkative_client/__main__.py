@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 01:33:13
+# @Last Modified time: 2019-08-25 00:29:56
 import argparse
 import asyncio
 import logging
@@ -106,7 +106,8 @@ def _configure_logger(verbose=0):
             self.level = level
 
         def filter(self, record):  # noqa
-            return record.levelno <= self.level and record.module in ('client', 'Converter', 'decorators', 'asyncio', 'async_core', 'core')
+            return record.levelno <= self.level
+            # and record.module in ('client', 'Converter', 'decorators', 'asyncio', 'async_core', 'core')
 
     root_logger = logging.root
     level = settings.get('LOGGING_LEVEL')
@@ -184,7 +185,6 @@ if settings.get('no_async'):
     client.connect()
 else:
     client = ClientTransport()
-    client.daemon = True
 
     class WaitAuth:
         is_wait = True
@@ -203,9 +203,11 @@ else:
     waiter = WaitAuth()
     client.attach(waiter, 'done_auth')
     client.attach(waiter, 'fail__auth')
-    client.start()
+
     time.sleep(1)
-    waiter.wait()
+
+    # waiter.wait()
+
     sys.argv += ['-style', 'Fusion']
     app = QApplication(sys.argv)
     client_gui = ClientGui(client)

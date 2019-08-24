@@ -2,9 +2,10 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 01:15:54
+# @Last Modified time: 2019-08-24 23:12:56
 import enum
 import logging
+import threading
 from pathlib import Path
 
 import sqlalchemy as sa
@@ -14,13 +15,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 from sqlalchemy_utils import PasswordType
 
 from .errors import (ContactExists, ContactNotExists, NotFoundContact,
                      NotFoundUser)
 
 logger = logging.getLogger('client__db')
+database_lock = threading.Lock()
 
 
 class DBManager(object):
@@ -78,8 +80,11 @@ class DBManager(object):
             connect_args=db_settings.get('CONNECT_ARGS'),
         )
         Base.metadata.create_all(self.engine)
-        session = sa.orm.sessionmaker(bind=self.engine)()
-        Core.set_session(session)
+
+        session_factory = sessionmaker(bind=self.engine)
+        session = scoped_session(session_factory)
+
+        Core.set_session(session())
         ActiveUsers.delete_all()
 
 
@@ -310,6 +315,7 @@ class User(Core):
     descr = sa.Column(sa.String(300))
     last_login = sa.Column(sa.DateTime)
     password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
+    pub_key = sa.Column(sa.String())
     username = sa.Column(sa.String(30), unique=True, nullable=False)
 
     @classmethod
@@ -537,8 +543,15 @@ class UserMessages(Core):
             лист сообщений
 
         """
-        user = User.by_name(username) if isinstance(username, str) else username
-        return cls.query().filter((cls.sender == user) | (cls.receiver == user)).order_by(desc(cls.created)).limit(limit).all()
+
+        try:
+            user = User.by_name(username) if isinstance(username, str) else username
+            history = cls.query().filter((cls.sender == user) | (cls.receiver == user)).order_by(desc(cls.created)).limit(limit).all()
+        except Exception as e:
+            logger.error(f'Ошибка БД {e}')
+            history = []
+
+        return history
 
 
 # Отладка

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 01:43:25
+# @Last Modified time: 2019-08-25 00:58:10
 import asyncio
 import base64
 import binascii
@@ -14,6 +14,7 @@ import struct
 import threading
 
 from dynaconf import settings
+from PyQt5.QtCore import QByteArray, QObject, QThread, pyqtSignal
 
 from .db import ActiveUsers, DBManager, User, UserHistory
 from .decorators import login_required_db
@@ -25,7 +26,7 @@ app_name = 'server'
 logger = logging.getLogger(app_name)
 
 
-class ServerA(threading.Thread, metaclass=ServerVerifier):
+class ServerA(QThread):
     """Асинхронный сервер
 
     not support cli yet
@@ -48,6 +49,7 @@ class ServerA(threading.Thread, metaclass=ServerVerifier):
     """
 
     port = PortDescr()
+    update = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
@@ -103,7 +105,10 @@ class ServerA(threading.Thread, metaclass=ServerVerifier):
         logger.info(f'Свершилось событие {event}')
         obs = self._observers.get(event, []) or []
         for observer in obs:
-            observer.update(self, event, *args, **kwargs)
+            if isinstance(observer, QObject):
+                self.update.emit({**{'event': event}, **kwargs})
+            else:
+                observer.update(self, event, *args, **kwargs)
 
     def attach(self, observer, event):
         obs = self._observers.get(event, []) or []
@@ -124,6 +129,14 @@ class ServerA(threading.Thread, metaclass=ServerVerifier):
             self.notify(action, proto, mes)
         else:
             logger.debug(f'Пустая команда {action}')
+
+    def service_update_lists(self, excep=None):
+        for k, v in self.loop._transports.items():
+            if v is excep:
+                continue
+            proto = v.get_protocol()
+            if proto:
+                proto.write(Message(response=205))
 
 
 class AsyncServerProtocol(asyncio.Protocol):
@@ -152,7 +165,7 @@ class AsyncServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         if len(data) == self.CHUNK_SIZE:
             self.cur_size = struct.unpack('>I', data)[0]
-            self.transport.max_size = self.def_size
+            self.transport.max_size = min(self.cur_size, self.def_size)
             return
         self.long_data += data
 
@@ -173,8 +186,8 @@ class AsyncServerProtocol(asyncio.Protocol):
         user = ActiveUsers.filter_by(ip_addr=ip, port=port).first()
         if user:
             self._thread.run_command(self, Message(**{
-                settings.ACION: settings.EXIT,
-                settings.USER: user.username,
+                settings.ACTION: settings.EXIT,
+                settings.USER: user.oper.username,
             }))
 
     def write(self, msg, transport=None):
@@ -195,10 +208,7 @@ class AsyncServerProtocol(asyncio.Protocol):
         self.transport.close()
 
     def service_update_lists(self):
-        for k, v in self._thread.loop._transports.items():
-            if v is self:
-                continue
-            self.write(Message(response=205), v)
+        self._thread.service_update_lists(excep=self.transport)
 
     def get_user_tr(self, user_name):
         act_user = ActiveUsers.by_name(user_name)
@@ -305,7 +315,10 @@ class UserListCommand:
         lst = []
         for user in User.all():
             lst.append((user.username, base64.b64encode(user.avatar).decode('ascii') if user.avatar else None))
-        proto.write(Message.success(202, **{settings.LIST_INFO: lst}))
+        proto.write(Message.success(202, **{
+            settings.LIST_INFO: lst,
+            settings.ACTION: settings.USERS_REQUEST,
+        }))
         proto.notify(f'done_{settings.USERS_REQUEST}')
 
 
@@ -323,7 +336,7 @@ class AddContactCommand:
             user.add_contact(contact)
             proto.write(Message.success())
         else:
-            print.write(Message.error_resp('Не найден контакт'))
+            proto.write(Message.error_resp('Не найден контакт'))
         logger.info(f'User {src_user} add contact {contact}')
         proto.notify(f'done_{settings.ADD_CONTACT}')
 
@@ -354,7 +367,7 @@ class ListContactsCommand:
     @login_required_db
     def update(self, event, proto, msg, *args, **kwargs):
         user = User.by_name(msg.user_account_name)
-        proto.write(Message.success(202, **{settings.LIST_INFO: [c.contact.username for c in user.contacts]}))
+        proto.write(Message.success(202, **{settings.LIST_INFO: [c.contact.username for c in user.contacts], settings.ACTION: settings.GET_CONTACTS}))
         logger.info(f'User {user.username} get list contacts')
         proto.notify(f'done_{settings.GET_CONTACTS}')
 
@@ -370,7 +383,11 @@ class RequestKeyCommand:
         src_user = getattr(msg, settings.SENDER, None)
         user = User.by_name(dest_user)
         if user and user.pub_key:
-            mes = Message(response=511, **{settings.DATA: user.pub_key, settings.ACCOUNT_NAME: dest_user})
+            mes = Message(response=202, **{
+                settings.DATA: user.pub_key,
+                settings.ACCOUNT_NAME: dest_user,
+                settings.ACTION: settings.PUBLIC_KEY_REQUEST,
+            })
         else:
             mes = Message.error_resp('Ошибка определения ключа')
         proto.write(mes)

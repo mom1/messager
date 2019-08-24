@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-14 09:16:25
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 00:33:13
+# @Last Modified time: 2019-08-24 23:22:19
 
 import base64
 import io
@@ -19,6 +19,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 
 from .db import User
+from .db import database_lock as db_lock
 from .jim_mes import Message
 
 logger = logging.getLogger('gui')
@@ -67,14 +68,15 @@ class UserWindow(QDialog):
         bimg = self.img_to_buff(ImageQt(image.convert('RGBA')))
 
         user.avatar = bimg
-        user.save()
+        with db_lock:
+            user.save()
         image = image.resize((100, 100), Image.ANTIALIAS)
         msg = Message(**{
             settings.ACTION: settings.AVA_INFO,
             settings.SENDER: settings.USER_NAME,
             settings.DATA: base64.b64encode(bimg.toBase64()).decode('ascii'),
         })
-        self.parent_gui.client.send_message(msg)
+        self.parent_gui.client.notify(f'send_{settings.MESSAGE}', msg=msg)
 
     def restore_ava(self):
         if self.origin_img:

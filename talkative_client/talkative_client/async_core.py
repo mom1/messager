@@ -2,22 +2,26 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 01:35:31
+# @Last Modified time: 2019-08-25 00:53:48
 import asyncio
 import base64
 import binascii
 import hashlib
 import hmac
 import logging
-import os
-import socket
 import struct
 import threading
 
+from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.PublicKey import RSA
 from dynaconf import settings
+from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 
-from .db import DBManager, User
+from .db import DBManager, User, UserHistory, UserMessages
+from .db import database_lock as db_lock
 from .descriptors import PortDescr
+from .errors import (ContactExists, ContactNotExists, NotFoundContact,
+                     NotFoundUser, ServerError)
 from .jim_mes import Message
 from .metaclasses import ClientVerifier
 
@@ -25,25 +29,34 @@ app_name = 'client'
 logger = logging.getLogger(app_name)
 
 
-class ClientTransport(threading.Thread, metaclass=ClientVerifier):
+class ClientTransport(QObject):
     """[summary].
 
     [description]
 
     """
     port = PortDescr()
+    update = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
+        QObject.__init__(self)
         self.started = False
         self._observers = {}
         self.auth = {}
+        self.transport = None
+        self.protocol = None
         self.router = router.init(self)
+        self.decrypter = PKCS1_OAEP.new(RSA.import_key(settings.get('USER_KEY')))
 
     async def async_start(self):
         self.loop = asyncio.get_running_loop()
         self.on_con_lost = self.loop.create_future()
-        self.transport, self.protocol = await self.loop.create_connection(lambda: AsyncClientProtocol(self), settings.get('HOST'), settings.as_int('PORT'))
+        self.transport, self.protocol = await self.loop.create_connection(
+            lambda: AsyncClientProtocol(self),
+            settings.get('HOST'),
+            settings.as_int('PORT'),
+        )
 
         # Wait until the protocol signals that the connection
         # is lost and close the transport.
@@ -65,18 +78,24 @@ class ClientTransport(threading.Thread, metaclass=ClientVerifier):
     def is_alive(self):
         return self.started
 
-    def notify(self, event, *args, **kwargs):
+    def notify(self, event, proto=None, msg=None, **kwargs):
         logger.info(f'Свершилось событие {event}')
         obs = self._observers.get(event, []) or []
+        kwargs['event'] = event
+        kwargs['thread'] = self
+        protocol = proto or self.protocol
+
         for observer in obs:
-            observer.update(self, event, *args, **kwargs)
+            if isinstance(observer, QObject):
+                self.update.emit({**{'proto': protocol, 'msg': msg}, **kwargs})
+            else:
+                observer.update(proto=protocol, msg=msg, **kwargs)
 
     def attach(self, observer, event):
         obs = self._observers.get(event, []) or []
         obs.append(observer)
         self._observers[event] = obs
         logger.info(f'{observer} подписался на событие {event}')
-        return True
 
     def detach(self, observer, event):
         obs = self._observers.get(event, []) or []
@@ -115,7 +134,8 @@ class AsyncClientProtocol(asyncio.Protocol):
             user.active = False
         else:
             user = User(username=settings.USER_NAME, password=settings.get('password'), auth_key=hash_)
-        user.save()
+        with db_lock:
+            user.save()
         logger.debug('Установлено соединение с сервером.')
 
         self.write(Message.presence())
@@ -134,14 +154,18 @@ class AsyncClientProtocol(asyncio.Protocol):
             return
 
         self.transport.max_size = self.cur_size = self.CHUNK_SIZE
-        logger.debug(f'Server say: {self.long_data.decode(settings.get("encoding", "utf-8"))}')
+        if len(self.long_data) < 1024:
+            logger.debug(f'Server say: {self.long_data.decode(settings.get("encoding", "utf-8"))}')
+        else:
+            logger.debug(f'Server say message len {len(self.long_data)}')
+
         mes = Message(self.long_data)
         self.long_data = b''
         self._thread.run_command(self, mes)
 
     def connection_lost(self, exc):
         print('The server closed the connection')
-        # self._thread.on_con_lost.set_result(True)
+        self._thread.on_con_lost.set_result(True)
 
     def write(self, msg, transport=None):
         transport = transport or self.transport
@@ -157,8 +181,14 @@ class AsyncClientProtocol(asyncio.Protocol):
     def close(self):
         self._thread.on_con_lost.set_result(True)
 
-    def notify(self, *args, **kwargs):
-        self._thread.notify(*args, **kwargs)
+    def notify(self, event, *args, **kwargs):
+        self._thread.notify(event, self, *args, **kwargs)
+
+    @property
+    def decrypter(self):
+        if not hasattr(self, '_decrypter'):
+            self._decrypter = self._thread.decrypter
+        return self._decrypter
 
 
 class Router:
@@ -185,6 +215,8 @@ class Router:
             self.init_cmd(cmd, name)
 
     def init_cmd(self, cmd, name):
+        if hasattr(cmd, '__name__'):
+            cmd = cmd()
         self.source.attach(cmd, name)
 
 
@@ -194,7 +226,7 @@ router = Router()
 class ClientAuth:
     name = settings.AUTH
 
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = User.by_name(settings.USER_NAME)
         ans_data = getattr(msg, settings.DATA, '')
         code = getattr(msg, settings.RESPONSE, '')
@@ -208,11 +240,12 @@ class ClientAuth:
             proto.notify('done_511')
         elif code == 212:
             user.active = True
-            user.save()
-            proto.notify(f'done_{settings.AUTH}')
+            with db_lock:
+                user.save()
+            proto.notify(f'done_{self.name}')
         elif code == 412:
             logger.error(f'{msg}')
-            proto.notify(f'fail_{settings.AUTH}')
+            proto.notify(f'fail_{self.name}')
 
 
 class ClientError:
@@ -220,8 +253,116 @@ class ClientError:
 
     def update(self, event, proto, msg, *args, **kwargs):
         logger.error(f'{msg}')
-        proto.close()
+        # proto.close()
+
+
+class GetAllUsers:
+    name = settings.USERS_REQUEST
+
+    def update(self, proto, msg=None, **kwargs):
+        code = getattr(msg, settings.RESPONSE, '')
+        if code == 202:
+            lst = []
+            for username, ava in getattr(msg, settings.LIST_INFO, []):
+                user = User.by_name(username=username)
+                if user:
+                    if ava:
+                        user.avatar = QByteArray.fromBase64(base64.b64decode(ava))
+                else:
+                    user = User(username=username, password='placeholder', avatar=QByteArray.fromBase64(base64.b64decode(ava)) if ava else None)
+                lst.append(user)
+            with db_lock:
+                User.save_all(lst)
+            proto.notify(f'done_{self.name}')
+        else:
+            proto.write(Message(**{
+                settings.ACTION: settings.USERS_REQUEST,
+                settings.USER: settings.USER_NAME,
+            }))
+            proto.notify(f'send_{self.name}')
+
+
+class GetContacts:
+    name = settings.GET_CONTACTS
+
+    def update(self, proto, msg=None, *args, **kwargs):
+        code = getattr(msg, settings.RESPONSE, '')
+        if code == 202:
+            user = User.by_name(settings.USER_NAME)
+            for contact in getattr(msg, settings.LIST_INFO, []):
+                try:
+                    with db_lock:
+                        user.add_contact(contact)
+                except ContactExists:
+                    pass
+            proto.notify(f'done_{self.name}')
+        else:
+            proto.write(Message(**{
+                settings.ACTION: settings.GET_CONTACTS,
+                settings.USER: settings.USER_NAME,
+            }))
+            proto.notify(f'send_{self.name}')
+
+
+class MessageCommand:
+    name = settings.MESSAGE
+
+    def update(self, proto, msg=None, *args, **kwargs):
+        if isinstance(msg, Message) and msg.is_valid():
+            sender = getattr(msg, settings.SENDER, None)
+            mes_ecrypted = base64.b64decode(str(msg))
+            decrypted_message = proto.decrypter.decrypt(mes_ecrypted)
+            with db_lock:
+                UserHistory.proc_message(sender, settings.USER_NAME)
+                UserMessages.create(
+                    sender=User.by_name(sender),
+                    receiver=User.by_name(settings.USER_NAME),
+                    message=decrypted_message.decode('utf8'),
+                )
+            proto.notify(f'new_{self.name}', msg)
+            logger.info(f'Получено сообщение от пользователя {sender}')
+
+
+class SendMessageCommand:
+    name = f'send_{settings.MESSAGE}'
+
+    def update(self, proto, msg, *args, **kwargs):
+        proto.write(msg)
+        proto.notify(f'done_{self.name}')
+
+
+class RequestKeyCommand:
+    name = settings.PUBLIC_KEY_REQUEST
+
+    def update(self, proto, msg=None, *args, **kwargs):
+        code = getattr(msg, settings.RESPONSE, '')
+        if not msg:
+            dest = kwargs.get('contact')
+            if not dest:
+                logger.info('Не указан контакт чей ключ нужно получить')
+                return
+            proto.write(Message(**{
+                settings.ACTION: settings.PUBLIC_KEY_REQUEST,
+                settings.SENDER: settings.USER_NAME,
+                settings.DESTINATION: dest,
+            }))
+            proto.notify(f'send_{self.name}')
+        elif code == 202:
+            pub_key = getattr(msg, settings.DATA, '')
+            with db_lock:
+                rest_user = User.by_name(getattr(msg, settings.ACCOUNT_NAME, ''))
+                rest_user.pub_key = pub_key
+                rest_user.save()
+            proto.notify(f'done_{self.name}')
 
 
 router.reg_command(ClientAuth)
 router.reg_command(ClientError)
+router.reg_command(GetAllUsers)
+router.reg_command(GetContacts)
+router.reg_command(GetAllUsers, f'done_{settings.AUTH}')
+router.reg_command(GetContacts, f'done_{settings.AUTH}')
+router.reg_command(GetAllUsers, 205)
+router.reg_command(MessageCommand)
+router.reg_command(RequestKeyCommand)
+router.reg_command(SendMessageCommand)
