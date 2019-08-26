@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-25 00:58:10
+# @Last Modified time: 2019-08-26 08:30:02
 import asyncio
 import base64
 import binascii
@@ -275,12 +275,13 @@ class Presence:
 
     def update(self, event, proto, msg, *args, **kwargs):
         user = User.by_name(msg.user_account_name)
-        if user and user.user_activity:
-            logger.info('Имя пользователя уже занято.')
-            return proto.write(Message.error_resp('Имя пользователя уже занято.'))
         if not user:
             logger.info('Пользователь не зарегистрирован.')
             return proto.write(Message.error_resp('Пользователь не зарегистрирован.'))
+
+        if user.user_activity:
+            logger.info('Имя пользователя уже занято.')
+            return proto.write(Message.error_resp('Имя пользователя уже занято.'))
 
         random_str = binascii.hexlify(os.urandom(64))
         digest = hmac.new(user.auth_key, random_str).digest()

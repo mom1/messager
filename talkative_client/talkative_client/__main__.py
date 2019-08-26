@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-25 00:29:56
+# @Last Modified time: 2019-08-26 10:02:26
 import argparse
 import asyncio
 import logging
@@ -148,7 +148,13 @@ def _process_key():
     secret = f'.secret.{settings.USER_NAME}.yaml'
     settings.INCLUDES_FOR_DYNACONF.append(secret)
     key_file = Path.cwd().joinpath(Path(f'{secret}'))
+
+    user_name = settings.get('USER_NAME')
+    passwd = settings.get('PASSWORD')
+
     settings.load_file(path=key_file)
+    settings.set('USER_NAME', user_name)
+    settings.set('PASSWORD', passwd)
     key = settings.get('USER_KEY')
     if not key:
 
@@ -184,35 +190,8 @@ if settings.get('no_async'):
     client = Client()
     client.connect()
 else:
-    client = ClientTransport()
-
-    class WaitAuth:
-        is_wait = True
-
-        def update(self, c, event, *args, **kwargs):
-            logger.info('WaitAuth', event)
-            if event == 'done_auth':
-                self.is_wait = False
-            elif event == 'fail__auth':
-                sys.exit()
-
-        def wait(self):
-            while self.is_wait:
-                time.sleep(2)
-
-    waiter = WaitAuth()
-    client.attach(waiter, 'done_auth')
-    client.attach(waiter, 'fail__auth')
-
-    time.sleep(1)
-
-    # waiter.wait()
-
     sys.argv += ['-style', 'Fusion']
     app = QApplication(sys.argv)
+    client = ClientTransport()
     client_gui = ClientGui(client)
     sys.exit(app.exec_())
-    # receiver.new_message.connect(client.update)
-    # receiver.up_all_users.connect(client.update)
-    # receiver.response_key.connect(client.update)
-    # sys.exit(app.exec_())

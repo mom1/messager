@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 23:12:56
+# @Last Modified time: 2019-08-26 09:58:04
 import enum
 import logging
 import threading
@@ -392,10 +392,18 @@ class User(Core):
         """Количество полученных сообщений."""
         return UserHistory.filter_by(oper=self, type_row=TypeHistory.mes_accepted).count()
 
-    def not_contacts(self):
+    def not_contacts(self, text=None):
         """Возвращает не контактов."""
         subquery = self._session.query(Contact.contact_id).filter(Contact.owner_id == self.id)
         query = self.query().filter(~User.id.in_(subquery), User.id != self.id)
+        if text:
+            query = query.filter(User.username.ilike(f'{text}%'))
+        return query.all()
+
+    def get_contacts(self, text):
+        query = self.query().join(Contact, Contact.owner_id == self.id).join(User, Contact.contact_id == User.id)
+        if text:
+            query = query.filter(User.username.ilike(f'{text}%'))
         return query.all()
 
 

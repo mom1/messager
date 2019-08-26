@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-25 00:37:04
+# @Last Modified time: 2019-08-26 09:59:51
 
 import base64
 import logging
@@ -127,7 +127,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.register_event()
         self.init_ui()
 
-    def exit_(self, kwargs):
+    def exit_(self, **kwargs):
         sys.exit(1)
 
     def register_event(self):
@@ -151,6 +151,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.btnBold.clicked.connect(self.set_bold)
         self.btnItalic.clicked.connect(self.set_italic)
         self.btnUnder.clicked.connect(self.set_underline)
+        self.editFind.textChanged.connect(self.search_contact)
         self.states = {
             'exists': QIcon(QPixmap(str(self.join(Path('templates/img/list-contacts.png'))))),
             'new': QIcon(QPixmap(str(self.join(Path('templates/img/add-contacts.png'))))),
@@ -257,17 +258,17 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         """Сохранение состояния сплитера."""
         self.settings.setValue('splitter', self.splitter.saveState())
 
-    def update_contact(self):
+    def update_contact(self, text=''):
         """Обновление контактов."""
         user = User.by_name(settings.USER_NAME)
         if not user:
             return
         with db_lock:
             if self.contacts_list_state != 'new':
-                contacts_list = [(i.contact.username, i.contact.avatar) for i in user.contacts]
+                contacts = user.get_contacts(text)
             else:
-                contacts_list = [(i.username, i.avatar) for i in user.not_contacts()]
-
+                contacts = user.not_contacts(text)
+        contacts_list = [(i.username, i.avatar) for i in contacts]
         self.contacts_model = QStandardItemModel()
         index = None
 
@@ -424,3 +425,6 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             logger.error(e)
         else:
             self.update_contact()
+
+    def search_contact(self, text):
+        self.update_contact(text)
