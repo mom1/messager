@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-26 09:59:51
+# @Last Modified time: 2019-08-26 20:41:24
 
 import base64
 import logging
@@ -156,6 +156,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             'exists': QIcon(QPixmap(str(self.join(Path('templates/img/list-contacts.png'))))),
             'new': QIcon(QPixmap(str(self.join(Path('templates/img/add-contacts.png'))))),
             'user': QIcon(QPixmap(str(self.join(Path('templates/img/user.png'))))),
+            'group': QIcon(QPixmap(str(self.join(Path('templates/img/create-group.png'))))),
             'default': self.menuBtn.icon(),
         }
         self.menuBtn.setMenu(self.make_menu())
@@ -189,6 +190,10 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             QMenu
         """
         menu = QMenu(self)
+        action = menu.addAction('Создать группу')
+        action.setIcon(self.states['group'])
+        # action.triggered.connect()
+
         action = menu.addAction('Контакы')
         action.setIcon(self.states['exists'])
         action.triggered.connect(lambda: self.switch_list_state('exists'))

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-26 08:30:02
+# @Last Modified time: 2019-08-30 11:54:17
 import asyncio
 import base64
 import binascii
@@ -11,19 +11,21 @@ import logging
 import os
 import socket
 import struct
-import threading
 
 from dynaconf import settings
-from PyQt5.QtCore import QByteArray, QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
-from .db import ActiveUsers, DBManager, User, UserHistory
-from .decorators import login_required_db
+from .db import DBManager
+
 from .descriptors import PortDescr
 from .jim_mes import Message
-from .metaclasses import ServerVerifier
+# from .metaclasses import ServerVerifier
 
 app_name = 'server'
 logger = logging.getLogger(app_name)
+db = DBManager(app_name)
+
+from .decorators import login_required_db  # noqa
 
 
 class ServerA(QThread):
@@ -86,7 +88,6 @@ class ServerA(QThread):
             self.notify('stoped_server')
 
     def run(self):
-        self.database = DBManager(app_name)
         self.notify('init_db')
         self.init_socket()
         self.notify('init_socket')
@@ -183,7 +184,7 @@ class AsyncServerProtocol(asyncio.Protocol):
     def connection_lost(self, exc):
         logger.info('The connection was closed')
         ip, port = self.transport.get_extra_info('peername')
-        user = ActiveUsers.filter_by(ip_addr=ip, port=port).first()
+        user = db.ActiveUsers.objects(ip_addr=ip, port=port).first()
         if user:
             self._thread.run_command(self, Message(**{
                 settings.ACTION: settings.EXIT,
@@ -211,7 +212,7 @@ class AsyncServerProtocol(asyncio.Protocol):
         self._thread.service_update_lists(excep=self.transport)
 
     def get_user_tr(self, user_name):
-        act_user = ActiveUsers.by_name(user_name)
+        act_user = db.ActiveUsers.by_name(user_name)
         for k, v in self._thread.loop._transports.items():
             if v is self:
                 continue
@@ -265,7 +266,7 @@ class MessageCommand:
                 logger.error(f'Пользователь {dest_user} не зарегистрирован на сервере, отправка сообщения невозможна.')
                 return
             proto.write(msg, dest)
-            UserHistory.proc_message(src_user, dest_user)
+            db.UserHistory.proc_message(src_user, dest_user)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
             proto.notify(f'done_{settings.MESSAGE}')
 
@@ -274,7 +275,7 @@ class Presence:
     name = settings.PRESENCE
 
     def update(self, event, proto, msg, *args, **kwargs):
-        user = User.by_name(msg.user_account_name)
+        user = db.User.by_name(msg.user_account_name)
         if not user:
             logger.info('Пользователь не зарегистрирован.')
             return proto.write(Message.error_resp('Пользователь не зарегистрирован.'))
@@ -294,7 +295,7 @@ class Auth:
     name = 'auth'
 
     def update(self, event, proto, msg, *args, **kwargs):
-        user = User.by_name(msg.user_account_name)
+        user = db.User.by_name(msg.user_account_name)
         if not user:
             return proto.write(Message.error_resp('Пользователь не зарегистрирован.'))
         client_digest = binascii.a2b_base64(getattr(msg, settings.DATA, ''))
@@ -302,7 +303,7 @@ class Auth:
         if digest and hmac.compare_digest(digest, client_digest):
             proto.write(Message(response=212, **{settings.ACTION: settings.AUTH}))
             client_ip, client_port = proto.transport.get_extra_info('peername')
-            User.login_user(user.username, ip_addr=client_ip, port=client_port, pub_key=pub_key)
+            db.User.login_user(user.username, ip_addr=client_ip, port=client_port, pub_key=pub_key)
             proto.notify('auth_new_user')
         else:
             proto.write(Message(response=412, error='Ошибка авторизации', **{settings.ACTION: settings.AUTH}))
@@ -314,7 +315,7 @@ class UserListCommand:
     @login_required_db
     def update(self, event, proto, msg, *args, **kwargs):
         lst = []
-        for user in User.all():
+        for user in db.User.objects.all():
             lst.append((user.username, base64.b64encode(user.avatar).decode('ascii') if user.avatar else None))
         proto.write(Message.success(202, **{
             settings.LIST_INFO: lst,
@@ -332,7 +333,7 @@ class AddContactCommand:
     def update(self, event, proto, msg, *args, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
-        user = User.by_name(src_user)
+        user = db.User.by_name(src_user)
         if contact:
             user.add_contact(contact)
             proto.write(Message.success())
@@ -352,7 +353,7 @@ class DelContactCommand:
         """Выполнение."""
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
-        user = User.by_name(src_user)
+        user = db.User.by_name(src_user)
         if contact:
             user.del_contact(contact)
             proto.write(Message.success())
@@ -367,8 +368,8 @@ class ListContactsCommand:
 
     @login_required_db
     def update(self, event, proto, msg, *args, **kwargs):
-        user = User.by_name(msg.user_account_name)
-        proto.write(Message.success(202, **{settings.LIST_INFO: [c.contact.username for c in user.contacts], settings.ACTION: settings.GET_CONTACTS}))
+        user = db.User.by_name(msg.user_account_name)
+        proto.write(Message.success(202, **{settings.LIST_INFO: [c.username for c in user.contacts], settings.ACTION: settings.GET_CONTACTS}))
         logger.info(f'User {user.username} get list contacts')
         proto.notify(f'done_{settings.GET_CONTACTS}')
 
@@ -382,7 +383,7 @@ class RequestKeyCommand:
     def update(self, event, proto, msg, *args, **kwargs):
         dest_user = getattr(msg, settings.DESTINATION, None)
         src_user = getattr(msg, settings.SENDER, None)
-        user = User.by_name(dest_user)
+        user = db.User.by_name(dest_user)
         if user and user.pub_key:
             mes = Message(response=202, **{
                 settings.DATA: user.pub_key,
@@ -403,7 +404,7 @@ class EditAvatar:
 
     @login_required_db
     def update(self, event, proto, msg, *args, **kwargs):
-        user = User.by_name(msg.user_account_name)
+        user = db.User.by_name(msg.user_account_name)
         ava = getattr(msg, settings.DATA, None)
         if user and ava:
             user.avatar = base64.b64decode(ava)
@@ -420,11 +421,11 @@ class ExitCommand:
 
     @login_required_db
     def update(self, event, proto, msg, *args, **kwargs):
-        user = User.by_name(msg.user_account_name)
+        user = db.User.by_name(msg.user_account_name)
         if user:
             client_ip, client_port = proto.transport.get_extra_info('peername')
             proto.close()
-            User.logout_user(user.username, ip_addr=client_ip, port=client_port)
+            db.User.logout_user(user.username, ip_addr=client_ip, port=client_port)
             logger.info(f'User {user.username} log off')
             proto.notify(f'done_{settings.EXIT}')
 

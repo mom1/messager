@@ -2,16 +2,19 @@
 # @Author: MaxST
 # @Date:   2019-07-23 22:59:32
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 16:43:53
+# @Last Modified time: 2019-08-30 08:13:22
 import logging
 import sys
 
 from tabulate import tabulate
 
 from .commands import AbstractCommand, icommands
-from .db import ActiveUsers, TypeHistory, User, UserHistory
+from .db import DBManager
+
+# ActiveUsers, TypeHistory, User, UserHistory
 
 logger = logging.getLogger('cli')
+db = DBManager()
 
 
 class CommandLineInterface(object):
@@ -82,7 +85,7 @@ class UserListCommand(AbstractCommand):
 
         """
         tab = []
-        for user in User.all():
+        for user in db.User.all():
             tab.append({'Пользователь': user.username, 'Последний вход': user.last_login})
         print()
         print(tabulate(
@@ -118,7 +121,7 @@ class ConnectedUsersCommand(AbstractCommand):
 
         """
         tab = []
-        for auser in ActiveUsers.all():
+        for auser in db.ActiveUsers.all():
             tab.append({
                 'Пользователь': auser.oper.username,
                 'HOST:PORT': f'{auser.ip_addr}:{auser.port}',
@@ -160,10 +163,10 @@ class LoginHistoryCommand(AbstractCommand):
         tab = []
         name = input('Введите имя пользователя для просмотра истории.\nДля вывода всей истории, просто нажмите Enter\n:')
         if name:
-            user = User.by_name(name)
-            qs = [i for i in user.history if i.type_row == TypeHistory.login]
+            user = db.User.by_name(name)
+            qs = [i for i in user.history if i.type_row == db.TypeHistory.login]
         else:
-            qs = UserHistory.all()
+            qs = db.UserHistory.all()
 
         for story in qs:
             tab.append({

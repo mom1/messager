@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 22:32:43
+# @Last Modified time: 2019-08-30 08:20:50
 import logging
 
 # Debug
@@ -55,11 +55,10 @@ DATABASES = {
         'NAME': 'db/db_talkative.db',
     },
     'server': {
-        'ENGINE': 'sqlite',
-        'NAME': 'db/db_server.db',
-        'CONNECT_ARGS': {
-            'check_same_thread': False,
-        },
+        'ENGINE': 'mongo',
+        'NAME': 'db_server',
+        'USERNAME': 'root',
+        'PASSWORD': 'root',
     },
     'client': {
         'ENGINE': 'sqlite',

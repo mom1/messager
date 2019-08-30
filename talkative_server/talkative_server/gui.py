@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-25 00:50:53
+# @Last Modified time: 2019-08-30 11:53:17
 import binascii
 import hashlib
 import sys
@@ -18,13 +18,15 @@ from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
                              QMessageBox)
 
-from .db import ActiveUsers, DBManager, User
+from .db import DBManager
 
 if getattr(sys, 'frozen', False):
     # frozen
     cfile = Path(sys.executable).parent
 else:
     cfile = Path(__file__).parent
+
+db = DBManager()
 
 
 class SaveGeometryMixin(object):
@@ -133,7 +135,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         """Обновление списка активных пользователей."""
         list_user = QStandardItemModel()
         list_user.setHorizontalHeaderLabels(['Пользователь', 'HOST:PORT', 'Последний вход'])
-        for auser in ActiveUsers.all():
+        for auser in db.ActiveUsers.objects.all():
             user = QStandardItem(auser.oper.username)
             user.setEditable(False)
             ip_port = QStandardItem(f'{auser.ip_addr}:{auser.port}')
@@ -198,7 +200,7 @@ class HistoryWindow(SaveGeometryMixin, QDialog):
         """Обновление списка пользователей."""
         list_ = QStandardItemModel()
         list_.setHorizontalHeaderLabels(['Пользователь', 'Последний вход', 'Сообщений отправлено', 'Сообщений получено'])
-        for auser in User.all():
+        for auser in db.User.objects.all():
             user = QStandardItem(auser.username)
             user.setEditable(False)
             last_login = QStandardItem(str(auser.last_login.replace(microsecond=0) if auser.last_login else 'Не входил'))
@@ -300,7 +302,7 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
         elif self.editPass2.text() != self.editPass1.text():
             self.messages.critical(self, 'Ошибка', 'Введённые пароли не совпадают.')
             return
-        elif User.by_name(self.editUser.text()):
+        elif db.User.by_name(self.editUser.text()):
             self.messages.critical(self, 'Ошибка', 'Пользователь уже существует.')
             return
         else:
@@ -310,7 +312,7 @@ class AddUserWindow(SaveGeometryMixin, QDialog):
                 self.editUser.text().encode('utf-8'),
                 10000,
             ))
-            User.create(username=self.editUser.text(), password=self.editPass1.text(), auth_key=hash_)
+            db.User.objects.create(username=self.editUser.text(), password=self.editPass1.text(), auth_key=hash_)
             self.messages.information(self, 'Успех', 'Пользователь успешно зарегистрирован.')
             # Рассылаем клиентам сообщение о необходимости обновить справочники
             self.server.service_update_lists()

@@ -2,16 +2,17 @@
 # @Author: maxst
 # @Date:   2019-07-23 10:34:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-11 12:12:07
+# @Last Modified time: 2019-08-30 08:15:54
 import logging
 
 from dynaconf import settings
 
 from talkative_server.commands import AbstractCommand, main_commands
-from talkative_server.db import UserHistory
+from talkative_server.db import DBManager
 from talkative_server.decorators import login_required
 
 logger = logging.getLogger('server__message')
+db = DBManager()
 
 
 class MessageCommand(AbstractCommand):
@@ -38,7 +39,7 @@ class MessageCommand(AbstractCommand):
             serv.write_client_data(dest, msg)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
             with serv.db_lock:
-                UserHistory.proc_message(src_user, dest_user)
+                db.UserHistory.proc_message(src_user, dest_user)
             serv.notify(self.name)
         return True
 

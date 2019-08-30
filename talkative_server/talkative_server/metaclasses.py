@@ -2,16 +2,16 @@
 # @Author: maxst
 # @Date:   2019-07-23 12:18:27
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-17 20:43:16
+# @Last Modified time: 2019-08-30 08:00:20
 import dis
 import socket
+from threading import Lock
 
 from .descriptors import PortDescr
 
 
 class ServerVerifier(type):
     """Проверка сервера."""
-
     def __new__(cls, name, bases, attr_dict):
         """Тут находим объявление сокета и проверяем его инициализацию.
 
@@ -55,3 +55,19 @@ class ServerVerifier(type):
                     # python 3.7 !!!LOAD_METHOD!!!
                     assert not (calls.argval in checks_meth and calls.opname == 'LOAD_METHOD'), f'Для сокетов запрещенно вызывать методы {checks_meth}'
         super().__init__(name, bases, attr_dict)
+
+
+class SingletonMeta(type):
+    """
+    Это потокобезопасная реализация класса Singleton.
+    """
+
+    _instance = None
+
+    _lock = Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = super().__call__(*args, **kwargs)
+        return cls._instance

@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-04 22:05:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-18 00:57:36
+# @Last Modified time: 2019-08-30 08:12:26
 import base64
 import binascii
 import hmac
@@ -13,11 +13,12 @@ from collections import OrderedDict
 from dynaconf import settings
 from tabulate import tabulate
 
-from .db import User
+from .db import DBManager
 from .decorators import login_required
 from .jim_mes import Message
 
 logger = logging.getLogger('commands')
+db = DBManager()
 
 
 class Comander(object):
@@ -136,7 +137,7 @@ class Presence(AbstractCommand):
         """
         mes = None
         if message.user_account_name not in serv.names:
-            user = User.by_name(message.user_account_name)
+            user = db.User.by_name(message.user_account_name)
             if not user:
                 mes = Message.error_resp('Пользователь не зарегистрирован.', user=message.user_account_name)
             else:
@@ -154,7 +155,7 @@ class Presence(AbstractCommand):
                     serv.names[message.user_account_name] = message.client
                     mes = Message.success(**{settings.DESTINATION: message.user_account_name})
                     client_ip, client_port = message.client.getpeername()
-                    User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port, pub_key=getattr(message, settings.PUBLIC_KEY, ''))
+                    db.User.login_user(message.user_account_name, ip_addr=client_ip, port=client_port, pub_key=getattr(message, settings.PUBLIC_KEY, ''))
                     serv.notify(self.name)
         else:
             serv.clients.remove(message.client)
@@ -190,7 +191,7 @@ class ExitCommand(AbstractCommand):
             serv.clients.remove(client)
             client.close()
             del serv.names[message.user_account_name]
-            User.logout_user(message.user_account_name, ip_addr=client_ip, port=client_port)
+            db.User.logout_user(message.user_account_name, ip_addr=client_ip, port=client_port)
             serv.notify(self.name)
 
 
@@ -220,7 +221,7 @@ class UserListCommand(AbstractCommand):
         """
         src_user = getattr(msg, settings.USER, None)
         lst = []
-        for user in User.all():
+        for user in db.User.all():
             lst.append((user.username, base64.b64encode(user.avatar).decode('ascii') if user.avatar else None))
         serv.write_client_data(serv.names.get(src_user), Message.success(202, **{settings.LIST_INFO: lst}))
         return True
