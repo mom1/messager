@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-26 09:58:04
+# @Last Modified time: 2019-08-30 15:18:19
 import enum
 import logging
 import threading
@@ -516,50 +516,64 @@ class Contact(Core):
         return cls.query().filter_by(owner=owner, contact=contact).first()
 
 
-class UserMessages(Core):
-    """Пользовательские сообщения.
-
-    Хранилище сообщений
-
-    Attributes:
-        id: Идентификатор
-        sender_id: ИД отправителя
-        receiver_id: ИД получателя
-        message: текст сообщения
-        sender: Отправитель
-        receiver: Получатель
-
-    """
-
+class Messages(Core):
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
     sender_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
     receiver_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
-    message = sa.Column(sa.Text())
+    text = sa.Column(sa.Text())
 
     sender = relationship('User', backref='sents_messages', foreign_keys=[sender_id])
     receiver = relationship('User', backref='received_messages', foreign_keys=[receiver_id])
 
+    chat_id = sa.Column(sa.ForeignKey('chat.id', ondelete='CASCADE'))
+    chat = relationship('Chat', backref='messages', foreign_keys=[chat_id])
+
+    sended = sa.Column(sa.Boolean, default=False)
+    received = sa.Column(sa.Boolean, default=False)
+    readed = sa.Column(sa.Boolean, default=False)
+
+
+class Chat(Core):
+    id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
+    name = sa.Column(sa.String(30), unique=True, nullable=False)
+    # members = ListField(ReferenceField('User'))
+    owner_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
+    owner = relationship('User', backref=backref('chats', order_by='Chat.name'), foreign_keys=[owner_id])
+
     @classmethod
-    def chat_hiltory(cls, username, limit=100):
+    def chat_hiltory(cls, chatname, limit=100):
         """Получение истории чата.
 
         Args:
-            username: имя пользователя
+            chatname: имя чата для персональных чатов совпадает с именем контакта
             limit: ограничение по количеству сообщений (default: {100})
 
         Returns:
             лист сообщений
 
         """
-
-        try:
-            user = User.by_name(username) if isinstance(username, str) else username
-            history = cls.query().filter((cls.sender == user) | (cls.receiver == user)).order_by(desc(cls.created)).limit(limit).all()
-        except Exception as e:
-            logger.error(f'Ошибка БД {e}')
-            history = []
-
+        name = '__'.join(sorted((settings.USER_NAME, chatname)))
+        history = []
+        chat = cls.filter_by(name=chatname).first() or cls.filter_by(name=name).first()
+        if chat:
+            history = chat.messages[:limit]
         return history
+
+    @classmethod
+    def create_msg(cls, msg, text=''):
+        dest_user = getattr(msg, settings.DESTINATION, None) or settings.USER_NAME
+        src_user = getattr(msg, settings.SENDER, None) or settings.USER_NAME
+        text = text or getattr(msg, settings.MESSAGE_TEXT, '')
+        chat_name = getattr(msg, 'chat', None)
+        sender = User.by_name(src_user)
+        receiver = User.by_name(dest_user)
+        if not chat_name:
+            chat_name = '__'.join(sorted((sender.username, receiver.username)))
+        chat = cls.filter_by(name=chat_name).first()
+        if not chat:
+            chat = cls.create(name=chat_name, owner=sender)
+
+        Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
 
 
 # Отладка

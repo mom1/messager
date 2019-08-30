@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-26 20:41:24
+# @Last Modified time: 2019-08-30 15:31:43
 
 import base64
 import logging
@@ -16,11 +16,11 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5 import uic
 from PyQt5.Qt import QAction
-from PyQt5.QtCore import QObject, QSettings, pyqtSlot, QThread
+from PyQt5.QtCore import QSettings, pyqtSlot, QThread
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QDialog, QMainWindow, QMenu, QMessageBox
 
-from .db import User, UserHistory, UserMessages
+from .db import User, UserHistory, Chat
 from .db import database_lock as db_lock
 from .errors import ContactExists, ContactNotExists, NotFoundUser
 from .gui_profile import UserWindow
@@ -314,26 +314,23 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
     def fill_chat(self):
         """Заполнение чата."""
         with db_lock:
-            messages = UserMessages.chat_hiltory(self.current_chat, 20)
-            stop = len(messages) + 1
+            messages = Chat.chat_hiltory(self.current_chat, 20)
         style_mes_out = self.STYLE_OUT_MES.read_text().format
         style_mes_in = self.STYLE_IN_MES.read_text().format
         self.editMessages.clear()
         mes_list = []
         with db_lock:
-            for i in range(-1, -stop, -1):
-                message = messages[i]
+            for message in messages:
                 if message.receiver.username == self.current_chat:
                     style_mes = style_mes_out
                     color = settings.COLOR_MESSAGE_OUT
                 else:
                     style_mes = style_mes_in
                     color = settings.COLOR_MESSAGE_IN
-                mes_list.append(style_mes(color=color, text=message.message, created=message.created))
+                mes_list.append(style_mes(color=color, text=message.text, created=message.created))
         self.editMessages.setHtml(''.join(mes_list))
 
     def incoming_message(self, *args, **kwargs):
-        print('incoming_message ' * 5)
         msg = kwargs.get('msg')
         if getattr(msg, settings.SENDER, None) == self.current_chat:
             self.fill_chat()
@@ -363,9 +360,10 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         message = self.make_message(base64.b64encode(mes_crypted).decode('ascii'))
 
         self.client.notify(f'send_{settings.MESSAGE}', msg=message)
+
         with db_lock:
             UserHistory.proc_message(settings.USER_NAME, self.current_chat)
-            UserMessages.create(sender=User.by_name(settings.USER_NAME), receiver=User.by_name(self.current_chat), message=text)
+            Chat.create_msg(message, text=text)
 
         self.editMessage.clear()
         self.fill_chat()

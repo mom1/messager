@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-25 00:53:48
+# @Last Modified time: 2019-08-30 15:18:54
 import asyncio
 import base64
 import binascii
@@ -10,20 +10,18 @@ import hashlib
 import hmac
 import logging
 import struct
-import threading
 
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 
-from .db import DBManager, User, UserHistory, UserMessages
+from .db import Chat, DBManager, User, UserHistory
 from .db import database_lock as db_lock
 from .descriptors import PortDescr
-from .errors import (ContactExists, ContactNotExists, NotFoundContact,
-                     NotFoundUser, ServerError)
+from .errors import ContactExists
 from .jim_mes import Message
-from .metaclasses import ClientVerifier
+# from .metaclasses import ClientVerifier
 
 app_name = 'client'
 logger = logging.getLogger(app_name)
@@ -314,11 +312,7 @@ class MessageCommand:
             decrypted_message = proto.decrypter.decrypt(mes_ecrypted)
             with db_lock:
                 UserHistory.proc_message(sender, settings.USER_NAME)
-                UserMessages.create(
-                    sender=User.by_name(sender),
-                    receiver=User.by_name(settings.USER_NAME),
-                    message=decrypted_message.decode('utf8'),
-                )
+                Chat.create_msg(msg, text=decrypted_message.decode('utf8'))
             proto.notify(f'new_{self.name}', msg)
             logger.info(f'Получено сообщение от пользователя {sender}')
 

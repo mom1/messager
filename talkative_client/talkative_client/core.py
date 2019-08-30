@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 00:32:46
+# @Last Modified time: 2019-08-30 14:24:32
 import base64
 import binascii
 import hashlib
@@ -21,7 +21,7 @@ from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 
 from .commands import main_commands
-from .db import DBManager, User, UserHistory, UserMessages
+from .db import DBManager, User, UserHistory, Chat
 from .errors import ContactExists, ServerError
 from .gui import ClientGui
 from .jim_mes import Message
@@ -311,11 +311,7 @@ class ClientReader(threading.Thread, SocketMixin, QObject):
                 decrypted_message = self.decrypter.decrypt(mes_ecrypted)
                 with self.db_lock:
                     UserHistory.proc_message(sender, settings.USER_NAME)
-                    UserMessages.create(
-                        sender=User.by_name(sender),
-                        receiver=User.by_name(settings.USER_NAME),
-                        message=decrypted_message.decode('utf8'),
-                    )
+                    Chat.create_msg(self.message, text=decrypted_message.decode('utf8'))
                 self.notify(settings.get('event_new_message'))
                 self.new_message.emit(self.message)
                 logger.info(f'Получено сообщение от пользователя {sender}:\n{self.message}')

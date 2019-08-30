@@ -2,13 +2,14 @@
 # @Author: MaxST
 # @Date:   2019-08-29 21:53:57
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 11:33:45
+# @Last Modified time: 2019-08-30 15:42:21
 import logging
 import sys
 from datetime import datetime
 
 from dynaconf import settings
 from mongoengine import (BinaryField, BooleanField, DateTimeField, Document,
+                         EmbeddedDocument, EmbeddedDocumentListField,
                          ImageField, IntField, LazyReferenceField, ListField,
                          ReferenceField, StringField, connect)
 
@@ -263,8 +264,61 @@ class ActiveUsers(Core):
         return cls.objects(oper=user).first()
 
 
+class Messages(Core):
+    text = StringField()
+    sender = ReferenceField('User')
+    receiver = ReferenceField('User')
+    chat = ReferenceField('Chat')
+    sended = BooleanField(default=False)
+    received = BooleanField(default=False)
+    readed = BooleanField(default=False)
+
+
+class Chat(Core):
+    name = StringField(unique=True)
+    members = ListField(ReferenceField('User'))
+    owner = ReferenceField('User')
+
+    @property
+    def messages(self):
+        return Messages.objects(chat=self).all()
+
+    @classmethod
+    def chat_hiltory(cls, chatname, limit=100):
+        """Получение истории чата.
+
+        Args:
+            chatname: имя чата для персональных чатов совпадает с именем контакта
+            limit: ограничение по количеству сообщений (default: {100})
+
+        Returns:
+            лист сообщений
+
+        """
+
+        history = []
+        chat = cls.objects(name=chatname).first()
+        if chat:
+            history = chat.messages[:limit]
+        return history
+
+    @classmethod
+    def create_msg(cls, msg):
+        dest_user = getattr(msg, settings.DESTINATION, None)
+        src_user = getattr(msg, settings.SENDER, None)
+        text = getattr(msg, settings.MESSAGE_TEXT, '')
+        chat_name = getattr(msg, 'chat', None)
+        sender = User.by_name(src_user)
+        receiver = User.by_name(dest_user)
+        if not chat_name:
+            chat_name = '__'.join(sorted((sender.username, receiver.username)))
+        chat = cls.objects(name=chat_name).first()
+        if not chat:
+            chat = cls.objects.create(name=chat_name, owner=sender, members=[sender, receiver])
+
+        Messages.objects.create(chat=chat, text=text, sender=sender, receiver=receiver)
+
+
 if __name__ == '__main__':
     init_mongo({'USERNAME': 'root', 'PASSWORD': 'root', 'NAME': 'db_server'})
-    import ipdb
-    ipdb.set_trace()
     user = User.by_name('maxst')

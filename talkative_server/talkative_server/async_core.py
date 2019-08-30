@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 11:54:17
+# @Last Modified time: 2019-08-30 15:34:59
 import asyncio
 import base64
 import binascii
@@ -267,6 +267,7 @@ class MessageCommand:
                 return
             proto.write(msg, dest)
             db.UserHistory.proc_message(src_user, dest_user)
+            db.Chat.create_msg(msg)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
             proto.notify(f'done_{settings.MESSAGE}')
 
