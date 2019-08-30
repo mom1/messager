@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-29 21:53:57
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:42:21
+# @Last Modified time: 2019-08-30 15:58:36
 import logging
 import sys
 from datetime import datetime
@@ -276,6 +276,7 @@ class Messages(Core):
 
 class Chat(Core):
     name = StringField(unique=True)
+    avatar = BinaryField()
     members = ListField(ReferenceField('User'))
     owner = ReferenceField('User')
 

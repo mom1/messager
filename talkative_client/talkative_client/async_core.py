@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:18:54
+# @Last Modified time: 2019-08-30 16:49:50
 import asyncio
 import base64
 import binascii
@@ -144,7 +144,7 @@ class AsyncClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         if len(data) == self.CHUNK_SIZE:
             self.cur_size = struct.unpack('>I', data)[0]
-            self.transport.max_size = self.def_size
+            self.transport.max_size = min(self.cur_size, self.def_size)
             return
         self.long_data += data
 

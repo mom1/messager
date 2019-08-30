@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:18:19
+# @Last Modified time: 2019-08-30 17:59:23
 import enum
 import logging
 import threading
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import sqlalchemy as sa
 from dynaconf import settings
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
@@ -317,6 +317,7 @@ class User(Core):
     password = sa.Column(PasswordType(schemes=['pbkdf2_sha512']), nullable=False, unique=False)
     pub_key = sa.Column(sa.String())
     username = sa.Column(sa.String(30), unique=True, nullable=False)
+    chats = relationship('Chat', secondary='link')
 
     @classmethod
     def by_name(cls, username):
@@ -361,6 +362,10 @@ class User(Core):
         if self.has_contact(contact_name):
             raise ContactExists(contact_name)
         self.contacts.append(Contact(contact=cont))
+        chat = Chat.create(name=contact_name, owner=self)
+        chat.members.append(self)
+        chat.members.append(cont)
+        chat.save()
         self.history.append(UserHistory(type_row=TypeHistory.add_contact, note=contact_name))
         return self.save()
 
@@ -402,6 +407,12 @@ class User(Core):
 
     def get_contacts(self, text):
         query = self.query().join(Contact, Contact.owner_id == self.id).join(User, Contact.contact_id == User.id)
+        if text:
+            query = query.filter(User.username.ilike(f'{text}%'))
+        return query.all()
+
+    def get_chats(self, text=None):
+        query = self.query(Chat).join(Link, Link.chat_id == Chat.id).join(User, User.id == Link.user_id).filter(User.id == self.id)
         if text:
             query = query.filter(User.username.ilike(f'{text}%'))
         return query.all()
@@ -536,9 +547,15 @@ class Messages(Core):
 class Chat(Core):
     id = sa.Column(sa.Integer, sa.ForeignKey(Core.id, ondelete='CASCADE'), primary_key=True)  # noqa
     name = sa.Column(sa.String(30), unique=True, nullable=False)
-    # members = ListField(ReferenceField('User'))
+    avatar = sa.Column(sa.BLOB)
+    members = relationship('User', secondary='link')
     owner_id = sa.Column(sa.ForeignKey('user.id', ondelete='CASCADE'))
-    owner = relationship('User', backref=backref('chats', order_by='Chat.name'), foreign_keys=[owner_id])
+    owner = relationship('User', backref=backref('own_chats', order_by='Chat.name'), foreign_keys=[owner_id])
+    is_personal = sa.Column(sa.Boolean, default=True)
+
+    @hybrid_property
+    def username(self):
+        return self.name
 
     @classmethod
     def chat_hiltory(cls, chatname, limit=100):
@@ -572,8 +589,16 @@ class Chat(Core):
         chat = cls.filter_by(name=chat_name).first()
         if not chat:
             chat = cls.create(name=chat_name, owner=sender)
+            chat.members.append(sender)
+            chat.members.append(receiver)
+            chat.save()
 
         Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
+
+
+class Link(Base):
+    chat_id = sa.Column(sa.Integer, sa.ForeignKey('chat.id'))
+    user_id = sa.Column(sa.Integer, sa.ForeignKey('user.id'))
 
 
 # Отладка

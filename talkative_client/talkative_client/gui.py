@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:31:43
+# @Last Modified time: 2019-08-30 17:34:31
 
 import base64
 import logging
@@ -18,7 +18,7 @@ from PyQt5 import uic
 from PyQt5.Qt import QAction
 from PyQt5.QtCore import QSettings, pyqtSlot, QThread
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QMainWindow, QMenu, QMessageBox
+from PyQt5.QtWidgets import QDialog, QMainWindow, QMenu, QMessageBox, QInputDialog
 
 from .db import User, UserHistory, Chat
 from .db import database_lock as db_lock
@@ -192,7 +192,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         menu = QMenu(self)
         action = menu.addAction('Создать группу')
         action.setIcon(self.states['group'])
-        # action.triggered.connect()
+        action.triggered.connect(self.create_group)
 
         action = menu.addAction('Контакы')
         action.setIcon(self.states['exists'])
@@ -237,6 +237,16 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         global profile_window
         profile_window = UserWindow(self)
 
+    def create_group(self):
+        text, ok = QInputDialog.getText(self, 'Создание группы', 'Название группы:')
+        if ok:
+            text = str(text)
+            chat = Chat.filter_by(name=text).first()
+            if chat:
+                self.MsgBox.information(self, 'Создание чата', 'Такая группа уже существует')
+                return
+            Chat.objects.create(name=text, owner=User.by_name(settings.USER_NAME))
+
     def restore_size_pos(self):
         """Восстановление состояния сплитера."""
         super().restore_size_pos()
@@ -270,7 +280,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             return
         with db_lock:
             if self.contacts_list_state != 'new':
-                contacts = user.get_contacts(text)
+                contacts = user.get_chats(text)
             else:
                 contacts = user.not_contacts(text)
         contacts_list = [(i.username, i.avatar) for i in contacts]
