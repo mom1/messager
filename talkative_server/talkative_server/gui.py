@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 11:53:17
+# @Last Modified time: 2019-08-31 11:32:29
 import binascii
 import hashlib
 import sys
@@ -37,7 +37,7 @@ class SaveGeometryMixin(object):
 
     def restore_size_pos(self):
         """Востановление размера и позиции."""
-        self.settings = QSettings(type(self).__name__, 'server')
+        self.settings = QSettings('talkative_server', type(self).__name__)
         size = self.settings.value('size', None)
         pos = self.settings.value('pos', None)
         if size:

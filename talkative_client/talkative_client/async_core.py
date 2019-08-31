@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 16:49:50
+# @Last Modified time: 2019-08-31 17:43:46
 import asyncio
 import base64
 import binascii
@@ -302,6 +302,22 @@ class GetContacts:
             proto.notify(f'send_{self.name}')
 
 
+class GetChatsCommand:
+    name = settings.GET_CHATS
+
+    def update(self, proto, msg=None, *args, **kwargs):
+        code = getattr(msg, settings.RESPONSE, '')
+        if code == 202:
+            Chat.chats_merge(getattr(msg, settings.LIST_INFO, []))
+            proto.notify(f'done_{self.name}')
+        else:
+            proto.write(Message(**{
+                settings.ACTION: settings.GET_CHATS,
+                settings.USER: settings.USER_NAME,
+            }))
+            proto.notify(f'send_{self.name}')
+
+
 class MessageCommand:
     name = settings.MESSAGE
 
@@ -353,9 +369,9 @@ class RequestKeyCommand:
 router.reg_command(ClientAuth)
 router.reg_command(ClientError)
 router.reg_command(GetAllUsers)
-router.reg_command(GetContacts)
+router.reg_command(GetChatsCommand)
 router.reg_command(GetAllUsers, f'done_{settings.AUTH}')
-router.reg_command(GetContacts, f'done_{settings.AUTH}')
+router.reg_command(GetChatsCommand, f'done_{settings.AUTH}')
 router.reg_command(GetAllUsers, 205)
 router.reg_command(MessageCommand)
 router.reg_command(RequestKeyCommand)

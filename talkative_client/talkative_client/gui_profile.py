@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-14 09:16:25
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-24 23:22:19
+# @Last Modified time: 2019-08-31 18:50:19
 
 import base64
 import io
@@ -60,7 +60,12 @@ class UserWindow(QDialog):
         self.btnSepia.clicked.connect(lambda: self.apply_effects(['SEPIA']))
         self.btnEmboss.clicked.connect(lambda: self.apply_effects(['EMBOSS']))
         self.btnClear.clicked.connect(self.restore_ava)
+        self.switch_btn()
         self.show()
+
+    def switch_btn(self, force=None):
+        for field in (self.btnGrayScale, self.btnNegative, self.btnBW, self.btnSepia, self.btnEmboss):
+            field.setEnabled(not field.isEnabled() if force is None else force)
 
     def save_data(self):
         user = User.by_name(settings.USER_NAME)
@@ -97,6 +102,7 @@ class UserWindow(QDialog):
             img = ImageQt(image.convert('RGBA'))
             self.lblAvatar.setPixmap(QPixmap.fromImage(img))
             self.origin_img = self.lblAvatar.pixmap().toImage()
+            self.switch_btn()
 
     def make_sepia_palette(self, color):
         palette = []

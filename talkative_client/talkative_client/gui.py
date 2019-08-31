@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 17:34:31
+# @Last Modified time: 2019-08-31 19:35:50
 
 import base64
 import logging
@@ -16,11 +16,12 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5 import uic
 from PyQt5.Qt import QAction
-from PyQt5.QtCore import QSettings, pyqtSlot, QThread
+from PyQt5.QtCore import QSettings, QThread, pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QDialog, QMainWindow, QMenu, QMessageBox, QInputDialog
+from PyQt5.QtWidgets import (QDialog, QInputDialog, QMainWindow, QMenu,
+                             QMessageBox)
 
-from .db import User, UserHistory, Chat
+from .db import Chat, User, UserHistory
 from .db import database_lock as db_lock
 from .errors import ContactExists, ContactNotExists, NotFoundUser
 from .gui_profile import UserWindow
@@ -42,7 +43,7 @@ class SaveGeometryMixin(object):
 
     def restore_size_pos(self):
         """Востановление размера и позиции."""
-        self.settings = QSettings(type(self).__name__, settings.USER_NAME)
+        self.settings = QSettings('talkative_client', f'{settings.USER_NAME}__{type(self).__name__}')
         size = self.settings.value('size', None)
         pos = self.settings.value('pos', None)
         if size:
@@ -190,13 +191,13 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             QMenu
         """
         menu = QMenu(self)
-        action = menu.addAction('Создать группу')
-        action.setIcon(self.states['group'])
-        action.triggered.connect(self.create_group)
-
         action = menu.addAction('Контакы')
-        action.setIcon(self.states['exists'])
-        action.triggered.connect(lambda: self.switch_list_state('exists'))
+        action.setIcon(self.states['default'])
+        action.triggered.connect(lambda: self.switch_list_state('default'))
+
+        # action = menu.addAction('Создать группу')
+        # action.setIcon(self.states['group'])
+        # action.triggered.connect(self.create_group)
 
         action = menu.addAction('Новый контакт')
         action.setIcon(self.states['new'])
@@ -245,7 +246,23 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             if chat:
                 self.MsgBox.information(self, 'Создание чата', 'Такая группа уже существует')
                 return
-            Chat.objects.create(name=text, owner=User.by_name(settings.USER_NAME))
+            user = User.by_name(settings.USER_NAME)
+            with db_lock:
+                chat = Chat.create(name=text, owner=user, is_personal=False)
+                chat.members.append(user)
+                chat.save()
+            self.client.notify(
+                f'send_{settings.MESSAGE}',
+                msg=Message(**{
+                    settings.ACTION: settings.EDIT_CHAT,
+                    settings.USER: settings.USER_NAME,
+                    settings.DATA: {
+                        'name': chat.name,
+                        'owner': chat.owner.username,
+                        'is_personal': chat.is_personal,
+                        'members': [i.username for i in chat.members],
+                    },
+                }))
 
     def restore_size_pos(self):
         """Восстановление состояния сплитера."""
@@ -409,12 +426,25 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         user = User.by_name(settings.USER_NAME)
         try:
             with db_lock:
-                user.add_contact(self.current_chat)
-            self.client.notify(f'send_{settings.MESSAGE}', msg=Message(**{
-                settings.ACTION: settings.ADD_CONTACT,
-                settings.USER: settings.USER_NAME,
-                settings.ACCOUNT_NAME: self.current_chat,
-            }))
+                chat = user.add_contact(self.current_chat)
+            self.client.notify(f'send_{settings.MESSAGE}',
+                               msg=Message(**{
+                                   settings.ACTION: settings.ADD_CONTACT,
+                                   settings.USER: settings.USER_NAME,
+                                   settings.ACCOUNT_NAME: self.current_chat,
+                               }))
+            self.client.notify(
+                f'send_{settings.MESSAGE}',
+                msg=Message(**{
+                    settings.ACTION: settings.EDIT_CHAT,
+                    settings.USER: settings.USER_NAME,
+                    settings.DATA: {
+                        'name': chat.name,
+                        'owner': chat.owner.username,
+                        'is_personal': chat.is_personal,
+                        'members': [i.username for i in chat.members],
+                    },
+                }))
         except (ContactExists, NotFoundUser, ContactNotExists) as e:
             self.MsgBox.critical(self, 'Ошибка', str(e))
             logger.error(e)
@@ -427,16 +457,24 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         name_contact = self.listContact.currentIndex().data()
         try:
             with db_lock:
-                user.del_contact(name_contact)
+                chat = user.del_contact(name_contact)
             self.client.notify(f'send_{settings.MESSAGE}', msg=Message(**{
                 settings.ACTION: settings.DEL_CONTACT,
                 settings.USER: settings.USER_NAME,
                 settings.ACCOUNT_NAME: name_contact,
             }))
+            self.client.notify(f'send_{settings.MESSAGE}', msg=Message(**{
+                settings.ACTION: settings.DEL_CHAT,
+                settings.USER: settings.USER_NAME,
+                settings.DATA: {'name': chat},
+            }))
         except (ContactExists, NotFoundUser, ContactNotExists) as e:
             self.MsgBox.critical(self, 'Ошибка', str(e))
             logger.error(e)
         else:
+            self.editMessages.clear()
+            self.lblContact.setText('')
+            self.lblAvatar.clear()
             self.update_contact()
 
     def search_contact(self, text):

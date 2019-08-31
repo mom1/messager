@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 11:33:54
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 08:11:25
+# @Last Modified time: 2019-08-31 18:19:04
 import inspect
 import logging
 from functools import wraps
@@ -90,7 +90,7 @@ def login_required_db(func):
                 break
         for k, v in kwargs.items():
             if isinstance(v, Message):
-                user = db.User.by_name(x.user_account_name)
+                user = db.User.by_name(v.user_account_name)
                 break
 
         if not user or not user.user_activity:

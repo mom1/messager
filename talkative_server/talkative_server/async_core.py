@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:34:59
+# @Last Modified time: 2019-08-31 19:28:00
 import asyncio
 import base64
 import binascii
@@ -16,15 +16,14 @@ from dynaconf import settings
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from .db import DBManager
-
 from .descriptors import PortDescr
 from .jim_mes import Message
+
 # from .metaclasses import ServerVerifier
 
 app_name = 'server'
 logger = logging.getLogger(app_name)
 db = DBManager(app_name)
-
 from .decorators import login_required_db  # noqa
 
 
@@ -58,6 +57,7 @@ class ServerA(QThread):
         self.started = False
         self._observers = {}
         self.auth = {}
+        self.protocol = None
         self.router = router.init(self)
 
     def init_socket(self):
@@ -102,14 +102,18 @@ class ServerA(QThread):
     def is_alive(self):
         return self.started
 
-    def notify(self, event, *args, **kwargs):
+    def notify(self, event, proto=None, msg=None, **kwargs):
         logger.info(f'Свершилось событие {event}')
         obs = self._observers.get(event, []) or []
+        kwargs['event'] = event
+        kwargs['thread'] = self
+        protocol = proto or self.protocol
+
         for observer in obs:
             if isinstance(observer, QObject):
-                self.update.emit({**{'event': event}, **kwargs})
+                self.update.emit({**{'proto': protocol, 'msg': msg}, **kwargs})
             else:
-                observer.update(self, event, *args, **kwargs)
+                observer.update(proto=protocol, msg=msg, **kwargs)
 
     def attach(self, observer, event):
         obs = self._observers.get(event, []) or []
@@ -202,8 +206,8 @@ class AsyncServerProtocol(asyncio.Protocol):
         except BrokenPipeError:
             transport.close()
 
-    def notify(self, *args, **kwargs):
-        self._thread.notify(*args, **kwargs)
+    def notify(self, event, *args, **kwargs):
+        self._thread.notify(event, self, *args, **kwargs)
 
     def close(self):
         self.transport.close()
@@ -245,6 +249,8 @@ class Router:
             self.init_cmd(cmd, name)
 
     def init_cmd(self, cmd, name):
+        if hasattr(cmd, '__name__'):
+            cmd = cmd()
         self.source.attach(cmd, name)
 
 
@@ -257,7 +263,7 @@ class MessageCommand:
     name = settings.MESSAGE
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         if msg.is_valid():
             dest_user = getattr(msg, settings.DESTINATION, None)
             src_user = getattr(msg, settings.SENDER, None)
@@ -269,13 +275,13 @@ class MessageCommand:
             db.UserHistory.proc_message(src_user, dest_user)
             db.Chat.create_msg(msg)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
-            proto.notify(f'done_{settings.MESSAGE}')
+            proto.notify(f'done_{self.name}')
 
 
 class Presence:
     name = settings.PRESENCE
 
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
         if not user:
             logger.info('Пользователь не зарегистрирован.')
@@ -289,13 +295,13 @@ class Presence:
         digest = hmac.new(user.auth_key, random_str).digest()
         proto._thread.auth[user.username] = (digest, getattr(msg, settings.PUBLIC_KEY, ''))
         proto.write(Message(response=511, **{settings.ACTION: settings.AUTH, settings.DATA: random_str.decode('ascii')}))
-        proto.notify(f'done_{settings.PRESENCE}')
+        proto.notify(f'done_{self.name}')
 
 
 class Auth:
     name = 'auth'
 
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
         if not user:
             return proto.write(Message.error_resp('Пользователь не зарегистрирован.'))
@@ -314,7 +320,7 @@ class UserListCommand:
     name = settings.USERS_REQUEST
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         lst = []
         for user in db.User.objects.all():
             lst.append((user.username, base64.b64encode(user.avatar).decode('ascii') if user.avatar else None))
@@ -322,7 +328,7 @@ class UserListCommand:
             settings.LIST_INFO: lst,
             settings.ACTION: settings.USERS_REQUEST,
         }))
-        proto.notify(f'done_{settings.USERS_REQUEST}')
+        proto.notify(f'done_{self.name}')
 
 
 class AddContactCommand:
@@ -331,7 +337,7 @@ class AddContactCommand:
     name = settings.ADD_CONTACT
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         src_user = getattr(msg, settings.USER, None)
         contact = getattr(msg, settings.ACCOUNT_NAME, None)
         user = db.User.by_name(src_user)
@@ -341,25 +347,53 @@ class AddContactCommand:
         else:
             proto.write(Message.error_resp('Не найден контакт'))
         logger.info(f'User {src_user} add contact {contact}')
-        proto.notify(f'done_{settings.ADD_CONTACT}')
+        proto.notify(f'done_{self.name}')
 
 
-class DelContactCommand:
-    """Обрабатывает запросы на удаление контакта."""
+class EditChatCommand:
+    """Обрабатывает запросы на добавление/изменение чата."""
 
-    name = settings.DEL_CONTACT
+    name = settings.EDIT_CHAT
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
+        user = db.User.by_name(getattr(msg, settings.USER, None))
+        data = getattr(msg, settings.DATA, None)
+        chat = db.Chat.objects(name=data.get('name')).first()
+        code_resp = 201
+
+        if chat:
+            chat.update(set__members=[db.User.by_name(m) for m in data.get('members', [])])
+            code_resp = 202
+        else:
+            chat = db.Chat.objects.create(
+                name=data.get('name'),
+                owner=db.User.by_name(data.get('owner')),
+                is_personal=data.get('is_personal'),
+                members=[db.User.by_name(m) for m in data.get('members', [])],
+            )
+        proto.write(Message.success(code_resp))
+        logger.info(f'User {user} edit chat {chat.name}')
+        proto.notify(f'done_{self.name}')
+
+
+class DelChatCommand:
+    """Обрабатывает запросы на удаление контакта."""
+
+    name = settings.DEL_CHAT
+
+    @login_required_db
+    def update(self, proto, msg, *args, **kwargs):
         """Выполнение."""
-        src_user = getattr(msg, settings.USER, None)
-        contact = getattr(msg, settings.ACCOUNT_NAME, None)
-        user = db.User.by_name(src_user)
-        if contact:
-            user.del_contact(contact)
+        user = db.User.by_name(getattr(msg, settings.USER, None))
+        data = getattr(msg, settings.DATA, None)
+        chat = db.Chat.objects(name=data.get('name')).first()
+
+        if chat:
+            chat.delete()
             proto.write(Message.success())
-        logger.info(f'User {src_user} del contact {contact}')
-        proto.notify(f'done_{settings.DEL_CONTACT}')
+            logger.info(f'User {user} del chat {data.get("name")}')
+            proto.notify(f'done_{self.name}')
 
 
 class ListContactsCommand:
@@ -368,11 +402,33 @@ class ListContactsCommand:
     name = settings.GET_CONTACTS
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
         proto.write(Message.success(202, **{settings.LIST_INFO: [c.username for c in user.contacts], settings.ACTION: settings.GET_CONTACTS}))
         logger.info(f'User {user.username} get list contacts')
-        proto.notify(f'done_{settings.GET_CONTACTS}')
+        proto.notify(f'done_{self.name}')
+
+
+class ListChatsCommand:
+    """Обрабатывает запросы на получение списка контактов пользователя."""
+
+    name = settings.GET_CHATS
+
+    @login_required_db
+    def update(self, proto, msg, *args, **kwargs):
+        user = db.User.by_name(msg.user_account_name)
+        proto.write(Message.success(202, **{
+            settings.LIST_INFO: [{
+                'name': c.name,
+                'owner': c.owner.username,
+                'avatar': c.avatar,
+                'is_personal': c.is_personal,
+                'members': [i.username for i in c.members],
+            } for c in user.chats],
+            settings.ACTION: settings.GET_CHATS,
+        }))
+        logger.info(f'User {user.username} get list chats')
+        proto.notify(f'done_{self.name}')
 
 
 class RequestKeyCommand:
@@ -395,7 +451,7 @@ class RequestKeyCommand:
             mes = Message.error_resp('Ошибка определения ключа')
         proto.write(mes)
         logger.info(f'User {src_user} get pub_key {dest_user}')
-        proto.notify(f'done_{settings.PUBLIC_KEY_REQUEST}')
+        proto.notify(f'done_{self.name}')
 
 
 class EditAvatar:
@@ -404,14 +460,14 @@ class EditAvatar:
     name = settings.AVA_INFO
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
         ava = getattr(msg, settings.DATA, None)
         if user and ava:
             user.avatar = base64.b64decode(ava)
             user.save()
             logger.info(f'Ava saved for user {user.username}')
-            proto.notify(f'done_{settings.AVA_INFO}')
+            proto.notify(f'done_{self.name}')
             proto.service_update_lists()
 
 
@@ -421,23 +477,25 @@ class ExitCommand:
     name = settings.EXIT
 
     @login_required_db
-    def update(self, event, proto, msg, *args, **kwargs):
+    def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
         if user:
             client_ip, client_port = proto.transport.get_extra_info('peername')
             proto.close()
             db.User.logout_user(user.username, ip_addr=client_ip, port=client_port)
             logger.info(f'User {user.username} log off')
-            proto.notify(f'done_{settings.EXIT}')
+            proto.notify(f'done_{self.name}')
 
 
 router.reg_command(Presence)
 router.reg_command(Auth)
 router.reg_command(UserListCommand)
 router.reg_command(ListContactsCommand)
+router.reg_command(ListChatsCommand)
 router.reg_command(EditAvatar)
 router.reg_command(RequestKeyCommand)
-router.reg_command(DelContactCommand)
+router.reg_command(DelChatCommand)
 router.reg_command(AddContactCommand)
+router.reg_command(EditChatCommand)
 router.reg_command(MessageCommand)
 router.reg_command(ExitCommand)

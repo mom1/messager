@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-23 23:40:46
+# @Last Modified time: 2019-08-31 19:22:19
 import logging
 
 # Debug
@@ -31,12 +31,16 @@ USER = 'user'
 
 # Прочие ключи, используемые в протоколе
 ADD_CONTACT = 'add'
+ADD_CHAT = 'add_chat'
 AVA_INFO = 'edit_ava'
+EDIT_CHAT = 'edit_chat'
+DEL_CHAT = 'del_chat'
 AUTH = 'auth'
 DEL_CONTACT = 'remove'
 ERROR = 'error'
 EXIT = 'exit'
 GET_CONTACTS = 'get_contacts'
+GET_CHATS = 'get_chats'
 LIST_INFO = 'data_list'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'

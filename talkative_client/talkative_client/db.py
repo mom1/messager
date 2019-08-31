@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 17:59:23
+# @Last Modified time: 2019-08-31 19:23:03
 import enum
 import logging
 import threading
@@ -357,17 +357,23 @@ class User(Core):
 
         """
         cont = User.by_name(contact_name)
+        user = User.by_name(settings.USER_NAME)
         if not cont:
             raise NotFoundUser(contact_name)
         if self.has_contact(contact_name):
             raise ContactExists(contact_name)
         self.contacts.append(Contact(contact=cont))
-        chat = Chat.create(name=contact_name, owner=self)
-        chat.members.append(self)
-        chat.members.append(cont)
-        chat.save()
+        chat = None
+        for x in cont.get_chats():
+            if user in x.members and x.is_personal:
+                chat = x
+                break
+        if not chat:
+            chat = Chat.create(name='__'.join(sorted((self.username, contact_name))), owner=cont)
+            chat.members.extend((self, cont))
+            chat.save()
         self.history.append(UserHistory(type_row=TypeHistory.add_contact, note=contact_name))
-        return self.save()
+        return chat
 
     def del_contact(self, contact_name):
         """Удаляет контакт.
@@ -386,6 +392,14 @@ class User(Core):
         self.contacts.remove(Contact.filter_by(owner=self, contact=cont).one())
         self.history.append(UserHistory(type_row=TypeHistory.del_contact, note=contact_name))
         self.save()
+        name = None
+        for x in cont.get_chats():
+            if x.is_personal:
+                name = x.name
+                x.delete()
+        return name
+        # import ipdb; ipdb.set_trace()
+        # Chat.filter(Chat.members__in == [cont])
 
     @hybrid_property
     def sent(self):
@@ -555,7 +569,13 @@ class Chat(Core):
 
     @hybrid_property
     def username(self):
-        return self.name
+        if not self.is_personal:
+            return self.name
+        else:
+            user = User.by_name(settings.USER_NAME)
+            for i in self.members:
+                if i != user:
+                    return i.username
 
     @classmethod
     def chat_hiltory(cls, chatname, limit=100):
@@ -577,6 +597,34 @@ class Chat(Core):
         return history
 
     @classmethod
+    def chats_merge(cls, lst):
+        for item in lst:
+            cht = cls.filter_by(name=item.get('name')).first()
+            members = item.pop('members', [])
+            if cht:
+                for name, val in item.items():
+                    if 'owner' == name:
+                        val = User.by_name(val)
+                    setattr(cht, name, val)
+            else:
+                cht = cls(
+                    name=item.get('name'),
+                    avatar=item.get('avatar'),
+                    owner=User.by_name(item.get('owner')),
+                    is_personal=item.get('is_personal'),
+                )
+            cht.members.clear()
+            cht.members.extend([User.by_name(i) for i in members])
+            with database_lock:
+                cht.save()
+
+        lst_cht = [i.get('name') for i in lst]
+        for x in cls.all():
+            if x.name not in lst_cht:
+                with database_lock:
+                    x.delete()
+
+    @classmethod
     def create_msg(cls, msg, text=''):
         dest_user = getattr(msg, settings.DESTINATION, None) or settings.USER_NAME
         src_user = getattr(msg, settings.SENDER, None) or settings.USER_NAME
@@ -591,7 +639,8 @@ class Chat(Core):
             chat = cls.create(name=chat_name, owner=sender)
             chat.members.append(sender)
             chat.members.append(receiver)
-            chat.save()
+            with database_lock:
+                chat.save()
 
         Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
 

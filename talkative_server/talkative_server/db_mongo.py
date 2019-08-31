@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-29 21:53:57
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 15:58:36
+# @Last Modified time: 2019-08-31 17:59:19
 import logging
 import sys
 from datetime import datetime
@@ -151,6 +151,10 @@ class User(Core):
         except Exception:
             return None
 
+    @property
+    def chats(self):
+        return Chat.objects(members=self).all()
+
     @classmethod
     def login_user(cls, username, **kwargs):
         """Логирование при входе пользователя."""
@@ -279,6 +283,7 @@ class Chat(Core):
     avatar = BinaryField()
     members = ListField(ReferenceField('User'))
     owner = ReferenceField('User')
+    is_personal = BooleanField(default=True)
 
     @property
     def messages(self):
