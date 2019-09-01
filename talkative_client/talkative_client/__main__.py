@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-20 10:44:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 22:39:31
+# @Last Modified time: 2019-09-01 22:07:31
 import argparse
 import logging
 import logging.config
@@ -155,7 +155,6 @@ def _process_key():
     settings.set('PASSWORD', passwd)
     key = settings.get('USER_KEY')
     if not key:
-
         keys = RSA.generate(2048, os.urandom)
         key = keys.export_key().decode('ascii')
         loader.write(key_file, {'DEFAULT': {
