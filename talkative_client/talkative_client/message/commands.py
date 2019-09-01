@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-23 08:56:24
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 14:31:07
+# @Last Modified time: 2019-08-31 22:23:16
 import logging
 
 from dynaconf import settings
@@ -33,7 +33,6 @@ class MessageCommand(AbstractCommand):
         client.send_message(message)
         logger.info(f'Отправлено сообщение для пользователя {to}')
         with client.db_lock:
-            UserHistory.proc_message(settings.USER_NAME, to)
             Chat.create_msg(message, text=str(message))
         return True
 

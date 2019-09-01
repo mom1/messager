@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 11:32:29
+# @Last Modified time: 2019-08-31 21:01:18
 import binascii
 import hashlib
 import sys
@@ -15,8 +15,8 @@ from dynaconf.loaders import yaml_loader as loader
 from PyQt5 import uic
 from PyQt5.QtCore import QSettings, Qt, pyqtSlot
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow,
-                             QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QInputDialog,
+                             QMainWindow, QMessageBox)
 
 from .db import DBManager
 
@@ -93,6 +93,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
             'action_config': self.config_open,
             'action_add_user': self.add_user_open,
             'action_restart_server': self.action_restart_serv,
+            'action_create_group': self.create_group,
         }
         self.register_event()
         time.sleep(1)
@@ -173,6 +174,24 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         self.server = server()
         self.server.daemon = True
         self.server.start()
+
+    def create_group(self):
+        text, ok = QInputDialog.getText(self, 'Создание группы', 'Название группы:')
+        if ok:
+            text = str(text)
+            chat = db.Chat.objects.create(
+                name=text,
+                is_personal=False,
+            )
+            while ok:
+                items = [u.username for u in db.User.objects(id__nin=[i.id for i in chat.members]).all()]
+                if not items:
+                    break
+                item, ok = QInputDialog.getItem(self, 'Выберите участников\nдля перкращения нажмите отмену', 'Участник:', items)
+                if ok and item:
+                    chat.update(push__members=db.User.by_name(item))
+                    chat.reload()
+                chat.save()
 
 
 class HistoryWindow(SaveGeometryMixin, QDialog):

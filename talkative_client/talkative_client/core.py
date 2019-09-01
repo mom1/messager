@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-22 23:36:43
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-30 14:24:32
+# @Last Modified time: 2019-08-31 22:22:56
 import base64
 import binascii
 import hashlib
@@ -310,7 +310,6 @@ class ClientReader(threading.Thread, SocketMixin, QObject):
                 mes_ecrypted = base64.b64decode(str(self.message))
                 decrypted_message = self.decrypter.decrypt(mes_ecrypted)
                 with self.db_lock:
-                    UserHistory.proc_message(sender, settings.USER_NAME)
                     Chat.create_msg(self.message, text=decrypted_message.decode('utf8'))
                 self.notify(settings.get('event_new_message'))
                 self.new_message.emit(self.message)

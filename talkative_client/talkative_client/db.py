@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 19:23:03
+# @Last Modified time: 2019-09-01 11:47:07
 import enum
 import logging
 import threading
@@ -481,18 +481,6 @@ class UserHistory(Core):
 
     oper = relationship('User', backref='history', foreign_keys=[oper_id])
 
-    @classmethod
-    def proc_message(cls, scr, dest):
-        """Фиксация отправленного или пришедшего сообщения.
-
-        Args:
-            scr: отправитель
-            dest: получатель
-
-        """
-        cls.create(oper=User.by_name(scr), type_row=TypeHistory.mes_sent)
-        cls.create(oper=User.by_name(dest), type_row=TypeHistory.mes_accepted)
-
 
 class ActiveUsers(Core):
     """Активные пользователи.
@@ -604,13 +592,14 @@ class Chat(Core):
             if cht:
                 for name, val in item.items():
                     if 'owner' == name:
-                        val = User.by_name(val)
+                        val = User.by_name(val) if val else None
                     setattr(cht, name, val)
             else:
+                owner = item.get('owner')
                 cht = cls(
                     name=item.get('name'),
                     avatar=item.get('avatar'),
-                    owner=User.by_name(item.get('owner')),
+                    owner=User.by_name(owner) if owner else None,
                     is_personal=item.get('is_personal'),
                 )
             cht.members.clear()
@@ -636,13 +625,14 @@ class Chat(Core):
             chat_name = '__'.join(sorted((sender.username, receiver.username)))
         chat = cls.filter_by(name=chat_name).first()
         if not chat:
-            chat = cls.create(name=chat_name, owner=sender)
-            chat.members.append(sender)
-            chat.members.append(receiver)
             with database_lock:
+                chat = cls.create(name=chat_name, owner=sender)
+                chat.members.append(sender)
+                chat.members.append(receiver)
                 chat.save()
 
-        Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
+        with database_lock:
+            Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
 
 
 class Link(Base):
@@ -681,7 +671,6 @@ if __name__ == '__main__':
     McG2.del_contact('test1')
     pp.pprint(McG2.contacts)
     pp.pprint(McG2.history)
-    UserHistory.proc_message('McG2', '1111')
     # История
     print(McG2.username, 'sent:', McG2.sent, 'accepted:', McG2.accepted)
     print(cont_1111.username, 'sent:', cont_1111.sent, 'accepted:', cont_1111.accepted)

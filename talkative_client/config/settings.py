@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 19:22:19
+# @Last Modified time: 2019-09-01 12:08:29
 import logging
 
 # Debug
@@ -41,6 +41,7 @@ ERROR = 'error'
 EXIT = 'exit'
 GET_CONTACTS = 'get_contacts'
 GET_CHATS = 'get_chats'
+GET_MESSAGES = 'get_messages'
 LIST_INFO = 'data_list'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'

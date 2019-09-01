@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-29 21:53:57
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 17:59:19
+# @Last Modified time: 2019-09-01 11:58:31
 import logging
 import sys
 from datetime import datetime
@@ -309,11 +309,11 @@ class Chat(Core):
         return history
 
     @classmethod
-    def create_msg(cls, msg):
+    def create_msg(cls, msg, received=False):
         dest_user = getattr(msg, settings.DESTINATION, None)
         src_user = getattr(msg, settings.SENDER, None)
         text = getattr(msg, settings.MESSAGE_TEXT, '')
-        chat_name = getattr(msg, 'chat', None)
+        chat_name = msg.chat
         sender = User.by_name(src_user)
         receiver = User.by_name(dest_user)
         if not chat_name:
@@ -322,7 +322,7 @@ class Chat(Core):
         if not chat:
             chat = cls.objects.create(name=chat_name, owner=sender, members=[sender, receiver])
 
-        Messages.objects.create(chat=chat, text=text, sender=sender, receiver=receiver)
+        Messages.objects.create(chat=chat, text=text, sender=sender, receiver=receiver, received=received)
 
 
 if __name__ == '__main__':

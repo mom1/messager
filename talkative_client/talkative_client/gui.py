@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 19:35:50
+# @Last Modified time: 2019-09-01 12:47:30
 
 import base64
 import logging
@@ -21,7 +21,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QDialog, QInputDialog, QMainWindow, QMenu,
                              QMessageBox)
 
-from .db import Chat, User, UserHistory
+from .db import Chat, User
 from .db import database_lock as db_lock
 from .errors import ContactExists, ContactNotExists, NotFoundUser
 from .gui_profile import UserWindow
@@ -117,15 +117,20 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.client.moveToThread(self.thread)
         self.thread.started.connect(self.client.run)
         self.client.update.connect(self.update)
-        self.thread.start()
+        self.chat_members = []
+        self.encryptors = None
         uic.loadUi(self.join(Path('templates/client.ui')), self)
         self.events = {
             f'new_{settings.MESSAGE}': self.incoming_message,
             f'done_{settings.USERS_REQUEST}': self.should_update_contact,
+            f'done_{settings.GET_CHATS}': self.should_update_contact,
             f'done_{settings.PUBLIC_KEY_REQUEST}': self.make_encryptor,
             f'fail_{settings.AUTH}': self.exit_,
         }
         self.register_event()
+        self.thread.start()
+        time.sleep(1)
+        self.current_user = User.by_name(settings.USER_NAME)
         self.init_ui()
 
     def exit_(self, **kwargs):
@@ -165,7 +170,6 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         action = QAction('Удалить', self)
         action.triggered.connect(self.del_contact)
         self.listContact.addAction(action)
-        self.encryptor = None
         self.show()
 
     def set_bold(self):
@@ -246,10 +250,10 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             if chat:
                 self.MsgBox.information(self, 'Создание чата', 'Такая группа уже существует')
                 return
-            user = User.by_name(settings.USER_NAME)
+
             with db_lock:
-                chat = Chat.create(name=text, owner=user, is_personal=False)
-                chat.members.append(user)
+                chat = Chat.create(name=text, owner=self.current_user, is_personal=False)
+                chat.members.append(self.current_user)
                 chat.save()
             self.client.notify(
                 f'send_{settings.MESSAGE}',
@@ -282,6 +286,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
         """
         event = kwargs.get('event')
+        logger.info(f'gui catch {event}')
         method = self.events.get(event)
         if method:
             method(**kwargs)
@@ -292,7 +297,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def update_contact(self, text=''):
         """Обновление контактов."""
-        user = User.by_name(settings.USER_NAME)
+        user = self.current_user
         if not user:
             return
         with db_lock:
@@ -311,7 +316,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
             pava.loadFromData(ava)
             item.setIcon(QIcon(pava))
             self.contacts_model.appendRow(item)
-            if self.current_chat and self.current_chat == i:
+            if self.current_chat == i:
                 index = item.index()
         self.listContact.setModel(self.contacts_model)
         if index:
@@ -325,16 +330,25 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         if self.contacts_list_state == 'new':
             self.add_contact()
 
-        self.client.notify(settings.PUBLIC_KEY_REQUEST, contact=self.current_chat)
+        user = User.by_name(self.current_chat)
+        chat = Chat.filter_by(name=self.current_chat).first() or next((c for c in user.get_chats() if c.is_personal), None)
+        obj = user or chat
+
+        self.chat_members = chat.members
+        self.current_chat = chat.name
+        for cm in self.chat_members:
+            if self.current_user == cm:
+                continue
+            self.client.notify(settings.PUBLIC_KEY_REQUEST, contact=cm.username)
         self.make_encryptor()
 
-        self.lblContact.setText(f'{self.current_chat}')
-        user = User.by_name(self.current_chat)
-        if user:
+        self.lblContact.setText(f'{obj.username}')
+
+        if obj:
             self.fill_chat()
-            if user.avatar:
+            if obj.avatar:
                 ava = QPixmap()
-                ava.loadFromData(user.avatar)
+                ava.loadFromData(obj.avatar)
                 self.lblAvatar.setPixmap(ava)
                 self.lblAvatar.setVisible(True)
 
@@ -342,13 +356,14 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         """Заполнение чата."""
         with db_lock:
             messages = Chat.chat_hiltory(self.current_chat, 20)
+        user = self.current_user
         style_mes_out = self.STYLE_OUT_MES.read_text().format
         style_mes_in = self.STYLE_IN_MES.read_text().format
         self.editMessages.clear()
         mes_list = []
         with db_lock:
             for message in messages:
-                if message.receiver.username == self.current_chat:
+                if message.sender.username == user.username:
                     style_mes = style_mes_out
                     color = settings.COLOR_MESSAGE_OUT
                 else:
@@ -359,7 +374,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def incoming_message(self, *args, **kwargs):
         msg = kwargs.get('msg')
-        if getattr(msg, settings.SENDER, None) == self.current_chat:
+        if self.current_chat in (getattr(msg, settings.SENDER, None), msg.chat):
             self.fill_chat()
 
     def should_update_contact(self, **kwargs):
@@ -367,38 +382,37 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.select_active_user(current_chat=self.current_chat)
 
     def make_encryptor(self, **kwargs):
-        rest_user = User.by_name(self.current_chat)
-        if rest_user.pub_key:
-            self.encryptor = PKCS1_OAEP.new(RSA.import_key(rest_user.pub_key))
+        self.encryptors = {u.username: PKCS1_OAEP.new(RSA.import_key(u.pub_key)) for u in self.chat_members if u.pub_key}
 
     def send_message(self, extra=None):
         """Отправка сообщения."""
         text = extra or self.editMessage.text()
         if not self.current_chat or not text:
             return
-        if not self.encryptor:
+        if not self.encryptors:
             self.select_active_user()
             time.sleep(1)
-            if not self.encryptor:
+            if not self.encryptors:
                 logger.warn(f'Нет ключа для этого чата {self.current_chat}')
                 self.MsgBox.critical(self, 'Ошибка', 'Нет ключа для этого чата')
                 return
-        mes_crypted = self.encryptor.encrypt(text.encode('utf8'))
-        message = self.make_message(base64.b64encode(mes_crypted).decode('ascii'))
 
-        self.client.notify(f'send_{settings.MESSAGE}', msg=message)
+        for username, encryptor in self.encryptors.items():
+            mes_crypted = encryptor.encrypt(text.encode('utf8'))
+            message = self.make_message(username, base64.b64encode(mes_crypted).decode('ascii'))
 
-        with db_lock:
-            UserHistory.proc_message(settings.USER_NAME, self.current_chat)
-            Chat.create_msg(message, text=text)
+            self.client.notify(f'send_{settings.MESSAGE}', msg=message)
+
+        Chat.create_msg(message, text=text)
 
         self.editMessage.clear()
         self.fill_chat()
 
-    def make_message(self, text=''):
+    def make_message(self, username, text=''):
         """Создать объект сообщения.
 
         Args:
+            username: (str) Name destination
             text: [description] (default: {''})
 
         Returns:
@@ -408,8 +422,9 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         return Message(**{
             settings.ACTION: settings.MESSAGE,
             settings.SENDER: settings.USER_NAME,
-            settings.DESTINATION: self.current_chat,
+            settings.DESTINATION: username,
             settings.MESSAGE_TEXT: text,
+            'chat': self.current_chat,
         })
 
     def switch_list_state(self, state=None):
@@ -423,7 +438,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def add_contact(self):
         """Добавление контакта."""
-        user = User.by_name(settings.USER_NAME)
+        user = self.current_user
         try:
             with db_lock:
                 chat = user.add_contact(self.current_chat)
@@ -453,7 +468,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def del_contact(self):
         """Удаление контакта."""
-        user = User.by_name(settings.USER_NAME)
+        user = self.current_user
         name_contact = self.listContact.currentIndex().data()
         try:
             with db_lock:

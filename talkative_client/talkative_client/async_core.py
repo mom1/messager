@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 17:43:46
+# @Last Modified time: 2019-09-01 12:45:59
 import asyncio
 import base64
 import binascii
@@ -16,7 +16,7 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 
-from .db import Chat, DBManager, User, UserHistory
+from .db import Chat, DBManager, User
 from .db import database_lock as db_lock
 from .descriptors import PortDescr
 from .errors import ContactExists
@@ -82,7 +82,6 @@ class ClientTransport(QObject):
         kwargs['event'] = event
         kwargs['thread'] = self
         protocol = proto or self.protocol
-
         for observer in obs:
             if isinstance(observer, QObject):
                 self.update.emit({**{'proto': protocol, 'msg': msg}, **kwargs})
@@ -318,6 +317,17 @@ class GetChatsCommand:
             proto.notify(f'send_{self.name}')
 
 
+class GetMessagesCommand:
+    name = settings.GET_MESSAGES
+
+    def update(self, proto, msg=None, *args, **kwargs):
+        proto.write(Message(**{
+            settings.ACTION: self.name,
+            settings.USER: settings.USER_NAME,
+        }))
+        proto.notify(f'send_{self.name}')
+
+
 class MessageCommand:
     name = settings.MESSAGE
 
@@ -326,9 +336,7 @@ class MessageCommand:
             sender = getattr(msg, settings.SENDER, None)
             mes_ecrypted = base64.b64decode(str(msg))
             decrypted_message = proto.decrypter.decrypt(mes_ecrypted)
-            with db_lock:
-                UserHistory.proc_message(sender, settings.USER_NAME)
-                Chat.create_msg(msg, text=decrypted_message.decode('utf8'))
+            Chat.create_msg(msg, text=decrypted_message.decode('utf8'))
             proto.notify(f'new_{self.name}', msg)
             logger.info(f'Получено сообщение от пользователя {sender}')
 
@@ -372,6 +380,7 @@ router.reg_command(GetAllUsers)
 router.reg_command(GetChatsCommand)
 router.reg_command(GetAllUsers, f'done_{settings.AUTH}')
 router.reg_command(GetChatsCommand, f'done_{settings.AUTH}')
+router.reg_command(GetMessagesCommand, f'done_{settings.GET_CHATS}')
 router.reg_command(GetAllUsers, 205)
 router.reg_command(MessageCommand)
 router.reg_command(RequestKeyCommand)

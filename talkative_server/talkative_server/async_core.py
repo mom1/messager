@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 19:28:00
+# @Last Modified time: 2019-09-01 12:15:37
 import asyncio
 import base64
 import binascii
@@ -16,6 +16,7 @@ from dynaconf import settings
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from .db import DBManager
+from .decorators import login_required_db  # noqa
 from .descriptors import PortDescr
 from .jim_mes import Message
 
@@ -24,7 +25,6 @@ from .jim_mes import Message
 app_name = 'server'
 logger = logging.getLogger(app_name)
 db = DBManager(app_name)
-from .decorators import login_required_db  # noqa
 
 
 class ServerA(QThread):
@@ -217,6 +217,8 @@ class AsyncServerProtocol(asyncio.Protocol):
 
     def get_user_tr(self, user_name):
         act_user = db.ActiveUsers.by_name(user_name)
+        if not act_user:
+            return
         for k, v in self._thread.loop._transports.items():
             if v is self:
                 continue
@@ -269,11 +271,13 @@ class MessageCommand:
             src_user = getattr(msg, settings.SENDER, None)
             dest = proto.get_user_tr(dest_user)
             if not dest:
-                logger.error(f'Пользователь {dest_user} не зарегистрирован на сервере, отправка сообщения невозможна.')
+                db.Chat.create_msg(msg)
+                db.UserHistory.proc_message(src_user, dest_user)
+                logger.info(f'Пользователь {dest_user} не зарегистрирован на сервере, отправка сообщения невозможна.')
                 return
             proto.write(msg, dest)
             db.UserHistory.proc_message(src_user, dest_user)
-            db.Chat.create_msg(msg)
+            db.Chat.create_msg(msg, True)
             logger.info(f'Отправлено сообщение пользователю {dest_user} от пользователя {src_user}.')
             proto.notify(f'done_{self.name}')
 
@@ -417,17 +421,42 @@ class ListChatsCommand:
     @login_required_db
     def update(self, proto, msg, *args, **kwargs):
         user = db.User.by_name(msg.user_account_name)
-        proto.write(Message.success(202, **{
-            settings.LIST_INFO: [{
-                'name': c.name,
-                'owner': c.owner.username,
-                'avatar': c.avatar,
-                'is_personal': c.is_personal,
-                'members': [i.username for i in c.members],
-            } for c in user.chats],
-            settings.ACTION: settings.GET_CHATS,
-        }))
+        proto.write(
+            Message.success(
+                202, **{
+                    settings.LIST_INFO: [{
+                        'name': c.name,
+                        'owner': c.owner.username if c.owner else None,
+                        'avatar': c.avatar,
+                        'is_personal': c.is_personal,
+                        'members': [i.username for i in c.members],
+                    } for c in user.chats],
+                    settings.ACTION:
+                    settings.GET_CHATS,
+                }))
         logger.info(f'User {user.username} get list chats')
+        proto.notify(f'done_{self.name}')
+
+
+class ListMessagesCommand:
+    """Обрабатывает запросы на получение списка писем."""
+
+    name = settings.GET_MESSAGES
+
+    @login_required_db
+    def update(self, proto, msg, *args, **kwargs):
+        user = db.User.by_name(msg.user_account_name)
+        for msg in db.Messages.objects(receiver=user, received=False):
+            proto.write(Message(**{
+                settings.ACTION: settings.MESSAGE,
+                settings.SENDER: msg.sender.username,
+                settings.DESTINATION: msg.receiver.username,
+                settings.MESSAGE_TEXT: msg.text,
+                'chat': msg.chat.name,
+            }))
+            msg.received = True
+            msg.save()
+        logger.info(f'User {user.username} get list messages')
         proto.notify(f'done_{self.name}')
 
 
@@ -498,4 +527,5 @@ router.reg_command(DelChatCommand)
 router.reg_command(AddContactCommand)
 router.reg_command(EditChatCommand)
 router.reg_command(MessageCommand)
+router.reg_command(ListMessagesCommand)
 router.reg_command(ExitCommand)

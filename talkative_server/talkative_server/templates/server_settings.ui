@@ -98,6 +98,7 @@
    <addaction name="action_history"/>
    <addaction name="action_config"/>
    <addaction name="action_add_user"/>
+   <addaction name="action_create_group"/>
    <addaction name="action_restart_server"/>
   </widget>
   <action name="action_refresh">
@@ -170,6 +171,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="action_create_group">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/create-group.png</normaloff>icons/create-group.png</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить группу</string>
    </property>
   </action>
  </widget>

@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-21 11:33:54
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 18:19:04
+# @Last Modified time: 2019-08-31 20:10:08
 import inspect
 import logging
 from functools import wraps
@@ -13,7 +13,7 @@ from .db import DBManager
 from .jim_mes import Message
 
 logger = logging.getLogger('decorators')
-db = DBManager()
+db = DBManager('server')
 
 
 def get_name_by_frame(frame):
