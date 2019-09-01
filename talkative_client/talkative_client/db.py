@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 11:47:07
+# @Last Modified time: 2019-09-01 14:14:20
 import enum
 import logging
 import threading
@@ -358,16 +358,13 @@ class User(Core):
         """
         cont = User.by_name(contact_name)
         user = User.by_name(settings.USER_NAME)
-        if not cont:
+        chat = Chat.filter_by(name=contact_name).first() or next((c for c in cont.get_chats() if c.is_personal and user in c.members), None)
+        if not cont and not chat:
             raise NotFoundUser(contact_name)
         if self.has_contact(contact_name):
             raise ContactExists(contact_name)
-        self.contacts.append(Contact(contact=cont))
-        chat = None
-        for x in cont.get_chats():
-            if user in x.members and x.is_personal:
-                chat = x
-                break
+        if cont:
+            self.contacts.append(Contact(contact=cont))
         if not chat:
             chat = Chat.create(name='__'.join(sorted((self.username, contact_name))), owner=cont)
             chat.members.extend((self, cont))
@@ -385,21 +382,18 @@ class User(Core):
 
         """
         cont = User.by_name(contact_name)
-        if not cont:
+        user = User.by_name(settings.USER_NAME)
+        chat = Chat.filter_by(name=contact_name).first() or next((c for c in cont.get_chats() if c.is_personal and user in c.members), None)
+        if not cont and not chat:
             raise NotFoundContact(contact_name)
-        if not self.has_contact(contact_name):
-            raise ContactNotExists(contact_name)
-        self.contacts.remove(Contact.filter_by(owner=self, contact=cont).one())
+        if self.has_contact(contact_name):
+            self.contacts.remove(Contact.filter_by(owner=self, contact=cont).one())
         self.history.append(UserHistory(type_row=TypeHistory.del_contact, note=contact_name))
         self.save()
-        name = None
-        for x in cont.get_chats():
-            if x.is_personal:
-                name = x.name
-                x.delete()
-        return name
-        # import ipdb; ipdb.set_trace()
-        # Chat.filter(Chat.members__in == [cont])
+        if chat:
+            chat.members.remove(User.by_name(settings.USER_NAME))
+            chat.save()
+        return chat
 
     @hybrid_property
     def sent(self):
@@ -633,6 +627,15 @@ class Chat(Core):
 
         with database_lock:
             Messages.create(chat=chat, text=text, sender=sender, receiver=receiver)
+
+    def save(self):
+        if self.is_personal:
+            user = User.by_name(settings.USER_NAME)
+            for i in self.members:
+                if i != user:
+                    self.avatar = i.avatar
+                    break
+        return super().save()
 
 
 class Link(Base):

@@ -3,7 +3,7 @@
 # @Author: MaxST
 # @Date:   2019-07-31 09:03:14
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 12:47:30
+# @Last Modified time: 2019-09-01 15:02:39
 
 import base64
 import logging
@@ -149,6 +149,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.contacts_list_state = 'exists'
         self.current_chat = None
         self.lblAvatar.setVisible(False)
+        self.btnAddUser.setVisible(False)
         self.update_contact()
         self.listContact.doubleClicked.connect(self.select_active_user)
         self.editMessages.clear()
@@ -158,6 +159,8 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.btnItalic.clicked.connect(self.set_italic)
         self.btnUnder.clicked.connect(self.set_underline)
         self.editFind.textChanged.connect(self.search_contact)
+        self.btnAddUser.clicked.connect(self.add_user_to_current_group)
+
         self.states = {
             'exists': QIcon(QPixmap(str(self.join(Path('templates/img/list-contacts.png'))))),
             'new': QIcon(QPixmap(str(self.join(Path('templates/img/add-contacts.png'))))),
@@ -199,9 +202,9 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         action.setIcon(self.states['default'])
         action.triggered.connect(lambda: self.switch_list_state('default'))
 
-        # action = menu.addAction('Создать группу')
-        # action.setIcon(self.states['group'])
-        # action.triggered.connect(self.create_group)
+        action = menu.addAction('Создать группу')
+        action.setIcon(self.states['group'])
+        action.triggered.connect(self.create_group)
 
         action = menu.addAction('Новый контакт')
         action.setIcon(self.states['new'])
@@ -255,18 +258,24 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                 chat = Chat.create(name=text, owner=self.current_user, is_personal=False)
                 chat.members.append(self.current_user)
                 chat.save()
-            self.client.notify(
-                f'send_{settings.MESSAGE}',
-                msg=Message(**{
-                    settings.ACTION: settings.EDIT_CHAT,
-                    settings.USER: settings.USER_NAME,
-                    settings.DATA: {
-                        'name': chat.name,
-                        'owner': chat.owner.username,
-                        'is_personal': chat.is_personal,
-                        'members': [i.username for i in chat.members],
-                    },
-                }))
+            self.add_user_to_group(chat)
+
+    def add_user_to_group(self, chat):
+        ok = True
+        while ok:
+            items = [u.username for u in User.query().filter(User.id.notin_([i.id for i in chat.members])).all()]
+            if not items:
+                break
+            item, ok = QInputDialog.getItem(self, 'Выберите участников для перкращения нажмите отмену', 'Участник:', items)
+            if ok and item:
+                chat.members.append(User.by_name(item))
+            chat.save()
+
+        self.send_chat(chat)
+        self.should_update_contact()
+
+    def add_user_to_current_group(self):
+        self.add_user_to_group(Chat.filter_by(name=self.current_chat).first())
 
     def restore_size_pos(self):
         """Восстановление состояния сплитера."""
@@ -296,7 +305,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.settings.setValue('splitter', self.splitter.saveState())
 
     def update_contact(self, text=''):
-        """Обновление контактов."""
+        """Обновление списка контактов."""
         user = self.current_user
         if not user:
             return
@@ -343,6 +352,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.make_encryptor()
 
         self.lblContact.setText(f'{obj.username}')
+        self.btnAddUser.setVisible(not chat.is_personal)
 
         if obj:
             self.fill_chat()
@@ -351,6 +361,9 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                 ava.loadFromData(obj.avatar)
                 self.lblAvatar.setPixmap(ava)
                 self.lblAvatar.setVisible(True)
+            else:
+                self.lblAvatar.clear()
+                self.lblAvatar.setVisible(False)
 
     def fill_chat(self):
         """Заполнение чата."""
@@ -369,7 +382,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                 else:
                     style_mes = style_mes_in
                     color = settings.COLOR_MESSAGE_IN
-                mes_list.append(style_mes(color=color, text=message.text, created=message.created))
+                mes_list.append(style_mes(color=color, text=message.text, created=message.created, user_name=message.sender.username))
         self.editMessages.setHtml(''.join(mes_list))
 
     def incoming_message(self, *args, **kwargs):
@@ -382,7 +395,8 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
         self.select_active_user(current_chat=self.current_chat)
 
     def make_encryptor(self, **kwargs):
-        self.encryptors = {u.username: PKCS1_OAEP.new(RSA.import_key(u.pub_key)) for u in self.chat_members if u.pub_key}
+        with db_lock:
+            self.encryptors = {u.username: PKCS1_OAEP.new(RSA.import_key(u.pub_key)) for u in self.chat_members if u.pub_key}
 
     def send_message(self, extra=None):
         """Отправка сообщения."""
@@ -448,18 +462,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                                    settings.USER: settings.USER_NAME,
                                    settings.ACCOUNT_NAME: self.current_chat,
                                }))
-            self.client.notify(
-                f'send_{settings.MESSAGE}',
-                msg=Message(**{
-                    settings.ACTION: settings.EDIT_CHAT,
-                    settings.USER: settings.USER_NAME,
-                    settings.DATA: {
-                        'name': chat.name,
-                        'owner': chat.owner.username,
-                        'is_personal': chat.is_personal,
-                        'members': [i.username for i in chat.members],
-                    },
-                }))
+            self.send_chat(chat)
         except (ContactExists, NotFoundUser, ContactNotExists) as e:
             self.MsgBox.critical(self, 'Ошибка', str(e))
             logger.error(e)
@@ -478,11 +481,7 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
                 settings.USER: settings.USER_NAME,
                 settings.ACCOUNT_NAME: name_contact,
             }))
-            self.client.notify(f'send_{settings.MESSAGE}', msg=Message(**{
-                settings.ACTION: settings.DEL_CHAT,
-                settings.USER: settings.USER_NAME,
-                settings.DATA: {'name': chat},
-            }))
+            self.send_chat(chat)
         except (ContactExists, NotFoundUser, ContactNotExists) as e:
             self.MsgBox.critical(self, 'Ошибка', str(e))
             logger.error(e)
@@ -494,3 +493,17 @@ class ClientMainWindow(SaveGeometryMixin, QMainWindow):
 
     def search_contact(self, text):
         self.update_contact(text)
+
+    def send_chat(self, chat):
+        self.client.notify(
+            f'send_{settings.MESSAGE}',
+            msg=Message(**{
+                settings.ACTION: settings.EDIT_CHAT,
+                settings.USER: settings.USER_NAME,
+                settings.DATA: {
+                    'name': chat.name,
+                    'owner': chat.owner.username if chat.owner else None,
+                    'is_personal': chat.is_personal,
+                    'members': [i.username for i in chat.members],
+                },
+            }))

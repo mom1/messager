@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 07:50:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 12:15:37
+# @Last Modified time: 2019-09-01 15:43:10
 import asyncio
 import base64
 import binascii
@@ -135,13 +135,13 @@ class ServerA(QThread):
         else:
             logger.debug(f'Пустая команда {action}')
 
-    def service_update_lists(self, excep=None):
+    def service_update_lists(self, code=205, excep=None):
         for k, v in self.loop._transports.items():
             if v is excep:
                 continue
             proto = v.get_protocol()
             if proto:
-                proto.write(Message(response=205))
+                proto.write(Message(response=code))
 
 
 class AsyncServerProtocol(asyncio.Protocol):
@@ -212,8 +212,8 @@ class AsyncServerProtocol(asyncio.Protocol):
     def close(self):
         self.transport.close()
 
-    def service_update_lists(self):
-        self._thread.service_update_lists(excep=self.transport)
+    def service_update_lists(self, code=205):
+        self._thread.service_update_lists(code=code, excep=self.transport)
 
     def get_user_tr(self, user_name):
         act_user = db.ActiveUsers.by_name(user_name)
@@ -378,6 +378,7 @@ class EditChatCommand:
             )
         proto.write(Message.success(code_resp))
         logger.info(f'User {user} edit chat {chat.name}')
+        proto.service_update_lists(206)
         proto.notify(f'done_{self.name}')
 
 
@@ -397,6 +398,7 @@ class DelChatCommand:
             chat.delete()
             proto.write(Message.success())
             logger.info(f'User {user} del chat {data.get("name")}')
+            proto.service_update_lists(206)
             proto.notify(f'done_{self.name}')
 
 
@@ -498,6 +500,7 @@ class EditAvatar:
             logger.info(f'Ava saved for user {user.username}')
             proto.notify(f'done_{self.name}')
             proto.service_update_lists()
+            proto.service_update_lists(206)
 
 
 class ExitCommand:

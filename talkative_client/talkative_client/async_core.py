@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 12:45:59
+# @Last Modified time: 2019-09-01 15:20:01
 import asyncio
 import base64
 import binascii
@@ -382,6 +382,7 @@ router.reg_command(GetAllUsers, f'done_{settings.AUTH}')
 router.reg_command(GetChatsCommand, f'done_{settings.AUTH}')
 router.reg_command(GetMessagesCommand, f'done_{settings.GET_CHATS}')
 router.reg_command(GetAllUsers, 205)
+router.reg_command(GetChatsCommand, 206)
 router.reg_command(MessageCommand)
 router.reg_command(RequestKeyCommand)
 router.reg_command(SendMessageCommand)
