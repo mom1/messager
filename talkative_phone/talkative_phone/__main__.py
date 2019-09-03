@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-01 21:30:28
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-02 02:09:36
+# @Last Modified time: 2019-09-02 02:36:49
 import logging
 import logging.config
 import os
@@ -18,10 +18,15 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
+from kivy.properties import BooleanProperty
+from kivy.uix.behaviors import FocusBehavior
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
+from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview import RecycleView
+from kivy.uix.recycleview.layout import LayoutSelectionBehavior
+from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
@@ -40,14 +45,24 @@ cwd = cfile
 os.environ['ROOT_PATH_FOR_DYNACONF'] = str(cwd)
 
 Builder.load_string('''
+<SelectableLabel>:
+    # Draw a background to indicate selection
+    canvas.before:
+        Color:
+            rgba: (.0, 0.9, .1, .3) if self.selected else (0, 0, 0, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
 <ContactsPage>:
-    viewclass: 'Label'
-    RecycleBoxLayout:
+    viewclass: 'SelectableLabel'
+    SelectableRecycleBoxLayout:
         default_size: None, dp(56)
         default_size_hint: 1, None
         size_hint_y: None
         height: self.minimum_height
         orientation: 'vertical'
+        multiselect: True
+        touch_multiselect: True
 ''')
 
 
@@ -244,9 +259,47 @@ class ChatPage(LayoutMixin, GridLayout):
         self.history.update_chat_history(f'[color=20dd20]{username}[/color] > {msg}')
 
 
+class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior, RecycleBoxLayout):
+    """Adds selection and focus behaviour to the view."""
+
+
+class SelectableLabel(RecycleDataViewBehavior, Label):
+    """Add selection support to the Label."""
+    index = None
+    selected = BooleanProperty(False)
+    selectable = BooleanProperty(True)
+
+    def refresh_view_attrs(self, rv, index, data):
+        """Catch and handle the view changes."""
+        self.index = index
+        return super(SelectableLabel, self).refresh_view_attrs(rv, index, data)
+
+    def on_touch_down(self, touch):
+        """Add selection on touch down"""
+        if super(SelectableLabel, self).on_touch_down(touch):
+            return True
+        if self.collide_point(*touch.pos) and self.selectable:
+            return self.parent.select_with_touch(self.index, touch)
+
+    def apply_selection(self, rv, index, is_selected):
+        """Respond to the selection of items in the view."""
+        self.selected = is_selected
+        if is_selected:
+            print('selection changed to {0}'.format(rv.data[index]))
+        else:
+            print('selection removed for {0}'.format(rv.data[index]))
+
+
 class ContactsPage(RecycleView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # self.viewclass = Label
+        # self.list = RecycleBoxLayout(
+        #     default_size=(None, 56),
+        #     default_size_hint=(1, None),
+        #     size_hint_y=None,
+        # )
+        # self.add_widget(self.list)
         user = User.by_name(settings.USER_NAME)
         self.data = [{'text': str(x.username)} for x in user.get_chats()]
 

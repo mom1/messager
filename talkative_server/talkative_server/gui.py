@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-06-02 17:42:30
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-31 21:01:18
+# @Last Modified time: 2019-09-03 09:42:03
 import binascii
 import hashlib
 import sys
@@ -179,6 +179,11 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
         text, ok = QInputDialog.getText(self, 'Создание группы', 'Название группы:')
         if ok:
             text = str(text)
+            chat = db.Chat.objects(name=text).first()
+            if chat:
+                msg_box = QMessageBox()
+                msg_box.warning(main_window, 'Создание группы', 'Группа с таким именем уже есть')
+                return
             chat = db.Chat.objects.create(
                 name=text,
                 is_personal=False,
@@ -187,7 +192,7 @@ class ServerMainWindow(SaveGeometryMixin, QMainWindow):
                 items = [u.username for u in db.User.objects(id__nin=[i.id for i in chat.members]).all()]
                 if not items:
                     break
-                item, ok = QInputDialog.getItem(self, 'Выберите участников\nдля перкращения нажмите отмену', 'Участник:', items)
+                item, ok = QInputDialog.getItem(self, 'Выберите участников для перкращения нажмите отмену', 'Участник:', items)
                 if ok and item:
                     chat.update(push__members=db.User.by_name(item))
                     chat.reload()
