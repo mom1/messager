@@ -1,0 +1,45 @@
+#:import images_path kivymd.images_path
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+#:import MDSeparator kivymd.uix.card.MDSeparator
+#:import MDToolbar kivymd.uix.toolbar.MDToolbar
+##:import NavigationLayout kivymd.navigationdrawer.NavigationLayout
+#:import MDNavigationDrawer kivymd.uix.navigationdrawer.MDNavigationDrawer
+#:import NavigationDrawerSubheader kivymd.uix.navigationdrawer.NavigationDrawerSubheader
+
+# <MyNavigationDrawerIconButton@NavigationDrawerIconButton>
+#     icon: 'checkbox-blank-circle'
+#     on_release:
+#         app.show_screen(root.text)
+#         app.set_title_toolbar(root.text)
+
+<ContentNavigationDrawer@MDNavigationDrawer>
+    drawer_logo: 'icon.png'
+
+    NavigationDrawerSubheader:
+        text: "Menu of Examples:"
+
+    # MyNavigationDrawerIconButton:
+    #     text: "Connection"
+
+NavigationLayout:
+    id: nav_layout
+
+    ContentNavigationDrawer:
+        id: nav_drawer
+
+    BoxLayout:
+        id: box_for_manager
+        orientation: 'vertical'
+
+        MDToolbar:
+            id: toolbar
+            title: app.title
+            md_bg_color: app.theme_cls.primary_color
+            background_palette: 'Primary'
+            background_hue: '500'
+            elevation: 10
+            left_action_items: [['menu', lambda x: app.root.toggle_nav_drawer()]]
+
+        ScreenManager:
+            id: scr_mngr
+            transition: NoTransition()

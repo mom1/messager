@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-08-23 17:30:42
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-02 00:01:52
+# @Last Modified time: 2019-09-08 22:12:00
 import asyncio
 import base64
 import binascii
@@ -17,11 +17,11 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from PyQt5.QtCore import QByteArray, QObject, pyqtSignal
 
-from .db import Chat, DBManager, User
-from .db import database_lock as db_lock
-from .descriptors import PortDescr
-from .errors import ContactExists
-from .jim_mes import Message
+from db import Chat, DBManager, User
+from db import database_lock as db_lock
+from descriptors import PortDescr
+from errors import ContactExists
+from jim_mes import Message
 # from .metaclasses import ClientVerifier
 
 app_name = 'client_phone'

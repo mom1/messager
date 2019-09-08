@@ -1,0 +1,48 @@
+#:import images_path kivymd.images_path
+#:set color_shadow [0, 0, 0, .2980392156862745]
+
+<LoginFieldRound@MDTextFieldRound>
+    size_hint_x: None
+    normal_color: color_shadow
+    active_color: color_shadow
+
+<Connection>
+    name: 'connect'
+
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: None, None
+        size: self.minimum_size
+        spacing: dp(10)
+        pos_hint: {'center_x': .5}
+
+        LoginFieldRound:
+            id: field_username
+            icon_type: 'left'
+            icon_left: 'account-box'
+            hint_text: 'Username'
+            require_text_error: 'Field must be not empty!'
+
+        LoginFieldRound:
+            id: field_password
+            hint_text: 'Password'
+            icon_type: 'all'
+            icon_left: 'key-variant'
+            icon_right: 'eye-off'
+            icon_right_dasabled: False
+            icon_callback: root.show_password
+            password: True
+
+        Widget:
+            size_hint_y: None
+            height: dp(10)
+
+        MDFillRoundFlatButton:
+            text: 'Login'
+            pos_hint: {'center_x': .5}
+            on_release: root.connect()
+            # TODO: socket connect
+
+        Widget:
+            size_hint_y: None
+            height: dp(15)

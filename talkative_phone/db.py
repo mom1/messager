@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 14:14:20
+# @Last Modified time: 2019-09-08 22:12:23
 import enum
 import logging
 import threading
@@ -18,7 +18,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 from sqlalchemy_utils import PasswordType
 
-from .errors import (ContactExists, ContactNotExists, NotFoundContact,
+from errors import (ContactExists, ContactNotExists, NotFoundContact,
                      NotFoundUser)
 
 logger = logging.getLogger('client__db')
