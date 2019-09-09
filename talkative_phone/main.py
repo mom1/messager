@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-08 22:07:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-09 23:10:11
+# @Last Modified time: 2019-09-10 00:04:41
 
 from dynaconf import settings
 from kivy.app import App
@@ -83,13 +83,11 @@ class TalkativePhoneApp(EventServerMixin, App):
         self.main_widget = Builder.load_file('templates/talkativephone.kv')
         return self.main_widget
 
-    # def callback(self, instance, value):
-    #     toast('Pressed item menu %d' % value)
-
     def on_start(self):
         self.add_screen(Connection())
         self.add_screen(Contacts())
         self.add_screen(InfoPage())
+        # self.root.ids.nav_drawer.add_widget(NavigationDrawerIconButton(icon='checkbox-blank-circle', text='Item menu %d' % i, on_release=lambda x, y=i: self.callback(x, y)))
         # for i in range(15):
         #     self.root.ids.nav_drawer.add_widget(
         #     NavigationDrawerIconButton(
