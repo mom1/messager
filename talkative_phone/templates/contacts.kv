@@ -1,13 +1,26 @@
+<RVRow@OneLineAvatarIconListItem>
+    image: None
+    AvatarSampleWidget:
+        texture: root.image
+
+<ContactRecycleView@RecycleView>
+    key_viewclass: 'viewclass'
+    key_size: 'height'
+
+    RecycleBoxLayout:
+        padding: dp(10)
+        spacing: dp(10)
+        default_size: None, dp(48)
+        default_size_hint: 1, None
+        size_hint_y: None
+        height: self.minimum_height
+        orientation: 'vertical'
+
 <Contacts>
     name: 'contacts'
+    on_enter:
+        root.make_data()
+        app.main_widget.ids.toolbar.title = 'Контакты'
 
-    ScrollView:
-        do_scroll_x: False
-
-        MDList:
-            id: ml
-
-            OneLineAvatarIconListItem:
-                text: "Single-line + avatar&icon"
-                AvatarSampleWidget:
-                    source: '/home/maxst/Projects/talkative/kitchen_sink/assets/avatar.png'
+    ContactRecycleView:
+        id: rv_main

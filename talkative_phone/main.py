@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-08 22:07:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-08 23:43:01
+# @Last Modified time: 2019-09-09 23:10:11
 
 from dynaconf import settings
 from kivy.app import App
@@ -10,12 +10,9 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.logger import Logger
-from kivy.uix.image import Image
 from kivy.uix.screenmanager import Screen
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
-from kivymd.uix.button import MDIconButton
-from kivymd.uix.list import ILeftBody, ILeftBodyTouch
 
 from uix.connection import Connection
 from uix.contacts import Contacts
@@ -124,21 +121,9 @@ class InfoPage(Screen):
             height: self.texture_size[1]
         """)
         super().__init__(**kwargs)
-        self.ids.message.bind(width=self.update_text_width)
-
-    def update_text_width(self, *_):
-        self.ids.message.text_size = (self.ids.message.width * 0.9, None)
 
     def update_info(self, message):
         self.ids.message.text = str(message)
-
-
-class AvatarSampleWidget(ILeftBody, Image):
-    pass
-
-
-class IconLeftSampleWidget(ILeftBodyTouch, MDIconButton):
-    pass
 
 
 if __name__ == '__main__':
