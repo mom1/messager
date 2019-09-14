@@ -2,14 +2,15 @@
 # @Author: MaxST
 # @Date:   2019-09-08 22:07:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-14 20:40:47
-
+# @Last Modified time: 2019-09-15 02:01:05
 from dynaconf import settings
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.logger import Logger
+from kivy.metrics import dp
+from kivy.properties import BooleanProperty
 from kivy.uix.screenmanager import Screen
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
@@ -18,8 +19,8 @@ from kivymd.uix.navigationdrawer import NavigationDrawerIconButton
 from uix.chat_screen import ChatScreen
 from uix.connection import Connection
 from uix.contacts import Contacts
-from uix.theming import Theming
 from uix.find_contact import FinContact
+from uix.theming import Theming
 
 
 class EventServerMixin:
@@ -27,14 +28,6 @@ class EventServerMixin:
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # self.events = {
-        #     f'new_{settings.MESSAGE}': self.incoming_message,
-        #     f'done_{settings.USERS_REQUEST}': self.should_update_contact,
-        #     f'done_{settings.GET_CHATS}': self.should_update_contact,
-        #     f'done_{settings.PUBLIC_KEY_REQUEST}': self.make_encryptor,
-        #     f'fail_{settings.AUTH}': self.exit_,
-        #     f'fail': self.exit_,
-        # }
 
     def register_event(self):
         """Регистрация событий."""
@@ -68,6 +61,7 @@ class TalkativePhoneApp(EventServerMixin, App):
     theme_cls.theme_style = settings.get('style', 'Dark')
     main_widget = None
     client = None
+    is_connected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -85,6 +79,7 @@ class TalkativePhoneApp(EventServerMixin, App):
 
     def build(self):
         self.main_widget = Builder.load_file('templates/talkativephone.kv')
+        self.hide_widget(self.main_widget.ids.nav_drawer.ids.create_group)
         return self.main_widget
 
     def on_start(self):
@@ -101,7 +96,9 @@ class TalkativePhoneApp(EventServerMixin, App):
         self.main_widget.ids.scr_mngr.current = name_item.lower()
 
     def done_connect(self, **kwargs):
+        self.is_connected = True
         self.main_widget.ids.nav_drawer.ids.list.remove_widget(self.main_widget.ids.nav_drawer.ids.connect_widget)
+        self.hide_widget(self.main_widget.ids.nav_drawer.ids.create_group, False)
         self.add_screen(FinContact())
         self.show_screen('contacts')
 
@@ -110,6 +107,15 @@ class TalkativePhoneApp(EventServerMixin, App):
         info = self.main_widget.ids.scr_mngr.get_screen(screen)
         info.update_info(msg)
         Clock.schedule_once(lambda *_: self.show_screen(screen), 0.1)
+
+    def hide_widget(self, wid, dohide=True):
+        if hasattr(wid, 'saved_attrs'):
+            if not dohide:
+                wid.height, wid.size_hint_y, wid.opacity, wid.disabled = wid.saved_attrs
+                del wid.saved_attrs
+        elif dohide:
+            wid.saved_attrs = wid.height, wid.size_hint_y, wid.opacity, wid.disabled
+            wid.height, wid.size_hint_y, wid.opacity, wid.disabled = 0, None, 0, True
 
 
 class InfoPage(Screen):

@@ -5,6 +5,7 @@
 
 <MyNavigationDrawerIconButton@NavigationDrawerIconButton>
     icon: 'checkbox-blank-circle'
+    use_active: False
     on_release: app.show_screen(root.screen)
 
 <ContentNavigationDrawer@MDNavigationDrawer>
@@ -12,6 +13,11 @@
 
     NavigationDrawerSubheader:
         text: "Menu:"
+
+    MyNavigationDrawerIconButton:
+        id: create_group
+        screen: "contacts"
+        text: "Создать группу"
 
     MyNavigationDrawerIconButton:
         id: connect_widget
