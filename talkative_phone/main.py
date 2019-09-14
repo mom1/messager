@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-08 22:07:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-10 00:04:41
+# @Last Modified time: 2019-09-14 20:40:47
 
 from dynaconf import settings
 from kivy.app import App
@@ -13,9 +13,13 @@ from kivy.logger import Logger
 from kivy.uix.screenmanager import Screen
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
+from kivymd.uix.navigationdrawer import NavigationDrawerIconButton
 
+from uix.chat_screen import ChatScreen
 from uix.connection import Connection
 from uix.contacts import Contacts
+from uix.theming import Theming
+from uix.find_contact import FinContact
 
 
 class EventServerMixin:
@@ -53,15 +57,15 @@ class EventServerMixin:
         Logger.info(f'gui catch {event}')
         method = self.events.get(event)
         if method:
-            method(**kwargs)
+            Clock.schedule_once(lambda *_: method(**kwargs), 0.1)
 
 
 class TalkativePhoneApp(EventServerMixin, App):
     title = 'Talkative Phone'
     theme_cls = ThemeManager()
-    theme_cls.primary_palette = 'BlueGray'
-    theme_cls.accent_palette = 'Gray'
-    theme_cls.theme_style = 'Dark'
+    theme_cls.primary_palette = settings.get('primary', 'BlueGray')
+    theme_cls.accent_palette = settings.get('accent', 'Gray')
+    theme_cls.theme_style = settings.get('style', 'Dark')
     main_widget = None
     client = None
 
@@ -71,7 +75,7 @@ class TalkativePhoneApp(EventServerMixin, App):
         self.events = {
             f'fail_{settings.AUTH}': self.exit_,
             f'fail': self.exit_,
-            f'done_{settings.AUTH}': lambda **kwargs: self.show_screen('contacts'),
+            f'done_{settings.AUTH}': self.done_connect,
             400: lambda **kwargs: toast(f'{kwargs.get("msg", "Error")}'),
         }
 
@@ -86,18 +90,26 @@ class TalkativePhoneApp(EventServerMixin, App):
     def on_start(self):
         self.add_screen(Connection())
         self.add_screen(Contacts())
+        self.add_screen(ChatScreen())
+        self.add_screen(Theming())
         self.add_screen(InfoPage())
-        # self.root.ids.nav_drawer.add_widget(NavigationDrawerIconButton(icon='checkbox-blank-circle', text='Item menu %d' % i, on_release=lambda x, y=i: self.callback(x, y)))
-        # for i in range(15):
-        #     self.root.ids.nav_drawer.add_widget(
-        #     NavigationDrawerIconButton(
-        #         icon='checkbox-blank-circle', text='Item menu %d' % i, on_release=lambda x, y=i: self.callback(x, y)))
 
     def add_screen(self, screen):
         self.main_widget.ids.scr_mngr.add_widget(screen)
 
     def show_screen(self, name_item):
         self.main_widget.ids.scr_mngr.current = name_item.lower()
+
+    def done_connect(self, **kwargs):
+        self.main_widget.ids.nav_drawer.ids.list.remove_widget(self.main_widget.ids.nav_drawer.ids.connect_widget)
+        self.add_screen(FinContact())
+        self.show_screen('contacts')
+
+    def show_info(self, msg):
+        screen = 'info'
+        info = self.main_widget.ids.scr_mngr.get_screen(screen)
+        info.update_info(msg)
+        Clock.schedule_once(lambda *_: self.show_screen(screen), 0.1)
 
 
 class InfoPage(Screen):

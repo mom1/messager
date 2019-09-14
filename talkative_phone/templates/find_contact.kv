@@ -1,0 +1,22 @@
+<FinContact>
+    name: 'find_contact'
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(10)
+        padding: dp(20)
+
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+
+            MDIconButton:
+                icon: 'magnify'
+
+            MDTextField:
+                id: search_field
+                hint_text: 'Поиск'
+                on_text: root.make_data(search=self.text, contacts=False)
+
+        ContactRecycleView:
+            id: rv_main

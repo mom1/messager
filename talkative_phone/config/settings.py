@@ -2,7 +2,7 @@
 # @Author: maxst
 # @Date:   2019-07-19 17:38:37
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-01 23:31:04
+# @Last Modified time: 2019-09-14 21:43:22
 import logging
 
 # Debug
@@ -82,5 +82,7 @@ CONSOLE = not GUI  # do console start default?
 NO_ASYNC = False
 
 # Colors
-COLOR_MESSAGE_IN = '#a40000;'
-COLOR_MESSAGE_OUT = 'green'
+COLOR_MESSAGE_IN = '#FF0000'
+COLOR_MESSAGE_OUT = '#008000'
+
+MAX_MESSAGE_IN_CHAT = 100

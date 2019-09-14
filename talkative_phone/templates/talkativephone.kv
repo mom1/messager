@@ -1,25 +1,30 @@
-#:import images_path kivymd.images_path
 #:import NoTransition kivy.uix.screenmanager.NoTransition
-#:import MDSeparator kivymd.uix.card.MDSeparator
 #:import MDToolbar kivymd.uix.toolbar.MDToolbar
-##:import NavigationLayout kivymd.navigationdrawer.NavigationLayout
 #:import MDNavigationDrawer kivymd.uix.navigationdrawer.MDNavigationDrawer
 #:import NavigationDrawerSubheader kivymd.uix.navigationdrawer.NavigationDrawerSubheader
 
-# <MyNavigationDrawerIconButton@NavigationDrawerIconButton>
-#     icon: 'checkbox-blank-circle'
-#     on_release:
-#         app.show_screen(root.text)
-#         app.set_title_toolbar(root.text)
+<MyNavigationDrawerIconButton@NavigationDrawerIconButton>
+    icon: 'checkbox-blank-circle'
+    on_release: app.show_screen(root.screen)
 
 <ContentNavigationDrawer@MDNavigationDrawer>
     drawer_logo: 'icon.png'
 
     NavigationDrawerSubheader:
-        text: "Menu of Examples:"
+        text: "Menu:"
 
-    # MyNavigationDrawerIconButton:
-    #     text: "Connection"
+    MyNavigationDrawerIconButton:
+        id: connect_widget
+        screen: "connect"
+        text: "Соединение"
+
+    MyNavigationDrawerIconButton:
+        screen: "Theming"
+        text: "Выбор темы оформления"
+
+    MyNavigationDrawerIconButton:
+        text: "Выход"
+        on_release: app.stop()
 
 NavigationLayout:
     id: nav_layout

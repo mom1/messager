@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-08 19:35:46
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-08 23:44:06
+# @Last Modified time: 2019-09-14 19:41:29
 import os
 import time
 from pathlib import Path
@@ -11,6 +11,7 @@ from Cryptodome.PublicKey import RSA
 from dynaconf import settings
 from dynaconf.loaders import yaml_loader as loader
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.screenmanager import Screen
@@ -35,7 +36,9 @@ class Connection(Screen):
         screen = 'info'
         info = app.main_widget.ids.scr_mngr.get_screen(screen)
         info.update_info(f'Attempt to join {settings.HOST}:{settings.PORT} as {settings.USER_NAME}')
-        app.show_screen(screen)
+
+        Clock.schedule_once(lambda *_: app.show_screen(screen), 0.1)
+
         Logger.debug(f'Connect to server {settings.get("host")}:{settings.get("port")} with name "{settings.USER_NAME}"')
         self.process_key()
 
@@ -54,7 +57,7 @@ class Connection(Screen):
         user_name = settings.get('USER_NAME')
         passwd = settings.get('PASSWORD')
 
-        settings.load_file(path=key_file)
+        settings.load_file(path=str(key_file))
         settings.set('USER_NAME', user_name)
         settings.set('PASSWORD', passwd)
         key = settings.get('USER_KEY')
@@ -65,10 +68,5 @@ class Connection(Screen):
                 'USER_KEY': key,
                 'PASSWORD': settings.PASSWORD,
             }})
-            settings.load_file(path=key_file)
+            settings.load_file(path=str(key_file))
             key = settings.get('USER_KEY')
-
-    # def back_to_previous_screen(self):
-    #     App.get_running_app().theme_cls.primary_palette = "BlueGray"
-    #     App.get_running_app().main_widget.ids.scr_mngr.current = "previous"
-    #     App.get_running_app().main_widget.ids.toolbar.height = dp(56)

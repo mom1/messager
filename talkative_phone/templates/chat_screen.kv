@@ -1,0 +1,126 @@
+# <MyMDLabel@MDLabel>:
+#     canvas.after:
+#         Line:
+#             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+#             dash_offset: 5
+#             dash_length: 3
+
+
+# <MyBoxLayout@BoxLayout>:
+#     canvas.after:
+#         Color:
+#             rgb: (1, 0, 0)
+#         Line:
+#             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+#         Color:
+#             rgb: (1, 1, 1)
+
+
+# <MyGridLayout@GridLayout>:
+#     canvas.after:
+#         Color:
+#             rgb: 1,0,0
+#         Line:
+#             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+#         Color:
+#             rgb: 2,2,2
+
+
+<MyMDTextFieldClear>
+    size_hint_y: None
+    height: self.minimum_height
+
+    FloatLayout:
+
+        MDTextField:
+            id: field
+            text: root.text
+            focus: root.focus
+            password: root.password
+            password_mask: root.password_mask
+            pos_hint: {'center_x': .5}
+            padding: 0, dp(16), clear_btn.width + dp(15), dp(10)
+            hint_text: root.hint_text
+            on_focus:
+                clear_btn.custom_color = self.line_color_focus\
+                if clear_btn.custom_color != self.line_color_focus\
+                else self.line_color_normal
+                root.focus = self.focus
+            on_text:
+                root.text = self.text
+
+        MDTextButton:
+            id: clear_btn
+            text: 'X'
+            pos_hint: {'right': .98, 'center_y': .5}
+            custom_color: field.line_color_normal
+            on_press: root.refresh_field(field, clear_btn)
+
+
+<ScrollableLabel>
+
+    GridLayout:
+        id: layout
+        cols: 2
+        rows: 2
+        size_hint_y: None
+        height: self.minimum_height
+        padding: dp(5), 0, dp(5), 0
+
+        MDLabel:
+            id: incoming_messages
+            markup: True
+            size_hint_y: None
+            theme_text_color: 'Primary'
+            halign: 'left'
+            height: self.texture_size[1]
+            text_size: self.width, None
+
+        MDLabel:
+            id: outcoming_messages
+            markup: True
+            size_hint_y: None
+            theme_text_color: 'Primary'
+            halign: 'right'
+            height: self.texture_size[1]
+            text_size: self.width, None
+
+        MDLabel:
+            id: scroll_to_point
+            size_hint_y: None
+            height: self.texture_size[1]
+
+
+<ChatScreen>
+    name: 'chat'
+    on_enter:
+        app.main_widget.ids.toolbar.left_action_items = [['arrow-left', lambda x: root.back()]]
+        root.set_active()
+    on_leave:
+        app.main_widget.ids.toolbar.left_action_items = [['menu', lambda x: app.root.toggle_nav_drawer()]]
+        root.ids.history.ids.incoming_messages.text = ''
+        root.ids.history.ids.outcoming_messages.text = ''
+
+    GridLayout:
+        cols: 1
+        rows: 2
+
+        ScrollableLabel:
+            id: history
+
+        MyMDTextFieldClear:
+            id: new_message
+            hint_text: "Message"
+            multiline: False
+            size_hint_y: None
+            height: self.minimum_height
+            padding: dp(10), 0, dp(10), dp(5)
+
+            MDFloatingActionButton:
+                icon: 'send'
+                opposite_colors: True
+                elevation_normal: 2
+                md_bg_color: app.theme_cls.primary_color
+                on_press: root.send_message()
+
+
