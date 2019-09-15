@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-14 19:55:09
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-15 17:08:46
+# @Last Modified time: 2019-09-15 19:09:30
 from dynaconf import settings
 from kivy.lang import Builder
 from kivy.logger import Logger
@@ -20,6 +20,9 @@ logger = Logger
 class FinContact(Contacts):
     def set_template(self):
         Builder.load_file('templates/find_contact.kv')
+
+    def set_viewclass(self):
+        self.viewclass_item = 'RVRow'
 
     def on_enter(self, *largs):
         self.app.main_widget.ids.toolbar.title = 'Найти контакты'

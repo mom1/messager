@@ -1,7 +1,7 @@
 <Theming>
     name: 'theming'
     on_enter:
-        app.main_widget.ids.toolbar.title = 'Выбор темы'
+        app.main_widget.ids.toolbar.title = 'Настройки'
         app.main_widget.ids.toolbar.left_action_items = [['arrow-left', lambda x: app.show_screen('contacts')]] \
         if app.is_connected else app.main_widget.ids.toolbar.left_action_items
 

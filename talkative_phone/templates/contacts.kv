@@ -1,8 +1,14 @@
 <RVRow@OneLineAvatarIconListItem>
-    on_release: root.callback(root)
     image: None
+    on_release: root.callback(root)
+
     AvatarSampleWidget:
         texture: root.image
+
+<RVRowDel@RVRow>
+    DelWidget:
+        icon: 'delete'
+        on_release: root.callback_del(root)
 
 <ContactRecycleView@RecycleView>
     key_viewclass: 'viewclass'

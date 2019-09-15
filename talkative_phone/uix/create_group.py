@@ -2,12 +2,11 @@
 # @Author: MaxST
 # @Date:   2019-09-15 13:21:59
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-15 17:28:41
+# @Last Modified time: 2019-09-15 19:10:28
 # from dynaconf import settings
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.properties import ObjectProperty
-from kivymd.toast import toast
 from kivymd.uix.chip import MDChip
 
 from db import User
@@ -23,6 +22,9 @@ class CreateGroup(Contacts):
     def set_template(self):
         Builder.load_file('templates/create_group.kv')
 
+    def set_viewclass(self):
+        self.viewclass_item = 'RVRow'
+
     def on_enter(self, *largs):
         title = f'Добавление участников в группу {self.instance_chat.name}'
         self.app.main_widget.ids.toolbar.title = title
@@ -36,7 +38,6 @@ class CreateGroup(Contacts):
         self.ids.list_members.clear_widgets()
 
     def select_active(self, row):
-        toast(f'Нажато {row.text}')
         self.instance_chat.members.append(User.by_name(row.text))
         self.update_chips()
 

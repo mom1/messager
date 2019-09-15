@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-15 17:50:20
+# @Last Modified time: 2019-09-15 20:04:56
 import enum
 import logging
 import threading
@@ -378,8 +378,10 @@ class User(Core):
 
         """
         cont = User.by_name(contact_name)
-        user = User.by_name(settings.USER_NAME)
-        chat = Chat.filter_by(name=contact_name).first() or next((c for c in cont.get_chats() if c.is_personal and user in c.members), None)
+        chat = Chat.filter_by(name=contact_name).first() or Chat.filter_by(name='__'.join(sorted((self.username, contact_name)))).first() or next((c for c in cont.get_chats() if c.is_personal and self in c.members), None)
+        if chat and self not in chat.members:
+            chat.members.append(self)
+            chat.save()
         if not cont and not chat:
             raise NotFoundUser(contact_name)
         if self.has_contact(contact_name):

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-08 22:07:08
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-15 17:43:01
+# @Last Modified time: 2019-09-15 19:10:48
 from dynaconf import settings
 from kivy.app import App
 from kivy.clock import Clock
@@ -217,7 +217,6 @@ class MenuItem(NavigationDrawerIconButton):
         super().__init__(**kwargs)
 
     def on_release(self):
-        toast(self.text)
         if self.screen:
             App.get_running_app().show_screen(self.screen)
         elif self.on_rel:
