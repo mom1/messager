@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-11 21:33:59
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-14 22:14:24
+# @Last Modified time: 2019-09-15 17:25:59
 # from datetime import datetime
 
 # from Cryptodome.PublicKey import RSA
@@ -36,6 +36,7 @@ class ChatScreen(CommonGUI, Screen):
         self.app.events[f'done_{settings.PUBLIC_KEY_REQUEST}'] = self.make_encryptor
 
     def back(self, *args):
+        self.app.main_widget.ids.toolbar.left_action_items = [['menu', lambda x: self.app.root.toggle_nav_drawer()]]
         self.app.show_screen('contacts')
 
     def on_key_down(self, instance, keyboard, keycode, text, modofiers):
@@ -56,7 +57,16 @@ class ChatScreen(CommonGUI, Screen):
         return self.app.main_widget.ids.toolbar.title
 
     def set_current_chat(self, chat):
+        menu = []
+        if not chat.is_personal:
+            menu = [['account-multiple-plus', lambda x: self.edit_group(chat)]]
+        self.app.main_widget.ids.toolbar.right_action_items = menu
         self.current_chat = chat.name or ''
+
+    def edit_group(self, chat):
+        group = self.app.get_screen('create_group')
+        group.instance_chat = chat
+        self.app.show_screen(group.name)
 
     def set_view_obj(self, obj):
         self.app.main_widget.ids.toolbar.title = obj.username or ''

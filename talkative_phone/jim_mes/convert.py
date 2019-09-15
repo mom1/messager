@@ -2,7 +2,7 @@
 # @Author: Max ST
 # @Date:   2019-04-05 01:21:21
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-08-09 00:12:00
+# @Last Modified time: 2019-09-15 17:59:01
 import csv
 import json
 import logging
@@ -146,6 +146,9 @@ class Csv(object):
         Args:
             file_name: Имя файла
 
+        Returns:
+            list
+
         """
         with Path(file_name).open() as f:
             reader = csv.DictReader(f)
@@ -179,6 +182,9 @@ class Csv(object):
 
         Args:
             data: данные для чтения
+
+        Returns:
+            list
 
         """
         f = StringIO(data)

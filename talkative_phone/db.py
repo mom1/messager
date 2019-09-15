@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-05-25 22:33:58
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-08 22:12:23
+# @Last Modified time: 2019-09-15 17:50:20
 import enum
 import logging
 import threading
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import sqlalchemy as sa
 from dynaconf import settings
-from sqlalchemy import desc, func, or_
+from sqlalchemy import desc, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import as_declarative
@@ -18,8 +18,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, relationship, scoped_session, sessionmaker
 from sqlalchemy_utils import PasswordType
 
-from errors import (ContactExists, ContactNotExists, NotFoundContact,
-                     NotFoundUser)
+from errors import ContactExists, NotFoundContact, NotFoundUser
 
 logger = logging.getLogger('client__db')
 database_lock = threading.Lock()
@@ -61,6 +60,9 @@ class DBManager(object):
     def _setup(self, *args, **kwargs):
         """Установка БД.
 
+        Raises:
+            e: (Exception) DATABASES setting required
+
         Args:
             *args: доп. параметры
             **kwargs: доп. параметры
@@ -99,6 +101,9 @@ class Base(object):
     @declared_attr
     def __tablename__(cls):  # noqa
         """Имя таблицы в БД для класса
+
+        Args:
+            cls: текущий касс
 
         Returns:
             имя таблицы это имя класса в ловер-кейсе
@@ -139,6 +144,12 @@ class Core(Base):
         """Полиморфный маппер.
 
         Заполняет building_type именем класса
+
+        Args:
+            cls: текущий касс
+
+        Returns:
+            dict
 
         """
         if cls.__name__ == 'Core':
@@ -270,6 +281,9 @@ class Core(Base):
 
         По одной что бы удалились связанные записи в родительской таблице
 
+        Args:
+            qs: список объектов бд
+
         """
         for item in qs:
             item.delete()
@@ -355,6 +369,13 @@ class User(Core):
         Args:
             contact_name: имя добавляемого контакта
 
+        Raises:
+            NotFoundUser: if user did not find
+            ContactExists: if user did find like contact
+
+        Returns:
+            Измененый объект чата
+
         """
         cont = User.by_name(contact_name)
         user = User.by_name(settings.USER_NAME)
@@ -379,6 +400,12 @@ class User(Core):
 
         Args:
             contact_name: имя контакта
+
+        Raises:
+            NotFoundContact: if user did not find in contacts
+
+        Returns:
+            Измененый объект чата
 
         """
         cont = User.by_name(contact_name)

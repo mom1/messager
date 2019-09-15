@@ -1,36 +1,17 @@
 #:import NoTransition kivy.uix.screenmanager.NoTransition
 #:import MDToolbar kivymd.uix.toolbar.MDToolbar
 #:import MDNavigationDrawer kivymd.uix.navigationdrawer.MDNavigationDrawer
-#:import NavigationDrawerSubheader kivymd.uix.navigationdrawer.NavigationDrawerSubheader
-
-<MyNavigationDrawerIconButton@NavigationDrawerIconButton>
-    icon: 'checkbox-blank-circle'
-    use_active: False
-    on_release: app.show_screen(root.screen)
 
 <ContentNavigationDrawer@MDNavigationDrawer>
     drawer_logo: 'icon.png'
 
-    NavigationDrawerSubheader:
-        text: "Menu:"
-
-    MyNavigationDrawerIconButton:
-        id: create_group
-        screen: "contacts"
-        text: "Создать группу"
-
-    MyNavigationDrawerIconButton:
-        id: connect_widget
-        screen: "connect"
-        text: "Соединение"
-
-    MyNavigationDrawerIconButton:
-        screen: "Theming"
-        text: "Выбор темы оформления"
-
-    MyNavigationDrawerIconButton:
+    NavigationDrawerIconButton:
+        id: exit_app
+        icon: 'exit-run'
+        use_active: False
         text: "Выход"
         on_release: app.stop()
+
 
 NavigationLayout:
     id: nav_layout

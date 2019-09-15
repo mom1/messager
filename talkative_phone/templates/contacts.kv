@@ -24,8 +24,5 @@
         app.main_widget.ids.toolbar.title = 'Контакты'
         app.main_widget.ids.toolbar.right_action_items = [['account-search', lambda x: app.show_screen('find_contact')]]
 
-    on_leave:
-        app.main_widget.ids.toolbar.right_action_items = []
-
     ContactRecycleView:
         id: rv_main

@@ -2,7 +2,7 @@
 # @Author: MaxST
 # @Date:   2019-09-14 19:55:09
 # @Last Modified by:   MaxST
-# @Last Modified time: 2019-09-14 21:37:23
+# @Last Modified time: 2019-09-15 17:08:46
 from dynaconf import settings
 from kivy.lang import Builder
 from kivy.logger import Logger
@@ -24,16 +24,13 @@ class FinContact(Contacts):
     def on_enter(self, *largs):
         self.app.main_widget.ids.toolbar.title = 'Найти контакты'
         self.app.main_widget.ids.toolbar.left_action_items = [['arrow-left', lambda x: self.app.show_screen('contacts')]]
+        self.app.main_widget.ids.toolbar.right_action_items = []
         self.make_data(contacts=False)
 
     def on_leave(self, *largs):
         self.app.main_widget.ids.toolbar.left_action_items = [['menu', lambda x: self.app.root.toggle_nav_drawer()]]
-        self.app.main_widget.ids.toolbar.title = 'Контакты'
-        self.app.main_widget.ids.toolbar.right_action_items = [['account-search', lambda x: self.app.show_screen('find_contact')]]
-        self.make_data()
 
     def select_active(self, row):
-        # toast(f'Нажато {row.text}')
         self.add_contact(row.text)
         self.app.show_screen('contacts')
 
@@ -49,21 +46,7 @@ class FinContact(Contacts):
                                        settings.USER: settings.USER_NAME,
                                        settings.ACCOUNT_NAME: current_chat,
                                    }))
-            self.send_chat(chat)
+            self.app.send_chat(chat)
         except (ContactExists, NotFoundUser, ContactNotExists) as e:
             self.app.show_info('Ошибка\n' + str(e))
             logger.error(e)
-
-    def send_chat(self, chat):
-        self.app.client.notify(f'send_{settings.MESSAGE}',
-                               msg=Message(
-                                   **{
-                                       settings.ACTION: settings.EDIT_CHAT,
-                                       settings.USER: settings.USER_NAME,
-                                       settings.DATA: {
-                                           'name': chat.name,
-                                           'owner': chat.owner.username if chat.owner else None,
-                                           'is_personal': chat.is_personal,
-                                           'members': [i.username for i in chat.members],
-                                       },
-                                   }))

@@ -97,7 +97,6 @@
         app.main_widget.ids.toolbar.left_action_items = [['arrow-left', lambda x: root.back()]]
         root.set_active()
     on_leave:
-        app.main_widget.ids.toolbar.left_action_items = [['menu', lambda x: app.root.toggle_nav_drawer()]]
         root.ids.history.ids.incoming_messages.text = ''
         root.ids.history.ids.outcoming_messages.text = ''
 

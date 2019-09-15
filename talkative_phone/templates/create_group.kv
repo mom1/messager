@@ -1,0 +1,45 @@
+<CreateGroup>
+    name: 'create_group'
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(10)
+        padding: dp(20)
+
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+
+            MDIconButton:
+                icon: 'magnify'
+
+            MDTextField:
+                id: search_field
+                hint_text: 'Поиск'
+                on_text: root.make_data(search=self.text)
+
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+
+            MDLabel:
+                text: 'Участники'
+                theme_text_color: 'Primary'
+
+            MDSeparator:
+
+            StackLayout:
+                id: list_members
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(5)
+
+                # MDChip:
+                #     label: 'Имя контакта'
+                #     icon: ''
+
+        ContactRecycleView:
+            id: rv_main
